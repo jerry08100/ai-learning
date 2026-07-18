@@ -1,9 +1,10 @@
 import { nextBox, isMastered, scoreExam, progressStats, wrongQuestionIds, toMarkdown, reviewPriority, MASTER_BOX } from './core.js';
 
 const STORE_KEY = 'ipas_quiz_progress';
-// 部署 Cloudflare Worker 後填入，例如 'https://ipas-quiz-sync.你的帳號.workers.dev'。留空=只用本機。
-const SYNC_URL = ''; // Phase 2: 部署自己的 worker 後填入
+// 同步後端＝永續地球遊戲伺服器共用（piggyback 到 sustain-earth.zeabur.app 的 /sync/:code）。留空=只用本機。
+const SYNC_URL = 'https://sustain-earth.zeabur.app'; // 同步後端＝永續地球遊戲伺服器共用
 const VAPID_PUBLIC = 'BNn4Lwq818aHx8cb0LrcQ6IpRgHb9B3P_BOqusct-uFyJPQ4hlDrIOirliHoNdbbg5tg8zWfzBg5SZ0yBhRq7zA';
+const PUSH_ENABLED = false; // Phase 3: 現行同步後端（永續地球遊戲伺服器）無 push，關閉推播 UI 與 /push/* 呼叫（同步不受影響）
 const $ = (sel) => document.querySelector(sel);
 const view = $('#view');
 
@@ -43,7 +44,7 @@ function logRecent(correct) {
 }
 
 // ---- 推播提醒(Web Push)----
-const pushSupported = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+const pushSupported = () => PUSH_ENABLED && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
 function urlB64ToBytes(s) {
   const pad = '='.repeat((4 - (s.length % 4)) % 4);
   const raw = atob((s + pad).replace(/-/g, '+').replace(/_/g, '/'));
@@ -685,14 +686,14 @@ function settings() {
       </label>
       ${examInfoHtml()}
 
-      <h3>每日提醒（推播）</h3>
+      ${pushSupported() ? `<h3>每日提醒（推播）</h3>
       <p class="muted">到設定時間若今天還沒練，會推播提醒你刷題。iPhone 需先把本站「加到主畫面」，並從安裝後的 App 開啟才收得到。</p>
       <label>提醒時間
         <select id="rem-hour">${Array.from({ length: 24 }, (_, h) => `<option value="${h}" ${h === remHour ? 'selected' : ''}>${String(h).padStart(2, '0')}:00</option>`).join('')}</select>
       </label>
-      <button id="rem-toggle">${pushSupported() ? '載入中…' : '此瀏覽器不支援推播'}</button>
+      <button id="rem-toggle">載入中…</button>
       <button id="rem-test">傳測試通知</button>
-      <span id="rem-msg" class="muted"></span>
+      <span id="rem-msg" class="muted"></span>` : ''}
 
       <h3>同步碼</h3>
       <p class="muted">${SYNC_URL
