@@ -1,0 +1,7 @@
+node_modules/
+.DS_Store
+pdfs/
+worker/.wrangler/
+worker/node_modules/
+resource-change.md
+resource-change-title.txt
