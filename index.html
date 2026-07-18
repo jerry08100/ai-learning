@@ -83,6 +83,13 @@
   .range-item span { flex:1; font-size:14px; }
   .range-item b { color:var(--c-accent); font-variant-numeric:tabular-nums; }
   .qfig { max-width:100%; border:1px solid var(--c-line); border-radius:8px; margin:10px 0; display:block; }
+  /* 背題模式:選項唯讀(不作答),正解沿用 .opt.correct 綠底;解析用原生 details/summary */
+  .study-opts .opt { cursor:default; }
+  .study-opts .opt:hover { border-color:var(--c-line); }
+  .study-opts .opt.correct:hover { border-color:var(--c-ok); }
+  .study-exp { margin-top:10px; }
+  .study-exp summary { cursor:pointer; color:var(--c-accent); font-size:14px; font-weight:600; }
+  .study-exp .exp { margin-top:8px; }
   #installbar:not([hidden]) { display:flex; align-items:center; justify-content:space-between; gap:8px; max-width:720px; margin:0 auto; padding:10px 14px; background:#2563eb; color:#fff; font-size:14px; }
   #installbar button { border:0; border-radius:8px; padding:6px 12px; font-size:14px; cursor:pointer; margin-left:6px; }
   #install-btn { background:#fff; color:#2563eb; font-weight:600; }
@@ -133,6 +140,7 @@
     <p id="banner" hidden></p>
     <nav>
       <button data-v="home" class="on">練習</button>
+      <button data-v="study">背題</button>
       <button data-v="mock">模擬考</button>
       <button data-v="wrong">錯題本</button>
       <button data-v="notes">筆記</button>

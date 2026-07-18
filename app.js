@@ -281,17 +281,21 @@ function rangeGroups() {
   }
   return [...m.values()];
 }
+// 範圍勾選清單:練習頁與背題頁共用同一份 store.ranges(不複製兩份 render 邏輯)。
+// 首次進站(store 無 ranges 偏好)預設只勾初級;使用者改選後記住(見各頁 saveRanges)。
+const selectedRangeKeys = () => new Set([...view.querySelectorAll('.rng:checked')].map((c) => c.value));
+function rangeChecklistHtml() {
+  const byLevel = {};
+  rangeGroups().forEach((g) => (byLevel[g.level] ||= []).push(g));
+  const saved = Array.isArray(store.ranges) ? new Set(store.ranges) : null;
+  return Object.entries(byLevel).map(([lv, gs]) =>
+    `<div class="range-group"><div class="range-lv">${esc(lv)}</div>${gs.map((g) =>
+      `<label class="range-item"><input type="checkbox" class="rng" value="${esc(g.key)}"${(saved ? saved.has(g.key) : g.level === '初級') ? ' checked' : ''}><span>${esc(g.key)}</span><b>${g.count}</b></label>`).join('')}</div>`).join('');
+}
 
 function home() {
   setNav('home');
-  const groups = rangeGroups();
-  const byLevel = {};
-  groups.forEach((g) => (byLevel[g.level] ||= []).push(g));
-  // 首次進站（store 無 ranges 偏好）預設只勾初級；使用者改選後記住（見下方 saveRanges）
-  const savedRanges = Array.isArray(store.ranges) ? new Set(store.ranges) : null;
-  const ranges = Object.entries(byLevel).map(([lv, gs]) =>
-    `<div class="range-group"><div class="range-lv">${esc(lv)}</div>${gs.map((g) =>
-      `<label class="range-item"><input type="checkbox" class="rng" value="${esc(g.key)}"${(savedRanges ? savedRanges.has(g.key) : g.level === '初級') ? ' checked' : ''}><span>${esc(g.key)}</span><b>${g.count}</b></label>`).join('')}</div>`).join('');
+  const ranges = rangeChecklistHtml(); // 範圍勾選清單與背題頁共用同一份 store.ranges
   const g = dailyGoal(), dc = todayCount(), strk = liveStreak(), du = daysUntilExam();
   const goalHit = dc >= g;
   const dailyStrip = `
@@ -346,7 +350,7 @@ function home() {
       <button class="primary" id="pr-start">開始練習</button>
       <button class="primary alt" id="pr-images">只練看圖題（${DATA.questions.filter((q) => q.image).length} 題,全中級）</button>
     </section>`;
-  const selectedKeys = () => new Set([...view.querySelectorAll('.rng:checked')].map((c) => c.value));
+  const selectedKeys = selectedRangeKeys; // 與背題頁共用
   const kw = () => $('#pr-kw').value.trim().toLowerCase();
   const matchKw = (q) => {
     const k = kw();
@@ -460,6 +464,58 @@ function runPractice(pool, opts = {}) {
     $('#back').onclick = home;
   };
   render();
+}
+
+// 背題模式:把題目+選項+正解攤開成清單背誦。純閱讀——不寫作答紀錄、不動 dirty/同步、不影響錯題本統計。
+// 範圍勾選與練習頁共用同一份 store.ranges;分批渲染每批 50 題、底部「載入更多」,換範圍時重置清單。
+function study() {
+  setNav('study');
+  view.innerHTML = `
+    <section class="card">
+      <h2>背題模式</h2>
+      <p class="muted">把題目、選項與正解直接攤開來背,不作答、不計分。勾選要背的範圍(與練習頁共用同一份選擇)。</p>
+      <div class="row range-head"><span class="muted" id="range-sum"></span>
+        <span><button id="sel-all">全選</button><button id="sel-none">清除</button></span></div>
+      <div id="ranges">${rangeChecklistHtml()}</div>
+    </section>
+    <div id="study-list"></div>
+    <div id="study-more"></div>`;
+  const listEl = $('#study-list'), moreEl = $('#study-more');
+  let pool = [], shown = 0;
+  const cardHtml = (q) => {
+    const meta = `${esc(q.level)}・${esc(q.subject)}${q.chapter ? '・' + esc(q.chapter) : ''}`
+      + (q.source === '學習指引' ? ' <span class="src-tag">學習指引範例</span>' : '');
+    const opts = q.options.map((o, k) =>
+      `<div class="opt${k === q.answer ? ' correct' : ''}">${k === q.answer ? '✓ ' : ''}${esc(o)}</div>`).join('');
+    return `<section class="card">
+      <p class="qmeta muted">${meta}</p>
+      <h3>${esc(q.question)}</h3>
+      ${q.image ? `<img class="qfig" src="${esc(q.image)}" alt="題目附圖" loading="lazy">` : ''}
+      <div class="study-opts">${opts}</div>
+      ${q.explanation ? `<details class="study-exp"><summary>解析</summary><div class="exp">${formatExp(q.explanation)}</div></details>` : ''}
+    </section>`;
+  };
+  const renderMore = () => {
+    const next = pool.slice(shown, shown + 50); // 每批 50 題,避免整批一次塞爆 DOM
+    listEl.insertAdjacentHTML('beforeend', next.map(cardHtml).join(''));
+    shown += next.length;
+    const rest = pool.length - shown;
+    moreEl.innerHTML = rest > 0 ? `<button class="primary" id="load-more">載入更多（剩 ${rest} 題）</button>` : '';
+    if (rest > 0) $('#load-more').onclick = renderMore;
+  };
+  const reset = () => {
+    const keys = selectedRangeKeys();
+    pool = DATA.questions.filter((q) => keys.has(rangeKey(q)));
+    $('#range-sum').textContent = `已選 ${keys.size} 範圍，共 ${pool.length} 題`;
+    listEl.innerHTML = ''; shown = 0;
+    renderMore();
+  };
+  // 勾選變動:存回共用的 store.ranges 後重置清單(與練習頁同一套儲存,不寫任何作答紀錄)
+  const apply = () => { store.ranges = [...selectedRangeKeys()]; save(); reset(); };
+  view.querySelectorAll('.rng').forEach((c) => (c.onchange = apply));
+  $('#sel-all').onclick = () => { view.querySelectorAll('.rng').forEach((c) => (c.checked = true)); apply(); };
+  $('#sel-none').onclick = () => { view.querySelectorAll('.rng').forEach((c) => (c.checked = false)); apply(); };
+  reset();
 }
 
 function mockSetup() {
@@ -829,7 +885,7 @@ function deviceLabel() {
   return `${os} · ${br}`;
 }
 
-const ROUTES = { home, mock: mockSetup, wrong: wrongbook, notes, stats, settings };
+const ROUTES = { home, study, mock: mockSetup, wrong: wrongbook, notes, stats, settings };
 
 // ---- boot ----
 async function boot() {
