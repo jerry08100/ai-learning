@@ -470,12 +470,14 @@ function runPractice(pool, opts = {}) {
 // 範圍勾選與練習頁共用同一份 store.ranges;分批渲染每批 50 題、底部「載入更多」,換範圍時重置清單。
 function study() {
   setNav('study');
+  let showExp = store.studyExp !== false; // 顯示解說開關,預設開(true);關則每題解說整段不渲染
   view.innerHTML = `
     <section class="card">
       <h2>背題模式</h2>
       <p class="muted">把題目、選項與正解直接攤開來背,不作答、不計分。勾選要背的範圍(與練習頁共用同一份選擇)。</p>
       <div class="row range-head"><span class="muted" id="range-sum"></span>
         <span><button id="sel-all">全選</button><button id="sel-none">清除</button></span></div>
+      <label class="study-toggle"><input type="checkbox" id="exp-toggle"${showExp ? ' checked' : ''}> 顯示解說</label>
       <div id="ranges">${rangeChecklistHtml()}</div>
     </section>
     <div id="study-list"></div>
@@ -492,7 +494,7 @@ function study() {
       <h3>${esc(q.question)}</h3>
       ${q.image ? `<img class="qfig" src="${esc(q.image)}" alt="題目附圖" loading="lazy">` : ''}
       <div class="study-opts">${opts}</div>
-      ${q.explanation ? `<details class="study-exp"><summary>解析</summary><div class="exp">${formatExp(q.explanation)}</div></details>` : ''}
+      ${showExp && q.explanation ? `<details class="study-exp" open><summary>解析</summary><div class="exp">${formatExp(q.explanation)}</div></details>` : ''}
     </section>`;
   };
   const renderMore = () => {
@@ -515,6 +517,8 @@ function study() {
   view.querySelectorAll('.rng').forEach((c) => (c.onchange = apply));
   $('#sel-all').onclick = () => { view.querySelectorAll('.rng').forEach((c) => (c.checked = true)); apply(); };
   $('#sel-none').onclick = () => { view.querySelectorAll('.rng').forEach((c) => (c.checked = false)); apply(); };
+  // 顯示解說開關:存回 store.studyExp(沿用既有 save 持久化)後重渲染清單
+  $('#exp-toggle').onchange = (e) => { showExp = e.target.checked; store.studyExp = showExp; save(); reset(); };
   reset();
 }
 
