@@ -190,7 +190,8 @@ async function ensureFreshCode() {
 
 // ---- helpers ----
 const subjects = () => [...new Set(DATA.questions.map((q) => q.subject))];
-const papers = () => [...new Set(DATA.questions.filter((q) => q.source !== '模擬題').map((q) => `${q.level}｜${q.round}｜${q.subject}`))]; // 模擬題非官方,不出現在模擬考試卷清單
+const OFFICIAL_SRC = (q) => q.source !== '模擬題' && q.source !== '課程題'; // 非官方題不出現在模擬考試卷清單
+const papers = () => [...new Set(DATA.questions.filter(OFFICIAL_SRC).map((q) => `${q.level}｜${q.round}｜${q.subject}`))];
 const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
 // 解析顯示用:在「。/；後面的 (A)-(D) 選項分析」與「記憶點」前斷行並加粗,把長段落變條列(不動資料)
 function formatExp(text) {
@@ -272,9 +273,11 @@ function setNav(active) {
 // 範圍 = 章節（若題目尚未分類則退回科目），供「選擇練習範圍」用
 const rangeKey = (q) => q.chapter || q.subject;
 const srcOf = (q) => q.source || '歷屆';
-// 卡片來源標籤(練習卡與背題卡共用):學習指引→「學習指引範例」;模擬題→「模擬題・非官方」(同 .src-tag 樣式);其餘無標籤
-const srcTag = (q) => q.source === '學習指引' ? ' <span class="src-tag">學習指引範例</span>'
-  : q.source === '模擬題' ? ' <span class="src-tag">模擬題・非官方</span>' : '';
+// 卡片來源標籤(練習卡與背題卡共用):非官方來源都要標示,其餘(歷屆)無標籤
+const SRC_TAG = { 學習指引: '學習指引範例', 模擬題: '模擬題・非官方', 課程題: '課程練習・非官方' };
+const srcTag = (q) => SRC_TAG[q.source] ? ` <span class="src-tag">${SRC_TAG[q.source]}</span>` : '';
+// 非官方章節:首訪預設不勾,官方題純度不變(使用者自己勾才出現)
+const UNOFFICIAL_CH = /^(2026趨勢模擬題|課程練習・)/;
 function rangeGroups() {
   const m = new Map();
   for (const q of DATA.questions) {
@@ -293,7 +296,7 @@ function rangeChecklistHtml() {
   const saved = Array.isArray(store.ranges) ? new Set(store.ranges) : null;
   return Object.entries(byLevel).map(([lv, gs]) =>
     `<div class="range-group"><div class="range-lv">${esc(lv)}</div>${gs.map((g) =>
-      `<label class="range-item"><input type="checkbox" class="rng" value="${esc(g.key)}"${(saved ? saved.has(g.key) : (g.level === '初級' && g.key !== '2026趨勢模擬題')) ? ' checked' : ''}><span>${esc(g.key)}</span><b>${g.count}</b></label>`).join('')}</div>`).join('');
+      `<label class="range-item"><input type="checkbox" class="rng" value="${esc(g.key)}"${(saved ? saved.has(g.key) : (g.level === '初級' && !UNOFFICIAL_CH.test(g.key))) ? ' checked' : ''}><span>${esc(g.key)}</span><b>${g.count}</b></label>`).join('')}</div>`).join('');
 }
 
 function home() {
@@ -345,10 +348,11 @@ function home() {
       </label>
       <label>來源
         <select id="pr-source">
-          <option value="">全部（歷屆 + 學習指引 + 模擬題）</option>
+          <option value="">全部（官方 + 非官方）</option>
           <option value="歷屆">只練歷屆考古題</option>
           <option value="學習指引">只練學習指引範例</option>
           <option value="模擬題">只練模擬題（非官方）</option>
+          <option value="課程題">只練課程練習題（非官方）</option>
         </select>
       </label>
       <button class="primary" id="pr-start">開始練習</button>
