@@ -336,7 +336,6 @@ function home() {
         <div><b>${strk}</b><span>連續天數</span></div>
         ${du != null ? `<div><b>${du < 0 ? '—' : du}</b><span>${du < 0 ? '考試已過' : '距考試（天）'}</span></div>` : ''}
       </div>
-      <button id="share">分享進度</button>
     </section>`;
   const chRound = store.challengeDate === today() ? (store.challengeRound || 0) : 0;
   const challengeCard = `
@@ -401,13 +400,6 @@ function home() {
     const r = store.challengeDate === today() ? (store.challengeRound || 0) : 0; // 跨日自動歸零
     store.challengeDate = today(); store.challengeRound = r + 1; save();
     runPractice(dailyChallenge(r));
-  };
-  $('#share').onclick = async () => {
-    const cd = (du != null && du >= 0) ? `、距考試 ${du} 天` : '';
-    const txt = `我在 iPAS AI 應用規劃師模擬考刷題：連續打卡 ${strk} 天、今日 ${dc}/${g} 題${cd}。一起來練官方試題！`;
-    const url = location.origin + location.pathname;
-    if (navigator.share) { try { await navigator.share({ title: 'iPAS 模考練習', text: txt, url }); } catch {} }
-    else { try { await navigator.clipboard.writeText(`${txt} ${url}`); $('#share').textContent = '已複製連結'; } catch {} }
   };
   updateSum();
 }
