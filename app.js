@@ -267,7 +267,7 @@ const srcOf = (q) => q.source || '歷屆';
 const SRC_TAG = { 學習指引: '學習指引範例', 模擬題: '模擬題・非官方', 課程題: '課程練習・非官方' };
 const srcTag = (q) => SRC_TAG[q.source] ? ` <span class="src-tag">${SRC_TAG[q.source]}</span>` : '';
 // ---- 範圍選單 UI:題庫 → 級別 → 科目(三層,取代原本 31 個章節 checkbox)----
-// 練習頁、背題頁、今日挑戰共用同一份偏好:store.bank(單選) / store.lv(單選) / store.subs(多選,null=該層全選)。
+// 練習頁、背題頁、快速做題共用同一份偏好:store.bank(單選) / store.lv(單選) / store.subs(多選,null=該層全選)。
 // 篩選邏輯在 core.js(有測);這裡只負責把 store 綁到 DOM。非官方題的隔離改由「題庫」這層負責(預設 official)。
 const curBank = () => bankOf(store.bank);
 const curLv = () => levelOf(store.lv);
