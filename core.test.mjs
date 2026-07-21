@@ -67,26 +67,30 @@ const bank = [
   { id: 'g2', level: '中級', subject: '中2' },
 ];
 const ids = (pref) => rangeQuestions(bank, pref).map((q) => q.id);
-// 預設(沒設過偏好)= 官方題 + 初級 + 科目全選 → 非官方題一題都不能漏進來
-assert.deepEqual(ids({}), ['p1', 'p2', 'p3'], '預設只出初級官方題');
-assert.equal(bankOf(undefined).key, 'official');
-assert.equal(bankOf('亂填').key, 'official', '認不得的題庫回官方');
+// 預設(沒設過偏好)= 全題庫 + 初級 + 科目全選
+assert.deepEqual(ids({}), ['p1', 'p2', 'p3', 'c1', 'c2', 'm1'], '預設出初級全題庫');
+assert.equal(bankOf(undefined).key, 'all');
+assert.equal(bankOf('亂填').key, 'all', '認不得的題庫回全題庫');
 assert.equal(levelOf('亂填'), '初級', '認不得的級別回初級');
 // 級別
 assert.deepEqual(ids({ lv: '中級' }), ['g1', 'g2']);
-assert.deepEqual(ids({ lv: 'all' }), ['p1', 'p2', 'p3', 'g1', 'g2'], '全部=初級+中級,仍只有官方');
+assert.deepEqual(ids({ lv: 'all' }).length, 8, '全部級別+預設全題庫=整包');
+// 選官方題就一題非官方都不能漏進來
+assert.deepEqual(ids({ bank: 'official' }), ['p1', 'p2', 'p3'], '官方題只出官方');
+assert.deepEqual(ids({ bank: 'official', lv: 'all' }), ['p1', 'p2', 'p3', 'g1', 'g2']);
 // 題庫
 assert.deepEqual(ids({ bank: '課程題' }), ['c1', 'c2']);
 assert.deepEqual(ids({ bank: '模擬題' }), ['m1']);
 assert.deepEqual(ids({ bank: '歷屆' }), ['p1', 'p3'], '歷屆=沒有 source 欄的題');
 assert.deepEqual(ids({ bank: '學習指引' }), ['p2']);
 assert.deepEqual(ids({ bank: 'all', lv: 'all' }).length, 8);
-// 科目多選
-assert.deepEqual(ids({ subs: ['初2'] }), ['p3']);
-assert.deepEqual(ids({ subs: ['初1', '初2'] }), ['p1', 'p2', 'p3']);
+// 科目多選(釘住題庫,只測科目那層)
+assert.deepEqual(ids({ bank: 'official', subs: ['初2'] }), ['p3']);
+assert.deepEqual(ids({ bank: 'official', subs: ['初1', '初2'] }), ['p1', 'p2', 'p3']);
+assert.deepEqual(ids({ subs: ['初2'] }), ['p3', 'c2'], '全題庫時科目篩選也含非官方');
 // 存的科目不屬於目前題庫/級別 → 當全選(不能變成 0 題)
 assert.deepEqual(ids({ lv: '中級', subs: ['初1'] }), ['g1', 'g2'], '換級別後舊科目失效就全選');
-assert.deepEqual(ids({ subs: [] }), ['p1', 'p2', 'p3'], '空陣列也當全選');
+assert.deepEqual(ids({ bank: 'official', subs: [] }), ['p1', 'p2', 'p3'], '空陣列也當全選');
 // 科目清單與題數
 assert.deepEqual(subjectsIn(bank, bankOf('official'), '初級'),
   [{ subject: '初1', count: 2 }, { subject: '初2', count: 1 }]);

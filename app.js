@@ -34,7 +34,8 @@ window.addEventListener('appinstalled', dismissInstallBar);
 function load() {
   try {
     const s = JSON.parse(localStorage.getItem(STORE_KEY));
-    if (s && s.q) { delete s.ranges; return s; } // ranges=舊版章節勾選,已換成 bank/lv/subs 三層,順手清掉不再同步
+    // ranges=舊版章節勾選(已換成 bank/lv/subs 三層)、challenge*=已移除的今日挑戰;清掉不再同步
+    if (s && s.q) { delete s.ranges; delete s.challengeDate; delete s.challengeRound; return s; }
   } catch {}
   return { v: 1, syncCode: makeCode(), codeFresh: true, q: {}, recent: [], updatedAt: 0 };
 }
@@ -209,26 +210,13 @@ function reportLink(q) {
     + `&qid=${encodeURIComponent(q.id)}&subject=${encodeURIComponent(q.subject)}`;
   return `<p class="report-line"><a href="${url}" target="_blank" rel="noopener">這題有誤？回報給作者</a></p>`;
 }
-// 今日挑戰：每輪 10 題，一天想做幾輪都行。第 0 輪用日期當種子（當天穩定），之後每輪換種子給新題。
-const CHALLENGE_N = 10;
-// 出題池跟著使用者在練習頁選的題庫／級別／科目走；真的挑到空的就退回初級官方題。
-function challengePool() {
-  const pool = rangePool();
-  return pool.length ? pool : DATA.questions.filter((q) => q.level === '初級' && OFFICIAL_SRC(q));
-}
-function dailyChallenge(round = 0) {
-  const qs = challengePool(); if (!qs.length) return [];
-  let seed = (round * 2654435761) >>> 0;
-  for (const ch of today()) seed = (seed * 31 + ch.charCodeAt(0)) >>> 0;
-  const picks = [];
-  for (let n = 0; n < CHALLENGE_N && n < qs.length; n++) {
-    seed = (seed * 1103515245 + 12345) >>> 0;
-    let i = seed % qs.length;
-    while (picks.includes(i)) i = (i + 1) % qs.length;
-    picks.push(i);
-  }
-  return picks.map((i) => qs[i]);
-}
+// 快速做題：首頁一顆按鈕，用目前範圍偏好（首訪＝初級全題庫）智慧複習挑 QUICK_N 題直接開練。
+const QUICK_N = 10;
+// 智慧複習排序：錯題 → 沒做過 → 做過未掌握 → 已掌握，同級隨機。練習頁與快速做題共用。
+const smartSort = (pool) => pool
+  .map((q) => ({ q, pr: reviewPriority(store.q[q.id]), r: Math.random() }))
+  .sort((a, b) => a.pr - b.pr || a.r - b.r)
+  .map((x) => x.q);
 // 今日觀念卡：優先挑「你還沒掌握的章節」(錯題 + 練過未掌握)，逐日輪過；沒練過則全站輪播
 function todayConcept() {
   if (!CONCEPTS.length) return null;
@@ -321,13 +309,12 @@ function wireRangePicker(onChange) {
 
 function home() {
   setNav('home');
-  // 首頁不再顯示每日戰績條(今日題數/連續天數/距考試);數據照常累計,要看去「統計」頁
-  const chRound = store.challengeDate === today() ? (store.challengeRound || 0) : 0;
-  const challengeCard = `
+  // 首頁不再顯示每日戰績條與今日挑戰;數據照常累計,要看去「統計」頁
+  const quickCard = `
     <section class="card">
-      <div class="row"><h3 style="margin:0">今日挑戰 ${CHALLENGE_N} 題${chRound ? ` ・已完成 ${chRound} 輪` : ''}</h3>
-        <button class="primary" id="challenge" style="margin:0;padding:8px 14px">${chRound ? '再來一輪' : '開始'}</button></div>
-      <p class="muted" style="margin:6px 0 0">每輪 ${CHALLENGE_N} 題，一天想做幾輪都行，每輪都換新題（出題範圍同練習頁的勾選）。</p>
+      <div class="row"><h3 style="margin:0">快速做題 ${QUICK_N} 題</h3>
+        <button class="primary" id="quick-start" style="margin:0;padding:10px 18px">開始</button></div>
+      <p class="muted" style="margin:6px 0 0">用下面的範圍設定，優先出錯題與沒做過的，按了就開始。</p>
     </section>`;
   const cc = todayConcept();
   const conceptCard = cc ? `
@@ -336,7 +323,7 @@ function home() {
       <h3>${esc(cc.title)}</h3>
       <p>${esc(cc.body)}</p>
     </section>` : '';
-  view.innerHTML = `${challengeCard}${conceptCard}
+  view.innerHTML = `${quickCard}${conceptCard}
     <section class="card">
       <h2>練習模式</h2>
       <p class="muted">即時看答案與解析。先挑題庫，再挑級別跟科目。</p>
@@ -369,23 +356,13 @@ function home() {
   $('#pr-kw').oninput = updateSum;
   $('#pr-start').onclick = () => {
     const count = +$('#pr-count').value;
-    let pool = pickPool();
-    if ($('#pr-mode').value === 'smart') {
-      // 依優先序排（錯題→沒做過→做過未掌握→已掌握），同級隨機
-      pool = pool.map((q) => ({ q, pr: reviewPriority(store.q[q.id]), r: Math.random() }))
-        .sort((a, b) => a.pr - b.pr || a.r - b.r).map((x) => x.q);
-    } else {
-      pool = shuffle(pool);
-    }
+    let pool = $('#pr-mode').value === 'smart' ? smartSort(pickPool()) : shuffle(pickPool());
     if (count) pool = pool.slice(0, count);
     runPractice(pool);
   };
   $('#pr-images').onclick = () => runPractice(shuffle(DATA.questions.filter((q) => q.image)));
-  $('#challenge').onclick = () => {
-    const r = store.challengeDate === today() ? (store.challengeRound || 0) : 0; // 跨日自動歸零
-    store.challengeDate = today(); store.challengeRound = r + 1; save();
-    runPractice(dailyChallenge(r));
-  };
+  // 快速做題:跳過下面所有選項,直接用目前範圍偏好智慧複習挑 QUICK_N 題
+  $('#quick-start').onclick = () => runPractice(smartSort(rangePool()).slice(0, QUICK_N));
   updateSum();
 }
 

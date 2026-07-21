@@ -82,7 +82,9 @@ export const BANKS = [
   { key: 'all', label: '全部（官方＋非官方）', test: () => true },
 ];
 export const LEVELS = [['初級', '初級'], ['中級', '中級'], ['all', '全部']];
-export const bankOf = (key) => BANKS.find((b) => b.key === key) || BANKS[0]; // 認不得就回官方題
+// 首訪預設 = 初級 + 全題庫(官方+非官方),使用者要求;改選後記在 store
+export const DEFAULT_BANK = 'all';
+export const bankOf = (key) => BANKS.find((b) => b.key === key) || BANKS.find((b) => b.key === DEFAULT_BANK);
 export const levelOf = (lv) => (LEVELS.some(([k]) => k === lv) ? lv : '初級'); // 認不得就回初級
 const inLevel = (q, lv) => lv === 'all' || q.level === lv;
 export const countIn = (questions, bank, lv) => questions.filter((q) => bank.test(q) && inLevel(q, lv)).length;
