@@ -74,14 +74,17 @@
   table { width:100%; border-collapse:collapse; margin-top:8px; }
   th, td { text-align:left; padding:8px; border-bottom:1px solid var(--c-line); font-size:14px; }
   ul.wrong { padding-left:18px; } ul.wrong li { margin:6px 0; }
-  .range-head { margin-bottom:6px; }
-  .range-head button { background:#eef0f3; border:0; padding:4px 10px; border-radius:6px; font-size:13px; cursor:pointer; margin-left:6px; }
-  .range-group { margin-bottom:10px; }
-  .range-lv { font-size:13px; font-weight:600; color:var(--c-muted); margin:8px 0 4px; }
-  .range-item { display:flex; align-items:center; gap:8px; margin:0; padding:8px 10px; border:1px solid var(--c-line); border-radius:8px; margin-bottom:6px; cursor:pointer; }
-  .range-item input { width:auto; }
-  .range-item span { flex:1; font-size:14px; }
-  .range-item b { color:var(--c-accent); font-variant-numeric:tabular-nums; }
+  /* 範圍選單:題庫(select) → 級別(chip 單選) → 科目(chip 多選) */
+  .pick-lb { display:block; font-size:13px; font-weight:600; color:var(--c-muted); margin:12px 0 6px; }
+  .pick-lb .muted { font-weight:400; }
+  .pick-lb select { margin-top:4px; }
+  .chip-row { display:flex; flex-wrap:wrap; gap:8px; }
+  .chip { background:#fff; border:1px solid var(--c-line); border-radius:999px; padding:8px 14px; font-size:14px; line-height:1.3; cursor:pointer; color:var(--c-ink); }
+  .chip b { color:var(--c-muted); font-weight:600; font-variant-numeric:tabular-nums; }
+  .chip.on { border-color:var(--c-accent); background:#eff6ff; color:var(--c-accent); font-weight:600; }
+  .chip.on b { color:var(--c-accent); }
+  .chip:disabled { opacity:.4; cursor:default; }
+  .range-sum { margin:10px 0 0; }
   .qfig { max-width:100%; border:1px solid var(--c-line); border-radius:8px; margin:10px 0; display:block; }
   /* 背題模式:選項唯讀(不作答),正解沿用 .opt.correct 綠底;解析用原生 details/summary */
   .study-opts .opt { cursor:default; }

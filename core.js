@@ -71,6 +71,43 @@ export function wrongQuestionIds(questions, progress) {
     .map((q) => q.id);
 }
 
+// ---- 練習範圍:題庫 → 級別 → 科目(三層)。純篩選,UI 在 app.js。----
+// 非官方題(模擬題/課程題)的隔離改由「題庫」這層負責,預設 official,不再靠章節名比對。
+export const BANKS = [
+  { key: 'official', label: '官方題（歷屆＋學習指引）', test: (q) => q.source !== '模擬題' && q.source !== '課程題' },
+  { key: '歷屆', label: '官方・只練歷屆考古題', test: (q) => (q.source || '歷屆') === '歷屆' },
+  { key: '學習指引', label: '官方・只練學習指引範例', test: (q) => q.source === '學習指引' },
+  { key: '課程題', label: '課程練習題（非官方）', test: (q) => q.source === '課程題' },
+  { key: '模擬題', label: '模擬題（非官方）', test: (q) => q.source === '模擬題' },
+  { key: 'all', label: '全部（官方＋非官方）', test: () => true },
+];
+export const LEVELS = [['初級', '初級'], ['中級', '中級'], ['all', '全部']];
+export const bankOf = (key) => BANKS.find((b) => b.key === key) || BANKS[0]; // 認不得就回官方題
+export const levelOf = (lv) => (LEVELS.some(([k]) => k === lv) ? lv : '初級'); // 認不得就回初級
+const inLevel = (q, lv) => lv === 'all' || q.level === lv;
+export const countIn = (questions, bank, lv) => questions.filter((q) => bank.test(q) && inLevel(q, lv)).length;
+// 換題庫後若目前級別是空的(例:課程題沒有中級),跳到第一個有題的級別
+export const firstLevelWith = (questions, bank) =>
+  (LEVELS.find(([k]) => countIn(questions, bank, k)) || ['all'])[0];
+// 該題庫＋級別下有哪些科目(帶題數)。科目名跨級別唯一(初級科目1≠中級科目1),故直接拿科目名當 key。
+export function subjectsIn(questions, bank, lv) {
+  const m = new Map();
+  for (const q of questions) if (bank.test(q) && inLevel(q, lv)) m.set(q.subject, (m.get(q.subject) || 0) + 1);
+  return [...m].map(([subject, count]) => ({ subject, count }));
+}
+// 沒選過、或存的科目已不在目前題庫/級別內 → 當成全選,免得換題庫後一題都選不到。
+export function resolveSubs(questions, bank, lv, subs) {
+  const all = subjectsIn(questions, bank, lv).map((s) => s.subject);
+  const kept = Array.isArray(subs) ? subs.filter((s) => all.includes(s)) : [];
+  return new Set(kept.length ? kept : all);
+}
+// 依偏好 {bank, lv, subs} 篩出題目池(練習頁、背題頁、今日挑戰共用同一份)。
+export function rangeQuestions(questions, pref = {}) {
+  const bank = bankOf(pref.bank), lv = levelOf(pref.lv);
+  const subs = resolveSubs(questions, bank, lv, pref.subs);
+  return questions.filter((q) => bank.test(q) && inLevel(q, lv) && subs.has(q.subject));
+}
+
 // 把「有星標或有筆記」的題 + 解析 + 筆記整理成 markdown,供匯出。
 export function toMarkdown(questions, progress, title = 'iPAS 筆記') {
   const lines = [`# ${title}`, ''];

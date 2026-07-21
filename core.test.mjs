@@ -1,6 +1,7 @@
 // node core.test.mjs  — 邏輯壞掉就會 throw。
 import assert from 'node:assert';
-import { nextBox, isMastered, scoreExam, progressStats, wrongQuestionIds, toMarkdown, reviewPriority } from './core.js';
+import { nextBox, isMastered, scoreExam, progressStats, wrongQuestionIds, toMarkdown, reviewPriority,
+  bankOf, levelOf, countIn, firstLevelWith, subjectsIn, resolveSubs, rangeQuestions } from './core.js';
 
 // 出題優先序:錯題(0) < 沒做過(1) < 做過未掌握(2) < 已掌握(3)
 assert.equal(reviewPriority({ box: 1, attempts: 2, wrong: 1 }), 0);
@@ -53,5 +54,47 @@ assert.ok(!md.includes('qa'), '沒星標也沒筆記的不該出現');
 const md2 = toMarkdown(qs, { a: { note: '只有筆記沒星標' } });
 assert.ok(md2.includes('只有筆記沒星標'), '有筆記就該收');
 assert.ok(md2.includes('qa'));
+
+// ---- 練習範圍:題庫 → 級別 → 科目 ----
+const bank = [
+  { id: 'p1', level: '初級', subject: '初1' },                    // 歷屆(無 source 欄)
+  { id: 'p2', level: '初級', subject: '初1', source: '學習指引' },
+  { id: 'p3', level: '初級', subject: '初2' },
+  { id: 'c1', level: '初級', subject: '初1', source: '課程題' },
+  { id: 'c2', level: '初級', subject: '初2', source: '課程題' },
+  { id: 'm1', level: '初級', subject: '初1', source: '模擬題' },
+  { id: 'g1', level: '中級', subject: '中1' },
+  { id: 'g2', level: '中級', subject: '中2' },
+];
+const ids = (pref) => rangeQuestions(bank, pref).map((q) => q.id);
+// 預設(沒設過偏好)= 官方題 + 初級 + 科目全選 → 非官方題一題都不能漏進來
+assert.deepEqual(ids({}), ['p1', 'p2', 'p3'], '預設只出初級官方題');
+assert.equal(bankOf(undefined).key, 'official');
+assert.equal(bankOf('亂填').key, 'official', '認不得的題庫回官方');
+assert.equal(levelOf('亂填'), '初級', '認不得的級別回初級');
+// 級別
+assert.deepEqual(ids({ lv: '中級' }), ['g1', 'g2']);
+assert.deepEqual(ids({ lv: 'all' }), ['p1', 'p2', 'p3', 'g1', 'g2'], '全部=初級+中級,仍只有官方');
+// 題庫
+assert.deepEqual(ids({ bank: '課程題' }), ['c1', 'c2']);
+assert.deepEqual(ids({ bank: '模擬題' }), ['m1']);
+assert.deepEqual(ids({ bank: '歷屆' }), ['p1', 'p3'], '歷屆=沒有 source 欄的題');
+assert.deepEqual(ids({ bank: '學習指引' }), ['p2']);
+assert.deepEqual(ids({ bank: 'all', lv: 'all' }).length, 8);
+// 科目多選
+assert.deepEqual(ids({ subs: ['初2'] }), ['p3']);
+assert.deepEqual(ids({ subs: ['初1', '初2'] }), ['p1', 'p2', 'p3']);
+// 存的科目不屬於目前題庫/級別 → 當全選(不能變成 0 題)
+assert.deepEqual(ids({ lv: '中級', subs: ['初1'] }), ['g1', 'g2'], '換級別後舊科目失效就全選');
+assert.deepEqual(ids({ subs: [] }), ['p1', 'p2', 'p3'], '空陣列也當全選');
+// 科目清單與題數
+assert.deepEqual(subjectsIn(bank, bankOf('official'), '初級'),
+  [{ subject: '初1', count: 2 }, { subject: '初2', count: 1 }]);
+assert.deepEqual([...resolveSubs(bank, bankOf('課程題'), '初級', null)], ['初1', '初2']);
+// 級別題數 + 該題庫沒中級時自動跳級
+assert.equal(countIn(bank, bankOf('official'), '中級'), 2);
+assert.equal(countIn(bank, bankOf('課程題'), '中級'), 0, '課程題沒有中級');
+assert.equal(firstLevelWith(bank, bankOf('課程題')), '初級');
+assert.equal(firstLevelWith(bank, bankOf('official')), '初級');
 
 console.log('PASS');

@@ -1,4 +1,5 @@
-import { nextBox, isMastered, scoreExam, progressStats, wrongQuestionIds, toMarkdown, reviewPriority, MASTER_BOX } from './core.js';
+import { nextBox, isMastered, scoreExam, progressStats, wrongQuestionIds, toMarkdown, reviewPriority, MASTER_BOX,
+  BANKS, LEVELS, bankOf, levelOf, countIn, firstLevelWith, subjectsIn, resolveSubs, rangeQuestions } from './core.js';
 
 const STORE_KEY = 'ipas_quiz_progress';
 // 同步後端＝永續地球遊戲伺服器共用（piggyback 到 sustain-earth.zeabur.app 的 /sync/:code）。留空=只用本機。
@@ -33,7 +34,7 @@ window.addEventListener('appinstalled', dismissInstallBar);
 function load() {
   try {
     const s = JSON.parse(localStorage.getItem(STORE_KEY));
-    if (s && s.q) return s;
+    if (s && s.q) { delete s.ranges; return s; } // ranges=舊版章節勾選,已換成 bank/lv/subs 三層,順手清掉不再同步
   } catch {}
   return { v: 1, syncCode: makeCode(), codeFresh: true, q: {}, recent: [], updatedAt: 0 };
 }
@@ -216,11 +217,10 @@ function reportLink(q) {
 }
 // 今日挑戰：每輪 10 題，一天想做幾輪都行。第 0 輪用日期當種子（當天穩定），之後每輪換種子給新題。
 const CHALLENGE_N = 10;
-// 出題池跟著使用者的範圍偏好走；沒設過（或全部清掉）就用預設的初級官方題，免得被非官方題洗版。
+// 出題池跟著使用者在練習頁選的題庫／級別／科目走；真的挑到空的就退回初級官方題。
 function challengePool() {
-  const keys = Array.isArray(store.ranges) && store.ranges.length ? new Set(store.ranges) : null;
-  return DATA.questions.filter((q) => (keys ? keys.has(rangeKey(q))
-    : q.level === '初級' && !UNOFFICIAL_CH.test(rangeKey(q))));
+  const pool = rangePool();
+  return pool.length ? pool : DATA.questions.filter((q) => q.level === '初級' && OFFICIAL_SRC(q));
 }
 function dailyChallenge(round = 0) {
   const qs = challengePool(); if (!qs.length) return [];
@@ -284,32 +284,49 @@ const srcOf = (q) => q.source || '歷屆';
 // 卡片來源標籤(練習卡與背題卡共用):非官方來源都要標示,其餘(歷屆)無標籤
 const SRC_TAG = { 學習指引: '學習指引範例', 模擬題: '模擬題・非官方', 課程題: '課程練習・非官方' };
 const srcTag = (q) => SRC_TAG[q.source] ? ` <span class="src-tag">${SRC_TAG[q.source]}</span>` : '';
-// 非官方章節:首訪預設不勾,官方題純度不變(使用者自己勾才出現)
-const UNOFFICIAL_CH = /^(2026趨勢模擬題|課程練習・)/;
-function rangeGroups() {
-  const m = new Map();
-  for (const q of DATA.questions) {
-    const k = rangeKey(q);
-    const g = m.get(k) || { key: k, level: q.level, count: 0 };
-    g.count++; m.set(k, g);
-  }
-  return [...m.values()];
+// ---- 範圍選單 UI:題庫 → 級別 → 科目(三層,取代原本 31 個章節 checkbox)----
+// 練習頁、背題頁、今日挑戰共用同一份偏好:store.bank(單選) / store.lv(單選) / store.subs(多選,null=該層全選)。
+// 篩選邏輯在 core.js(有測);這裡只負責把 store 綁到 DOM。非官方題的隔離改由「題庫」這層負責(預設 official)。
+const curBank = () => bankOf(store.bank);
+const curLv = () => levelOf(store.lv);
+const curSubs = () => resolveSubs(DATA.questions, curBank(), curLv(), store.subs);
+// 目前選到的題目池;關鍵字之類的額外條件由各頁自己再濾
+const rangePool = () => rangeQuestions(DATA.questions, { bank: store.bank, lv: store.lv, subs: store.subs });
+function rangePickerHtml() {
+  const bank = curBank(), lv = curLv(), subs = curSubs();
+  const banks = BANKS.map((b) =>
+    `<option value="${esc(b.key)}"${b.key === bank.key ? ' selected' : ''}>${esc(b.label)} ${DATA.questions.filter((q) => b.test(q)).length} 題</option>`).join('');
+  const lvs = LEVELS.map(([k, label]) => {
+    const n = countIn(DATA.questions, bank, k);
+    return `<button type="button" class="chip lv${k === lv ? ' on' : ''}" data-lv="${esc(k)}"${n ? '' : ' disabled'}>${label} <b>${n}</b></button>`;
+  }).join('');
+  const ss = subjectsIn(DATA.questions, bank, lv).map((s) =>
+    `<button type="button" class="chip sub${subs.has(s.subject) ? ' on' : ''}" data-sub="${esc(s.subject)}">${esc(s.subject)} <b>${s.count}</b></button>`).join('');
+  return `<label class="pick-lb">題庫<select id="bank-sel">${banks}</select></label>
+    <div class="pick-lb">級別</div><div class="chip-row">${lvs}</div>
+    <div class="pick-lb">科目<span class="muted">（可多選，至少留一個）</span></div><div class="chip-row">${ss}</div>`;
 }
-// 範圍勾選清單:練習頁與背題頁共用同一份 store.ranges(不複製兩份 render 邏輯)。
-// 首次進站(store 無 ranges 偏好)預設只勾初級;使用者改選後記住(見各頁 saveRanges)。
-const selectedRangeKeys = () => new Set([...view.querySelectorAll('.rng:checked')].map((c) => c.value));
-function rangeChecklistHtml() {
-  const byLevel = {};
-  rangeGroups().forEach((g) => (byLevel[g.level] ||= []).push(g));
-  const saved = Array.isArray(store.ranges) ? new Set(store.ranges) : null;
-  return Object.entries(byLevel).map(([lv, gs]) =>
-    `<div class="range-group"><div class="range-lv">${esc(lv)}</div>${gs.map((g) =>
-      `<label class="range-item"><input type="checkbox" class="rng" value="${esc(g.key)}"${(saved ? saved.has(g.key) : (g.level === '初級' && !UNOFFICIAL_CH.test(g.key))) ? ' checked' : ''}><span>${esc(g.key)}</span><b>${g.count}</b></label>`).join('')}</div>`).join('');
+// 綁事件:任一項改動 → 存 store → 重繪選單 → 回呼(更新題數/清單)。重繪會換掉 DOM,所以要重新綁一次。
+function wireRangePicker(onChange) {
+  const redraw = () => { $('#range-picker').innerHTML = rangePickerHtml(); wireRangePicker(onChange); onChange(); };
+  $('#bank-sel').onchange = (e) => {
+    store.bank = e.target.value; store.subs = null; // 換題庫→科目回全選
+    // 該題庫沒這個級別(例:課程題沒中級)就自動跳到有題的級別,免得停在 0 題
+    if (!countIn(DATA.questions, curBank(), curLv())) store.lv = firstLevelWith(DATA.questions, curBank());
+    save(); redraw();
+  };
+  view.querySelectorAll('.chip.lv').forEach((b) => (b.onclick = () => {
+    store.lv = b.dataset.lv; store.subs = null; save(); redraw();
+  }));
+  view.querySelectorAll('.chip.sub').forEach((b) => (b.onclick = () => {
+    const cur = curSubs(), k = b.dataset.sub;
+    if (cur.has(k)) { if (cur.size === 1) return; cur.delete(k); } else cur.add(k); // 不准把科目全取消
+    store.subs = [...cur]; save(); redraw();
+  }));
 }
 
 function home() {
   setNav('home');
-  const ranges = rangeChecklistHtml(); // 範圍勾選清單與背題頁共用同一份 store.ranges
   const g = dailyGoal(), dc = todayCount(), strk = liveStreak(), du = daysUntilExam();
   const goalHit = dc >= g;
   const dailyStrip = `
@@ -338,10 +355,9 @@ function home() {
   view.innerHTML = `${dailyStrip}${challengeCard}${conceptCard}
     <section class="card">
       <h2>練習模式</h2>
-      <p class="muted">即時看答案與解析。勾選要練的範圍，預設全選。</p>
-      <div class="row range-head"><span class="muted" id="range-sum"></span>
-        <span><button id="sel-all">全選</button><button id="sel-none">清除</button></span></div>
-      <div id="ranges">${ranges}</div>
+      <p class="muted">即時看答案與解析。先挑題庫，再挑級別跟科目。</p>
+      <div id="range-picker">${rangePickerHtml()}</div>
+      <p class="muted range-sum" id="range-sum"></p>
       <label>關鍵字（選填）
         <input id="pr-kw" placeholder="例如 RAG、特徵工程、Transformer">
       </label>
@@ -354,40 +370,19 @@ function home() {
       <label>題數
         <select id="pr-count"><option value="10">10</option><option value="20">20</option><option value="0">全部（選取範圍）</option></select>
       </label>
-      <label>來源
-        <select id="pr-source">
-          <option value="">全部（官方 + 非官方）</option>
-          <option value="歷屆">只練歷屆考古題</option>
-          <option value="學習指引">只練學習指引範例</option>
-          <option value="模擬題">只練模擬題（非官方）</option>
-          <option value="課程題">只練課程練習題（非官方）</option>
-        </select>
-      </label>
       <button class="primary" id="pr-start">開始練習</button>
       <button class="primary alt" id="pr-images">只練看圖題（${DATA.questions.filter((q) => q.image).length} 題,全中級）</button>
     </section>`;
-  const selectedKeys = selectedRangeKeys; // 與背題頁共用
   const kw = () => $('#pr-kw').value.trim().toLowerCase();
   const matchKw = (q) => {
     const k = kw();
     if (!k) return true;
     return `${q.question}${q.topic || ''}${q.chapter || ''}${q.options.join(' ')}`.toLowerCase().includes(k);
   };
-  const pickPool = () => {
-    const keys = selectedKeys();
-    const src = $('#pr-source') ? $('#pr-source').value : '';
-    return DATA.questions.filter((q) => keys.has(rangeKey(q)) && matchKw(q) && (!src || srcOf(q) === src));
-  };
-  const updateSum = () => {
-    const keys = selectedKeys();
-    $('#range-sum').textContent = `已選 ${keys.size} 範圍，共 ${pickPool().length} 題`;
-  };
-  const saveRanges = () => { store.ranges = [...selectedKeys()]; save(); }; // 記住使用者的範圍勾選
-  view.querySelectorAll('.rng').forEach((c) => (c.onchange = () => { updateSum(); saveRanges(); }));
+  const pickPool = () => rangePool().filter(matchKw);
+  const updateSum = () => { $('#range-sum').textContent = `目前範圍共 ${pickPool().length} 題`; };
+  wireRangePicker(updateSum); // 題庫/級別/科目改動 → 存 store + 更新題數
   $('#pr-kw').oninput = updateSum;
-  $('#pr-source').onchange = updateSum;
-  $('#sel-all').onclick = () => { view.querySelectorAll('.rng').forEach((c) => (c.checked = true)); updateSum(); saveRanges(); };
-  $('#sel-none').onclick = () => { view.querySelectorAll('.rng').forEach((c) => (c.checked = false)); updateSum(); saveRanges(); };
   $('#pr-start').onclick = () => {
     const count = +$('#pr-count').value;
     let pool = pickPool();
@@ -487,18 +482,17 @@ function runPractice(pool, opts = {}) {
 }
 
 // 背題模式:把題目+選項+正解攤開成清單背誦。純閱讀——不寫作答紀錄、不動 dirty/同步、不影響錯題本統計。
-// 範圍勾選與練習頁共用同一份 store.ranges;分批渲染每批 50 題、底部「載入更多」,換範圍時重置清單。
+// 範圍選單與練習頁共用同一份 store.bank/lv/subs;分批渲染每批 50 題、底部「載入更多」,換範圍時重置清單。
 function study() {
   setNav('study');
   let showExp = store.studyExp !== false; // 顯示解說開關,預設開(true);關則每題解說整段不渲染
   view.innerHTML = `
     <section class="card">
       <h2>背題模式</h2>
-      <p class="muted">把題目、選項與正解直接攤開來背,不作答、不計分。勾選要背的範圍(與練習頁共用同一份選擇)。</p>
-      <div class="row range-head"><span class="muted" id="range-sum"></span>
-        <span><button id="sel-all">全選</button><button id="sel-none">清除</button></span></div>
+      <p class="muted">把題目、選項與正解直接攤開來背,不作答、不計分。範圍與練習頁共用同一份選擇。</p>
+      <div id="range-picker">${rangePickerHtml()}</div>
+      <p class="muted range-sum" id="range-sum"></p>
       <label class="study-toggle"><input type="checkbox" id="exp-toggle"${showExp ? ' checked' : ''}> 顯示解說</label>
-      <div id="ranges">${rangeChecklistHtml()}</div>
     </section>
     <div id="study-list"></div>
     <div id="study-more"></div>`;
@@ -526,17 +520,13 @@ function study() {
     if (rest > 0) $('#load-more').onclick = renderMore;
   };
   const reset = () => {
-    const keys = selectedRangeKeys();
-    pool = DATA.questions.filter((q) => keys.has(rangeKey(q)));
-    $('#range-sum').textContent = `已選 ${keys.size} 範圍，共 ${pool.length} 題`;
+    pool = rangePool();
+    $('#range-sum').textContent = `目前範圍共 ${pool.length} 題`;
     listEl.innerHTML = ''; shown = 0;
     renderMore();
   };
-  // 勾選變動:存回共用的 store.ranges 後重置清單(與練習頁同一套儲存,不寫任何作答紀錄)
-  const apply = () => { store.ranges = [...selectedRangeKeys()]; save(); reset(); };
-  view.querySelectorAll('.rng').forEach((c) => (c.onchange = apply));
-  $('#sel-all').onclick = () => { view.querySelectorAll('.rng').forEach((c) => (c.checked = true)); apply(); };
-  $('#sel-none').onclick = () => { view.querySelectorAll('.rng').forEach((c) => (c.checked = false)); apply(); };
+  // 範圍變動:wireRangePicker 已存回共用的 store.bank/lv/subs,這裡只重置清單(不寫任何作答紀錄)
+  wireRangePicker(reset);
   // 顯示解說開關:存回 store.studyExp(沿用既有 save 持久化)後重渲染清單
   $('#exp-toggle').onchange = (e) => { showExp = e.target.checked; store.studyExp = showExp; save(); reset(); };
   reset();
