@@ -86,16 +86,10 @@ const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0
 const today = () => ymd(new Date());
 const yesterday = () => { const d = new Date(); d.setDate(d.getDate() - 1); return ymd(d); };
 const dailyGoal = () => (store.settings && store.settings.dailyGoal) || 20;
-const todayCount = () => (store.daily && store.daily.date === today() ? store.daily.count : 0);
 // 顯示用的連續天數：最後達標日是今天或昨天才還活著，否則歸 0
 function liveStreak() {
   const s = store.streak; if (!s || !s.lastDate) return 0;
   return (s.lastDate === today() || s.lastDate === yesterday()) ? s.count : 0;
-}
-function daysUntilExam() {
-  const e = store.settings && store.settings.examDate; if (!e) return null;
-  const diff = Math.ceil((new Date(e + 'T00:00:00') - new Date(today() + 'T00:00:00')) / 86400000);
-  return diff;
 }
 // 每答一題呼叫：累加今日題數、記每日歷史、達標當下更新打卡
 function bumpDaily(correct) {
@@ -327,16 +321,7 @@ function wireRangePicker(onChange) {
 
 function home() {
   setNav('home');
-  const g = dailyGoal(), dc = todayCount(), strk = liveStreak(), du = daysUntilExam();
-  const goalHit = dc >= g;
-  const dailyStrip = `
-    <section class="card daily-card">
-      <div class="daily">
-        <div><b class="${goalHit ? 'hit' : ''}">${dc}/${g}</b><span>今日題數${goalHit ? ' ✓' : ''}</span></div>
-        <div><b>${strk}</b><span>連續天數</span></div>
-        ${du != null ? `<div><b>${du < 0 ? '—' : du}</b><span>${du < 0 ? '考試已過' : '距考試（天）'}</span></div>` : ''}
-      </div>
-    </section>`;
+  // 首頁不再顯示每日戰績條(今日題數/連續天數/距考試);數據照常累計,要看去「統計」頁
   const chRound = store.challengeDate === today() ? (store.challengeRound || 0) : 0;
   const challengeCard = `
     <section class="card">
@@ -351,7 +336,7 @@ function home() {
       <h3>${esc(cc.title)}</h3>
       <p>${esc(cc.body)}</p>
     </section>` : '';
-  view.innerHTML = `${dailyStrip}${challengeCard}${conceptCard}
+  view.innerHTML = `${challengeCard}${conceptCard}
     <section class="card">
       <h2>練習模式</h2>
       <p class="muted">即時看答案與解析。先挑題庫，再挑級別跟科目。</p>
