@@ -214,12 +214,20 @@ function reportLink(q) {
     + `&qid=${encodeURIComponent(q.id)}&subject=${encodeURIComponent(q.subject)}`;
   return `<p class="report-line"><a href="${url}" target="_blank" rel="noopener">這題有誤？回報給作者</a></p>`;
 }
-// 今日挑戰：用日期當種子，固定挑 3 題（每天不同、當天穩定）
-function dailyChallenge() {
-  const qs = DATA.questions; if (!qs.length) return [];
-  let seed = 0; for (const ch of today()) seed = (seed * 31 + ch.charCodeAt(0)) >>> 0;
+// 今日挑戰：每輪 10 題，一天想做幾輪都行。第 0 輪用日期當種子（當天穩定），之後每輪換種子給新題。
+const CHALLENGE_N = 10;
+// 出題池跟著使用者的範圍偏好走；沒設過（或全部清掉）就用預設的初級官方題，免得被非官方題洗版。
+function challengePool() {
+  const keys = Array.isArray(store.ranges) && store.ranges.length ? new Set(store.ranges) : null;
+  return DATA.questions.filter((q) => (keys ? keys.has(rangeKey(q))
+    : q.level === '初級' && !UNOFFICIAL_CH.test(rangeKey(q))));
+}
+function dailyChallenge(round = 0) {
+  const qs = challengePool(); if (!qs.length) return [];
+  let seed = (round * 2654435761) >>> 0;
+  for (const ch of today()) seed = (seed * 31 + ch.charCodeAt(0)) >>> 0;
   const picks = [];
-  for (let n = 0; n < 3 && n < qs.length; n++) {
+  for (let n = 0; n < CHALLENGE_N && n < qs.length; n++) {
     seed = (seed * 1103515245 + 12345) >>> 0;
     let i = seed % qs.length;
     while (picks.includes(i)) i = (i + 1) % qs.length;
@@ -313,12 +321,12 @@ function home() {
       </div>
       <button id="share">分享進度</button>
     </section>`;
-  const chDone = store.challengeDone === today();
+  const chRound = store.challengeDate === today() ? (store.challengeRound || 0) : 0;
   const challengeCard = `
     <section class="card">
-      <div class="row"><h3 style="margin:0">今日挑戰 ${chDone ? '✓ 已完成' : '3 題'}</h3>
-        <button class="primary" id="challenge" style="margin:0;padding:8px 14px">${chDone ? '再做一次' : '開始'}</button></div>
-      <p class="muted" style="margin:6px 0 0">每天 3 題，養成每日刷題的習慣。</p>
+      <div class="row"><h3 style="margin:0">今日挑戰 ${CHALLENGE_N} 題${chRound ? ` ・已完成 ${chRound} 輪` : ''}</h3>
+        <button class="primary" id="challenge" style="margin:0;padding:8px 14px">${chRound ? '再來一輪' : '開始'}</button></div>
+      <p class="muted" style="margin:6px 0 0">每輪 ${CHALLENGE_N} 題，一天想做幾輪都行，每輪都換新題（出題範圍同練習頁的勾選）。</p>
     </section>`;
   const cc = todayConcept();
   const conceptCard = cc ? `
@@ -394,7 +402,11 @@ function home() {
     runPractice(pool);
   };
   $('#pr-images').onclick = () => runPractice(shuffle(DATA.questions.filter((q) => q.image)));
-  $('#challenge').onclick = () => { store.challengeDone = today(); save(); runPractice(dailyChallenge()); };
+  $('#challenge').onclick = () => {
+    const r = store.challengeDate === today() ? (store.challengeRound || 0) : 0; // 跨日自動歸零
+    store.challengeDate = today(); store.challengeRound = r + 1; save();
+    runPractice(dailyChallenge(r));
+  };
   $('#share').onclick = async () => {
     const cd = (du != null && du >= 0) ? `、距考試 ${du} 天` : '';
     const txt = `我在 iPAS AI 應用規劃師模擬考刷題：連續打卡 ${strk} 天、今日 ${dc}/${g} 題${cd}。一起來練官方試題！`;
