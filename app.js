@@ -2,10 +2,10 @@ import { nextBox, isMastered, scoreExam, progressStats, wrongQuestionIds, toMark
   BANKS, LEVELS, bankOf, levelOf, countIn, firstLevelWith, subjectsIn, resolveSubs, rangeQuestions } from './core.js';
 
 const STORE_KEY = 'ipas_quiz_progress';
-// 同步後端＝永續地球遊戲伺服器共用（piggyback 到 sustain-earth.zeabur.app 的 /sync/:code）。留空=只用本機。
-const SYNC_URL = 'https://sustain-earth.zeabur.app'; // 同步後端＝永續地球遊戲伺服器共用
+// 同步後端＝獨立 server 04_同步後端/（2026-08-26 從遊戲伺服器抽出，接手同一 Zeabur service，合約逐字相同）。/sync/:code。留空=只用本機。
+const SYNC_URL = 'https://sustain-earth.zeabur.app'; // 同步後端＝獨立 server（原始碼 04_同步後端/）
 const VAPID_PUBLIC = 'BNn4Lwq818aHx8cb0LrcQ6IpRgHb9B3P_BOqusct-uFyJPQ4hlDrIOirliHoNdbbg5tg8zWfzBg5SZ0yBhRq7zA';
-const PUSH_ENABLED = false; // Phase 3: 現行同步後端（永續地球遊戲伺服器）無 push，關閉推播 UI 與 /push/* 呼叫（同步不受影響）
+const PUSH_ENABLED = false; // Phase 3: 現行同步後端（04_同步後端/）無 push，關閉推播 UI 與 /push/* 呼叫（同步不受影響）
 const $ = (sel) => document.querySelector(sel);
 const view = $('#view');
 
@@ -95,7 +95,7 @@ function liveStreak() {
 // 每答一題呼叫：累加今日題數、記每日歷史、達標當下更新打卡
 function bumpDaily(correct) {
   const t = today();
-  store.settings ||= { dailyGoal: 20, examDate: '' };
+  store.settings ||= { dailyGoal: 20 };
   if (!store.daily || store.daily.date !== t) store.daily = { date: t, count: 0 };
   store.daily.count++;
   // 每日歷史（答題數/答對數），保留最近 30 天
@@ -342,7 +342,7 @@ function home() {
         <select id="pr-count"><option value="10">10</option><option value="20">20</option><option value="0">全部（選取範圍）</option></select>
       </label>
       <button class="primary" id="pr-start">開始練習</button>
-      <button class="primary alt" id="pr-images">只練看圖題（${DATA.questions.filter((q) => q.image).length} 題,全中級）</button>
+      <button class="primary alt" id="pr-images">只練看圖題（${DATA.questions.filter((q) => q.image).length} 題，全中級）</button>
     </section>`;
   const kw = () => $('#pr-kw').value.trim().toLowerCase();
   const matchKw = (q) => {
@@ -423,8 +423,8 @@ function runPractice(pool, opts = {}) {
       <section class="card">
         <h2>練習完成</h2>
         <p class="score">${pct}％</p>
-        <p>這組 ${total} 題,答對 ${right}、答錯 ${wrong}</p>
-        ${sessionWrong.length ? '<button class="primary" id="redo-wrong">只練這次錯的</button>' : '<p class="muted">這組全對,讚!</p>'}
+        <p>這組 ${total} 題，答對 ${right}、答錯 ${wrong}</p>
+        ${sessionWrong.length ? '<button class="primary" id="redo-wrong">只練這次錯的</button>' : '<p class="muted">這組全對，讚！</p>'}
         <button id="again">再練一次</button>
         <button id="back">回首頁</button>
       </section>`;
@@ -443,7 +443,7 @@ function study() {
   view.innerHTML = `
     <section class="card">
       <h2>背題模式</h2>
-      <p class="muted">把題目、選項與正解直接攤開來背,不作答、不計分。範圍與練習頁共用同一份選擇。</p>
+      <p class="muted">把題目、選項與正解直接攤開來背，不作答、不計分。範圍與練習頁共用同一份選擇。</p>
       <div id="range-picker">${rangePickerHtml()}</div>
       <p class="muted range-sum" id="range-sum"></p>
       <label class="study-toggle"><input type="checkbox" id="exp-toggle"${showExp ? ' checked' : ''}> 顯示解說</label>
@@ -591,10 +591,10 @@ function notes() {
   view.innerHTML = `
     <section class="card">
       <h2>我的筆記</h2>
-      <p class="muted">有寫筆記、或加星 ⭐ 的題目都在這。筆記可直接在下面改,會自動存。</p>
+      <p class="muted">有寫筆記、或加星 ⭐ 的題目都在這。筆記可直接在下面改，會自動存。</p>
       ${items.length
         ? '<button id="exp-notes">匯出筆記（Markdown）</button>'
-        : '<p>還沒有筆記或星標題。練習時在題目下方寫筆記、或點 ☆ 加星,就會出現在這。</p>'}
+        : '<p>還沒有筆記或星標題。練習時在題目下方寫筆記、或點 ☆ 加星，就會出現在這。</p>'}
       ${items.map((q) => {
         const p = qp(q.id);
         return `<div class="note-item">
@@ -674,17 +674,11 @@ function stats() {
     </section>`;
 }
 
-// 官方考試資訊小區塊:及格標準(穩定)+ 各級下次考試日期一鍵填入(非強制,初級中級日期不同)
+// 官方考試資訊小區塊:及格標準(穩定)+ 官方考試資訊連結。原「一鍵設倒數日期」已隨首頁倒數移除而拿掉。
 function examInfoHtml() {
   if (!EXAMINFO) return '';
-  const t = today();
-  const next = (arr) => (arr || []).filter((d) => d >= t).sort()[0];
-  const picks = Object.entries(EXAMINFO.exams || {})
-    .map(([lv, arr]) => { const d = next(arr); return d ? `<button class="exam-pick" data-d="${d}">下次${esc(lv)} ${d}</button>` : ''; })
-    .join('');
   return `<div class="guide" style="white-space:normal">
     ${EXAMINFO.pass ? `<p style="margin:0 0 6px">${esc(EXAMINFO.pass)}</p>` : ''}
-    ${picks ? `<div style="margin-bottom:6px">一鍵設為倒數日期(初級/中級日期不同,自己選):<br>${picks}</div>` : ''}
     <a href="https://ipd.nat.gov.tw/ipas/certification/AIAP/exam-info" target="_blank" rel="noopener">官方考試資訊 ↗</a>
   </div>`;
 }
@@ -705,9 +699,6 @@ function settings() {
       <label>每日目標題數
         <input id="set-goal" type="number" min="1" max="790" value="${dailyGoal()}">
       </label>
-      <label>考試日期（首頁倒數用）
-        <input id="set-exam" type="date" value="${(store.settings && store.settings.examDate) || ''}">
-      </label>
       ${examInfoHtml()}
 
       ${pushSupported() ? `<h3>每日提醒（推播）</h3>
@@ -721,7 +712,7 @@ function settings() {
 
       <h3>同步碼</h3>
       <p class="muted">${SYNC_URL
-        ? '平常背景自動同步（每隔幾秒、切走 App 時、打開本頁時都會上傳）。換新裝置時：先在舊裝置打開這頁（會上傳），再到新裝置輸入這組碼。'
+        ? '平常背景自動同步（答完題、切走 App、打開本頁時都會上傳；停在畫面沒動則最多 30 秒補傳一次）。換新裝置時：先在舊裝置打開這頁（會上傳），再到新裝置輸入這組碼。'
         : '雲端同步尚未啟用（需在 app.js 填入 Worker 網址）。目前可用下方「匯出/匯入」轉移。'}</p>
       <p class="code" id="code">${esc(store.syncCode)}</p>
       <label>在新裝置輸入既有同步碼
@@ -738,8 +729,8 @@ function settings() {
       <button id="exp-md">匯出筆記（Markdown）</button>
 
       <h3>重設統計</h3>
-      <p class="muted" style="font-size:13px">把作答統計歸零、重新練到 100%,但<strong>保留你的筆記與星標</strong>。</p>
-      <button id="reset-stats">重設統計(保留筆記與星標)</button>
+      <p class="muted" style="font-size:13px">把作答統計歸零、重新練到 100%，但<strong>保留你的筆記與星標</strong>。</p>
+      <button id="reset-stats">重設統計（保留筆記與星標）</button>
 
       <h3 class="danger">重設</h3>
       <button class="danger" id="reset">清除本機所有進度</button>
@@ -763,11 +754,6 @@ function settings() {
     }
   }
   $('#set-goal').onchange = (e) => { store.settings ||= {}; store.settings.dailyGoal = Math.max(1, +e.target.value || 20); save(); };
-  $('#set-exam').onchange = (e) => { store.settings ||= {}; store.settings.examDate = e.target.value; save(); };
-  view.querySelectorAll('.exam-pick').forEach((b) => (b.onclick = () => {
-    store.settings ||= {}; store.settings.examDate = b.dataset.d; save();
-    $('#set-exam').value = b.dataset.d;
-  }));
   if ($('#rem-hour')) $('#rem-hour').onchange = async (e) => {
     store.settings ||= {}; store.settings.reminderHour = +e.target.value; save();
     if (await pushIsOn()) { await enablePush(+e.target.value); $('#rem-msg').textContent = '提醒時間已更新'; }
@@ -831,7 +817,7 @@ function settings() {
     save(); settings();
   };
   $('#reset-stats').onclick = () => {
-    if (!confirm('重設統計?掌握度、正確率、錯題本、打卡、趨勢都歸零;保留筆記、星標與設定。')) return;
+    if (!confirm('重設統計？掌握度、正確率、錯題本、打卡、趨勢都歸零；保留筆記、星標與設定。')) return;
     for (const id in store.q) {
       const p = store.q[id];
       if (p.note || p.starred) store.q[id] = { box: 1, attempts: 0, correct: 0, wrong: 0, note: p.note || '', starred: !!p.starred };
