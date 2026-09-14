@@ -102,6 +102,20 @@
   .guide { font-size:13px; color:var(--c-muted); background:#f1f5f9; border-radius:8px; padding:8px 10px; margin:8px 0; }
   .guide a { color:var(--c-accent); white-space:nowrap; }
   .exam-pick { background:#fff; border:1px solid var(--c-line); padding:5px 10px; border-radius:6px; font-size:13px; cursor:pointer; margin:4px 6px 0 0; color:var(--c-accent); font-variant-numeric:tabular-nums; }
+  /* 知識延伸:題卡下方的摺疊區塊 + 知識庫分頁 */
+  .kext { margin-top:10px; border:1px solid var(--c-line); border-radius:8px; background:#fbfdff; }
+  .kext > summary { cursor:pointer; padding:8px 12px; color:var(--c-accent); font-size:14px; font-weight:600; }
+  .kext .kbody { padding:0 12px 10px; }
+  .kbody p { margin:8px 0; line-height:1.75; }
+  .kbody .ksum { font-weight:600; color:var(--c-ink); }
+  .kbody .kpit { margin:8px 0; padding-left:20px; color:var(--c-ink); }
+  .kbody .kpit li { margin:4px 0; line-height:1.7; }
+  .kbody .krefs { font-size:13px; color:var(--c-muted); margin-top:10px; }
+  .kbody .krefs a { color:var(--c-accent); }
+  .kfilter { display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end; margin-top:12px; }
+  .kfilter .chips { display:flex; gap:8px; }
+  .ksel { display:flex; flex-direction:column; gap:4px; font-size:13px; color:var(--c-muted); }
+  .ksel select, .ksel input { padding:8px 10px; border:1px solid var(--c-line); border-radius:8px; font-size:14px; max-width:100%; background:#fff; color:var(--c-ink); }
   .src-tag { display:inline-block; font-size:11px; padding:1px 6px; border-radius:999px; background:#eef4ff; color:#2563eb; border:1px solid #dbe5f5; }
   .site-footer { max-width:720px; margin:0 auto; padding:24px 12px 40px; text-align:center; border-top:1px solid var(--c-line); }
   .site-footer nav { display:flex; flex-wrap:wrap; gap:14px; justify-content:center; margin-bottom:10px; }
@@ -139,6 +153,7 @@
     <nav>
       <button data-v="home" class="on">練習</button>
       <button data-v="study">背題</button>
+      <button data-v="knowledge">知識</button>
       <button data-v="mock">模擬考</button>
       <button data-v="wrong">錯題本</button>
       <button data-v="notes">筆記</button>

@@ -11,6 +11,9 @@ const view = $('#view');
 
 let DATA = { meta: {}, questions: [] };
 let CONCEPTS = [];
+let KNOW = [];                 // 知識延伸：knowledge.json 的 notes
+const KTOPIC = new Map();      // 正規化 topic → notes（主要掛載）
+const KCHAP = new Map();       // chapter → notes（topic 沒中時的退路）
 let EXAMINFO = null;
 let store = load();
 let pushTimer = null;
@@ -195,6 +198,39 @@ function formatExp(text) {
     .replace(/([。；])\s*([(（][A-DＡ-Ｄ][)）])/g, '$1<br>$2')
     .replace(/([。；])\s*(核心記憶點|記憶點)/g, '$1<br>$2')
     .replace(/(^|<br>)\s*(正解\s*[(（][A-DＡ-Ｄ][)）]|[(（][A-DＡ-Ｄ][)）]|核心記憶點|記憶點)/g, '$1<strong>$2</strong>');
+}
+// ---- 知識延伸（knowledge.json）----
+// 每題掛 0~2 則延伸知識:先用 topic 對應(精準),沒中才退回 chapter(概括)。索引在載入時建一次。
+const kNorm = (s) => String(s || '').toLowerCase().replace(/\s+/g, '');
+function buildKnowIndex() {
+  KTOPIC.clear(); KCHAP.clear();
+  for (const n of KNOW) {
+    for (const t of n.topics || []) {
+      const k = kNorm(t); if (!k) continue;
+      if (!KTOPIC.has(k)) KTOPIC.set(k, []);
+      if (!KTOPIC.get(k).includes(n)) KTOPIC.get(k).push(n);
+    }
+    for (const c of n.chapters || []) {
+      if (!KCHAP.has(c)) KCHAP.set(c, []);
+      KCHAP.get(c).push(n);
+    }
+  }
+}
+const notesFor = (q) => (KTOPIC.get(kNorm(q.topic)) || KCHAP.get(q.chapter) || []).slice(0, 2);
+// 一則知識的內容(延伸頁與題卡共用)
+function noteBodyHtml(n) {
+  const paras = String(n.body || '').split('\n').filter(Boolean).map((t) => `<p>${esc(t)}</p>`).join('');
+  const pit = (n.pitfalls || []).length
+    ? `<ul class="kpit">${n.pitfalls.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : '';
+  const refs = (n.refs || []).length
+    ? `<p class="krefs">出處：${n.refs.map((r) => r.u
+        ? `<a href="${esc(r.u)}" target="_blank" rel="noopener">${esc(r.t)} ↗</a>` : esc(r.t)).join('、')}</p>` : '';
+  return `<p class="ksum">${esc(n.summary || '')}</p>${paras}${pit}${refs}`;
+}
+// 題卡下方的摺疊區塊(預設收合,不干擾作答節奏)
+function knowHtml(q) {
+  return notesFor(q).map((n) =>
+    `<details class="kext"><summary>延伸知識・${esc(n.title)}</summary><div class="kbody">${noteBodyHtml(n)}</div></details>`).join('');
 }
 // 教材對應：指到該題所屬科目的學習指引章節 + 開啟官方 PDF
 function guideLine(q) {
@@ -408,6 +444,7 @@ function runPractice(pool, opts = {}) {
     $('#fb').innerHTML = `
       <p class="${correct ? 'ok' : 'bad'}">${correct ? '答對' : '答錯'}（正解：${esc(q.options[q.answer])}）</p>
       ${q.explanation ? `<p class="exp">${formatExp(q.explanation)}</p>` : ''}
+      ${knowHtml(q)}
       ${guideLine(q)}
       ${reportLink(q)}
       <label class="note">筆記<textarea id="note" rows="2" placeholder="寫下你的理解或記憶點…">${esc(p.note || '')}</textarea></label>
@@ -463,6 +500,7 @@ function study() {
       ${q.image ? `<img class="qfig" src="${esc(q.image)}" alt="題目附圖" loading="lazy">` : ''}
       <div class="study-opts">${opts}</div>
       ${showExp && q.explanation ? `<details class="study-exp" open><summary>解析</summary><div class="exp">${formatExp(q.explanation)}</div></details>` : ''}
+      ${showExp ? knowHtml(q) : ''}
     </section>`;
   };
   const renderMore = () => {
@@ -839,7 +877,57 @@ function deviceLabel() {
   return `${os} · ${br}`;
 }
 
-const ROUTES = { home, study, mock: mockSetup, wrong: wrongbook, notes, stats, settings };
+// 知識庫:把 knowledge.json 的延伸知識整份攤開瀏覽(考題之外的觀念補充)。
+// 純閱讀,不寫任何進度;篩選與搜尋只存在本次瀏覽,不進 store。
+function knowledge() {
+  setNav('knowledge');
+  let lv = '全部', subj = '全部', kw = '';
+  const subjects = ['全部', ...new Set(KNOW.map((n) => n.subject))];
+  view.innerHTML = `
+    <section class="card">
+      <h2>知識庫</h2>
+      <p class="muted">考題之外的觀念延伸，每則附可查證出處。練習與背題頁的題目下方也會掛上對應的這幾則。</p>
+      ${KNOW.length ? `
+      <div class="kfilter">
+        <div class="chips" id="k-lv">${['全部', '初級', '中級'].map((x) =>
+          `<button type="button" class="chip${x === lv ? ' on' : ''}" data-lv="${x}">${x}</button>`).join('')}</div>
+        <label class="ksel">科目
+          <select id="k-subj">${subjects.map((s) => `<option value="${esc(s)}">${esc(s)}</option>`).join('')}</select>
+        </label>
+        <label class="ksel">搜尋
+          <input id="k-kw" type="search" placeholder="關鍵字，例如 RAG、過擬合">
+        </label>
+      </div>
+      <p class="muted" id="k-count"></p>` : '<p class="bad">knowledge.json 尚未載入。</p>'}
+    </section>
+    <div id="k-list"></div>`;
+  if (!KNOW.length) return;
+  const listEl = $('#k-list'), countEl = $('#k-count');
+  const draw = () => {
+    const q = kNorm(kw);
+    const hit = KNOW.filter((n) =>
+      (lv === '全部' || (n.levels || []).includes(lv))
+      && (subj === '全部' || n.subject === subj)
+      && (!q || kNorm(`${n.title}${n.summary}${n.body}${(n.topics || []).join('')}`).includes(q)));
+    countEl.textContent = `共 ${KNOW.length} 則，符合 ${hit.length} 則`;
+    listEl.innerHTML = hit.map((n) => `<section class="card knote">
+      <p class="qmeta muted">${esc((n.levels || []).join('／'))}・${esc(n.subject)}</p>
+      <h3>${esc(n.title)}</h3>
+      <div class="kbody">${noteBodyHtml(n)}</div>
+    </section>`).join('') || '<section class="card"><p class="muted">沒有符合的知識點。</p></section>';
+  };
+  $('#k-lv').onclick = (e) => {
+    const b = e.target.closest('[data-lv]'); if (!b) return;
+    lv = b.dataset.lv;
+    $('#k-lv').querySelectorAll('.chip').forEach((c) => c.classList.toggle('on', c.dataset.lv === lv));
+    draw();
+  };
+  $('#k-subj').onchange = (e) => { subj = e.target.value; draw(); };
+  $('#k-kw').oninput = (e) => { kw = e.target.value; draw(); };
+  draw();
+}
+
+const ROUTES = { home, study, knowledge, mock: mockSetup, wrong: wrongbook, notes, stats, settings };
 
 // ---- boot ----
 async function boot() {
@@ -864,6 +952,8 @@ async function boot() {
     return;
   }
   try { CONCEPTS = ((await (await fetch('concepts.json')).json()).cards) || []; } catch { CONCEPTS = []; }
+  try { KNOW = ((await (await fetch('knowledge.json')).json()).notes) || []; } catch { KNOW = []; }
+  buildKnowIndex();
   try { EXAMINFO = await (await fetch('exam-dates.json')).json(); } catch { EXAMINFO = null; }
   if (DATA.meta?.title) $('#title').textContent = DATA.meta.title;
   if (DATA.meta?.note) { const n = $('#banner'); n.textContent = DATA.meta.note; n.hidden = false; }
