@@ -42,9 +42,31 @@ for (const q of Q.questions) {
 }
 for (const [ch, n] of miss) fail.push(`章節「${ch}」的 ${n} 題掛不到任何知識點（topic 與 chapter 都沒對應）`);
 
+// 相關度：走 chapter 退路的題，知識點關鍵字有沒有真的出現在題幹／選項／解析裡。
+// 與 app.js 的 rankByRelevance() 同規則；重疊為零＝掛的是「同章節但不對題」的知識點。
+const keysOf = new Map(notes.map((n) => [n.id, [...new Set([
+  ...(n.topics || []),
+  ...String(n.title || '').split(/[\s,，、：:（）()／/]+/),
+])].map(norm).filter((s) => s.length >= 2)]));
+// 池只有 1 則時排序無意義（掛誰都一樣），真正要看的是「池 >= 2 則」那批有沒有挑對。
+let fbTotal = 0, fbMulti = 0, fbMultiWeak = 0;
+for (const q of Q.questions) {
+  if (byTopic.has(norm(q.topic))) continue;
+  const pool = byChap.get(q.chapter);
+  if (!pool) continue;
+  fbTotal++;
+  if (pool.length < 2) continue;
+  fbMulti++;
+  const hay = norm(`${q.question}${(q.options || []).join('')}${q.explanation || ''}`);
+  const best = Math.max(...pool.map((id) => keysOf.get(id).filter((k) => hay.includes(k)).length));
+  if (best === 0) fbMultiWeak++;
+}
+
 const tHit = Q.questions.filter((q) => byTopic.has(norm(q.topic))).length;
 console.log(`知識點 ${notes.length} 則｜topic 索引 ${byTopic.size} 個｜chapter 索引 ${byChap.size} 個`);
 console.log(`題目 ${Q.questions.length} 題：topic 精準掛載 ${tHit} 題，其餘走 chapter 退路，未覆蓋 ${[...miss.values()].reduce((a, b) => a + b, 0)} 題`);
+console.log(`chapter 退路 ${fbTotal} 題，其中章節對到 2 則以上、需要排序的有 ${fbMulti} 題：挑得到關鍵字重疊 ${fbMulti - fbMultiWeak} 題，零重疊 ${fbMultiWeak} 題`);
+if (fbMulti && fbMultiWeak / fbMulti > 0.4) warn.push(`需要排序的 ${fbMulti} 題裡有 ${(fbMultiWeak / fbMulti * 100).toFixed(0)}% 挑不出相關知識點，建議補該章節的知識點或補題目 topic`);
 for (const w of warn) console.log('WARN ' + w);
 if (fail.length) { console.error(`\nFAIL ${fail.length} 項：`); fail.forEach((f) => console.error('  - ' + f)); process.exit(1); }
 console.log('OK');

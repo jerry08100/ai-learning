@@ -216,7 +216,29 @@ function buildKnowIndex() {
     }
   }
 }
-const notesFor = (q) => (KTOPIC.get(kNorm(q.topic)) || KCHAP.get(q.chapter) || []).slice(0, 2);
+// chapter 退路的相關度排序:同一章節常對到十幾則,照檔案順序取前兩則會掛出不相干的知識點
+// (例：問 TCO 的題目掛到「可解釋 AI」)。改用題幹/選項/解析與知識點關鍵字的重疊數排序。
+const kKeys = (n) => n._keys || (n._keys = [...new Set([
+  ...(n.topics || []),
+  ...String(n.title || '').split(/[\s,，、：:（）()／/]+/),
+])].map(kNorm).filter((s) => s.length >= 2));
+function rankByRelevance(list, q) {
+  const hay = kNorm(`${q.question}${(q.options || []).join('')}${q.explanation || ''}`);
+  return list
+    .map((n, i) => ({ n, i, s: kKeys(n).reduce((a, k) => a + (hay.includes(k) ? 1 : 0), 0) }))
+    .sort((a, b) => b.s - a.s || a.i - b.i);
+}
+// 每題掛 0~2 則:topic 命中就直接用(已是精準對應);走 chapter 退路時只取真的有關鍵字重疊的,
+// 一則都沒重疊才退而求其次掛章節的第一則,確保每題至少有個延伸方向。
+function notesFor(q) {
+  const exact = KTOPIC.get(kNorm(q.topic));
+  if (exact) return exact.slice(0, 2);
+  const pool = KCHAP.get(q.chapter);
+  if (!pool) return [];
+  const ranked = rankByRelevance(pool, q);
+  const good = ranked.filter((x) => x.s > 0).slice(0, 2);
+  return (good.length ? good : ranked.slice(0, 1)).map((x) => x.n);
+}
 // 一則知識的內容(延伸頁與題卡共用)
 function noteBodyHtml(n) {
   const paras = String(n.body || '').split('\n').filter(Boolean).map((t) => `<p>${esc(t)}</p>`).join('');
