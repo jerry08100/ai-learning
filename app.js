@@ -228,16 +228,18 @@ function rankByRelevance(list, q) {
     .map((n, i) => ({ n, i, s: kKeys(n).reduce((a, k) => a + (hay.includes(k) ? 1 : 0), 0) }))
     .sort((a, b) => b.s - a.s || a.i - b.i);
 }
-// 每題掛 0~2 則:topic 命中就直接用(已是精準對應);走 chapter 退路時只取真的有關鍵字重疊的,
-// 一則都沒重疊才退而求其次掛章節的第一則,確保每題至少有個延伸方向。
+// 每題掛 0~2 則:topic 命中就直接用(已是精準對應);走 chapter 退路只取真的有關鍵字重疊的,
+// 零重疊就不掛 —— 覆蓋率不是目的,相關才是。
+//
+// 2026-09-16 修回歸:原本零重疊會退而求其次掛「章節的第一則」以湊到 100% 覆蓋,結果 1843 題
+// 課程題的六個章節各只對到一則知識點,整章數百題都掛同一張卡且多半不對題
+// (問音訊特徵提取 → 掛「機器學習的四種學習類型」),使用者回報「裡面全部都是一樣的內容」。
 function notesFor(q) {
   const exact = KTOPIC.get(kNorm(q.topic));
   if (exact) return exact.slice(0, 2);
   const pool = KCHAP.get(q.chapter);
   if (!pool) return [];
-  const ranked = rankByRelevance(pool, q);
-  const good = ranked.filter((x) => x.s > 0).slice(0, 2);
-  return (good.length ? good : ranked.slice(0, 1)).map((x) => x.n);
+  return rankByRelevance(pool, q).filter((x) => x.s > 0).slice(0, 2).map((x) => x.n);
 }
 // 一則知識的內容(延伸頁與題卡共用)
 function noteBodyHtml(n) {
