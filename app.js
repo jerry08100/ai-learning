@@ -633,13 +633,48 @@ function runMock(pool, mins) {
         <h2>結果</h2>
         <p class="score">${r.percent}％</p>
         <p>答對 ${r.correct} / ${r.total}，答錯 ${r.wrong}</p>
-        <button class="primary" id="review">檢討錯題</button>
+        <button class="primary" id="review">重做錯題</button>
+        <button id="review-all">整份檢討（含答對）</button>
         <button id="back">回首頁</button>
       </section>`;
     $('#back').onclick = home;
     $('#review').onclick = () => runPractice(pool.filter((q) => r.wrongIds.includes(q.id)));
+    $('#review-all').onclick = () => examReview(pool, answers);
   }
   render();
+}
+
+// 模擬考整份檢討:交卷後原本只能「重做錯題」,答對的題目永遠看不到解析(使用者 2026-09-20 回報)。
+// 這裡把整份攤開,標出你選的與正解,每題都附解析與延伸知識;純閱讀,不再計分也不動進度。
+function examReview(pool, answers) {
+  setNav('mock');
+  const cards = pool.map((q, idx) => {
+    const picked = answers[idx];
+    const done = picked !== undefined && picked !== null;
+    const ok = picked === q.answer;
+    const opts = q.options.map((o, k) => {
+      const cls = k === q.answer ? ' correct' : (k === picked ? ' wrong' : '');
+      const mark = k === q.answer ? '✓ ' : (k === picked ? '✗ ' : '');
+      return `<div class="opt${cls}">${mark}${esc(o)}</div>`;
+    }).join('');
+    const state = !done ? '未作答' : (ok ? '答對' : '答錯');
+    return `<section class="card">
+      <p class="qmeta muted">第 ${idx + 1} 題・<span class="${ok ? 'ok' : 'bad'}">${state}</span>${srcTag(q)}</p>
+      <h3>${esc(q.question)}</h3>
+      ${q.image ? `<img class="qfig" src="${esc(q.image)}" alt="題目附圖" loading="lazy">` : ''}
+      <div class="study-opts">${opts}</div>
+      ${q.explanation ? `<details class="study-exp" open><summary>解析</summary><div class="exp">${formatExp(q.explanation)}</div></details>` : ''}
+      ${knowHtml(q)}
+    </section>`;
+  }).join('');
+  view.innerHTML = `
+    <section class="card">
+      <h2>整份檢討</h2>
+      <p class="muted">${pool.length} 題全部列出，答對的也看得到解析。✓ 是正解，✗ 是你選的。</p>
+      <button id="back">回首頁</button>
+    </section>${cards}`;
+  $('#back').onclick = home;
+  window.scrollTo(0, 0);
 }
 
 function wrongbook() {
