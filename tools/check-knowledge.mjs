@@ -44,10 +44,24 @@ for (const [ch, n] of miss) warn.push(`章節「${ch}」的 ${n} 題連章節層
 
 // 相關度：走 chapter 退路的題，知識點關鍵字有沒有真的出現在題幹／選項／解析裡。
 // 與 app.js 的 rankByRelevance() 同規則；重疊為零＝掛的是「同章節但不對題」的知識點。
+// 與 app.js 的 K_STOP 同一張表：出現率太高的字沒有鑑別力，不能當命中證據
+const K_STOP = new Set(['ai', '訓練', 'in']);
 const keysOf = new Map(notes.map((n) => [n.id, [...new Set([
   ...(n.topics || []),
   ...String(n.title || '').split(/[\s,，、：:（）()／/]+/),
-])].map(norm).filter((s) => s.length >= 2)]));
+])].map(norm).filter((s) => s.length >= 2 && !K_STOP.has(s))]));
+
+// 重算每個關鍵字在題庫的出現率，超過 15% 又沒被停用就提醒（題庫長大後這張表會過時）
+const hays = Q.questions.map((q) => norm(`${q.question}${(q.options || []).join('')}${q.explanation || ''}`));
+const allKeys = [...new Set(notes.flatMap((n) => [...new Set([
+  ...(n.topics || []),
+  ...String(n.title || '').split(/[\s,，、：:（）()／/]+/),
+])].map(norm).filter((s) => s.length >= 2)))];
+for (const k of allKeys) {
+  if (K_STOP.has(k)) continue;
+  const df = hays.reduce((a, h) => a + (h.includes(k) ? 1 : 0), 0) / hays.length;
+  if (df > 0.15) warn.push(`關鍵字「${k}」出現在 ${(df * 100).toFixed(0)}% 的題目裡，鑑別力不足，建議加進 app.js 的 K_STOP`);
+}
 // 實際掛載數：app.js 的 notesFor() 只掛關鍵字真的有重疊的（零重疊寧可不掛，不硬湊覆蓋率）。
 let fbHit = 0, fbNone = 0;
 const bySrc = new Map();

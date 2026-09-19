@@ -199,8 +199,10 @@ function formatExp(text) {
     .replace(/\s*(本站補充：)\s*/g, '<br>$1')
     .replace(/(本站補充：)\s*([(（][A-DＡ-Ｄ][)）])/g, '$1<br>$2')
     .replace(/([。；])\s*([(（][A-DＡ-Ｄ][)）])/g, '$1<br>$2')
-    .replace(/([。；])\s*(核心記憶點|記憶點)/g, '$1<br>$2')
-    .replace(/(^|<br>)\s*(正解\s*[(（][A-DＡ-Ｄ][)）]|本站補充|[(（][A-DＡ-Ｄ][)）]|核心記憶點|記憶點)/g, '$1<strong>$2</strong>');
+    // 組合題/程式碼題不用 (A) 而是寫「原因 A：」「選項 B 的」,沒這條會整段擠成密文
+    .replace(/([。；])\s*(原因\s*[A-DＡ-Ｄ]|選項\s*[A-DＡ-Ｄ])/g, '$1<br>$2')
+    .replace(/([。；])\s*(核心概念|核心記憶點|記憶點)/g, '$1<br>$2')
+    .replace(/(^|<br>)\s*(正解\s*[(（][A-DＡ-Ｄ][)）]|本站補充|[(（][A-DＡ-Ｄ][)）]|原因\s*[A-DＡ-Ｄ]|選項\s*[A-DＡ-Ｄ]|核心概念|核心記憶點|記憶點)/g, '$1<strong>$2</strong>');
 }
 // ---- 知識延伸（knowledge.json）----
 // 每題掛 0~2 則延伸知識:先用 topic 對應(精準),沒中才退回 chapter(概括)。索引在載入時建一次。
@@ -221,10 +223,14 @@ function buildKnowIndex() {
 }
 // chapter 退路的相關度排序:同一章節常對到十幾則,照檔案順序取前兩則會掛出不相干的知識點
 // (例：問 TCO 的題目掛到「可解釋 AI」)。改用題幹/選項/解析與知識點關鍵字的重疊數排序。
+// 太常見的字沒有鑑別力:「ai」出現在 36% 的題目裡、「訓練」36%、「in」25%,拿它們當命中證據
+// 等於整章亂掛(2026-09-16 驗收實測:322 題課程題單靠「ai」就被掛上同一張卡)。
+// 門檻＝在題庫的出現率超過 15%;tools/check-knowledge.mjs 會重算出現率,超標又不在這張表就 WARN。
+const K_STOP = new Set(['ai', '訓練', 'in']);
 const kKeys = (n) => n._keys || (n._keys = [...new Set([
   ...(n.topics || []),
   ...String(n.title || '').split(/[\s,，、：:（）()／/]+/),
-])].map(kNorm).filter((s) => s.length >= 2));
+])].map(kNorm).filter((s) => s.length >= 2 && !K_STOP.has(s)));
 function rankByRelevance(list, q) {
   const hay = kNorm(`${q.question}${(q.options || []).join('')}${q.explanation || ''}`);
   return list
