@@ -74,11 +74,12 @@ export function wrongQuestionIds(questions, progress) {
 // ---- 練習範圍:題庫 → 級別 → 科目(三層)。純篩選,UI 在 app.js。----
 // 非官方題(模擬題/課程題)的隔離改由「題庫」這層負責,預設 official,不再靠章節名比對。
 export const BANKS = [
-  { key: 'official', label: '官方題（歷屆＋學習指引）', test: (q) => q.source !== '模擬題' && q.source !== '課程題' },
+  { key: 'official', label: '官方題（歷屆＋學習指引）', test: (q) => q.source !== '模擬題' && q.source !== '課程題' && q.source !== '延伸題' },
   { key: '歷屆', label: '官方・只練歷屆考古題', test: (q) => (q.source || '歷屆') === '歷屆' },
   { key: '學習指引', label: '官方・只練學習指引範例', test: (q) => q.source === '學習指引' },
   { key: '課程題', label: '課程練習題（非官方）', test: (q) => q.source === '課程題' },
   { key: '模擬題', label: '模擬題（非官方）', test: (q) => q.source === '模擬題' },
+  { key: '延伸題', label: '延伸練習題（非官方）', test: (q) => q.source === '延伸題' },
   { key: 'all', label: '全部（官方＋非官方）', test: () => true },
 ];
 export const LEVELS = [['初級', '初級'], ['中級', '中級'], ['all', '全部']];

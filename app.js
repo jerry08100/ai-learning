@@ -189,7 +189,7 @@ async function ensureFreshCode() {
 
 // ---- helpers ----
 const subjects = () => [...new Set(DATA.questions.map((q) => q.subject))];
-const OFFICIAL_SRC = (q) => q.source !== '模擬題' && q.source !== '課程題'; // 非官方題不出現在模擬考試卷清單
+const OFFICIAL_SRC = (q) => q.source !== '模擬題' && q.source !== '課程題' && q.source !== '延伸題'; // 非官方題不出現在模擬考試卷清單
 const papers = () => [...new Set(DATA.questions.filter(OFFICIAL_SRC).map((q) => `${q.level}｜${q.round}｜${q.subject}`))];
 const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
 // 解析顯示用:在「。/；後面的 (A)-(D) 選項分析」與「記憶點」前斷行並加粗,把長段落變條列(不動資料)
@@ -333,7 +333,7 @@ function setNav(active) {
 const rangeKey = (q) => q.chapter || q.subject;
 const srcOf = (q) => q.source || '歷屆';
 // 卡片來源標籤(練習卡與背題卡共用):非官方來源都要標示,其餘(歷屆)無標籤
-const SRC_TAG = { 學習指引: '學習指引範例', 模擬題: '模擬題・非官方', 課程題: '課程練習・非官方' };
+const SRC_TAG = { 學習指引: '學習指引範例', 模擬題: '模擬題・非官方', 課程題: '課程練習・非官方', 延伸題: '延伸練習・非官方' };
 const srcTag = (q) => SRC_TAG[q.source] ? ` <span class="src-tag">${SRC_TAG[q.source]}</span>` : '';
 // ---- 範圍選單 UI:題庫 → 級別 → 科目(三層,取代原本 31 個章節 checkbox)----
 // 練習頁、背題頁、快速做題共用同一份偏好:store.bank(單選) / store.lv(單選) / store.subs(多選,null=該層全選)。
