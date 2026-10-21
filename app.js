@@ -3,7 +3,7 @@ import { nextBox, isMastered, scoreExam, progressStats, wrongQuestionIds, toMark
 
 const STORE_KEY = 'ipas_quiz_progress';
 // 同步後端＝獨立 server 04_同步後端/（2026-08-26 從遊戲伺服器抽出，接手同一 Zeabur service，合約逐字相同）。/sync/:code。留空=只用本機。
-const SYNC_URL = 'https://sustain-earth.zeabur.app'; // 同步後端＝獨立 server（原始碼 04_同步後端/）
+const SYNC_URL = 'https://ipas-sync-823719914514.asia-east1.run.app'; // 同步後端＝獨立 server（原始碼 04_同步後端/）
 const VAPID_PUBLIC = 'BNn4Lwq818aHx8cb0LrcQ6IpRgHb9B3P_BOqusct-uFyJPQ4hlDrIOirliHoNdbbg5tg8zWfzBg5SZ0yBhRq7zA';
 const PUSH_ENABLED = false; // Phase 3: 現行同步後端（04_同步後端/）無 push，關閉推播 UI 與 /push/* 呼叫（同步不受影響）
 const $ = (sel) => document.querySelector(sel);
