@@ -273,12 +273,6 @@ function guideLine(q) {
   const link = url ? ` <a href="${esc(url)}" target="_blank" rel="noopener">開啟學習指引 ↗</a>` : '';
   return `<p class="guide">教材對應：${esc(q.subject)} ${ch}${link}</p>`;
 }
-// 回報這題：開 GitHub issue form,自動帶入題號與科目
-function reportLink(q) {
-  const url = `https://github.com/yazelin/ipas-ai-quiz/issues/new?template=question-report.yml`
-    + `&qid=${encodeURIComponent(q.id)}&subject=${encodeURIComponent(q.subject)}`;
-  return `<p class="report-line"><a href="${url}" target="_blank" rel="noopener">這題有誤？回報給作者</a></p>`;
-}
 // 快速做題：首頁一顆按鈕，用目前範圍偏好（首訪＝初級全題庫）智慧複習挑 QUICK_N 題直接開練。
 const QUICK_N = 10;
 // 智慧複習排序：錯題 → 沒做過 → 做過未掌握 → 已掌握，同級隨機。練習頁與快速做題共用。
@@ -479,7 +473,6 @@ function runPractice(pool, opts = {}) {
       ${q.explanation ? `<p class="exp">${formatExp(q.explanation)}</p>` : ''}
       ${knowHtml(q)}
       ${guideLine(q)}
-      ${reportLink(q)}
       <label class="note">筆記<textarea id="note" rows="2" placeholder="寫下你的理解或記憶點…">${esc(p.note || '')}</textarea></label>
       <button class="primary" id="next">${i + 1 < pool.length ? '下一題' : '完成'}</button>`;
     $('#note').oninput = (e) => { p.note = e.target.value; save(); };
@@ -934,17 +927,6 @@ function settings() {
   };
 }
 
-// 從 UA 粗略判斷裝置/瀏覽器,給「意見回饋」表單預填(僅 OS + 瀏覽器名,不含版本)
-function deviceLabel() {
-  const ua = navigator.userAgent;
-  const os = /iPhone/.test(ua) ? 'iPhone' : /iPad/.test(ua) ? 'iPad' : /Android/.test(ua) ? 'Android'
-    : /Windows/.test(ua) ? 'Windows' : /Macintosh|Mac OS X/.test(ua) ? 'Mac' : /Linux/.test(ua) ? 'Linux' : '其他';
-  const br = /Edg\//.test(ua) ? 'Edge' : /SamsungBrowser/.test(ua) ? 'Samsung Internet'
-    : /CriOS|Chrome\//.test(ua) ? 'Chrome' : /FxiOS|Firefox\//.test(ua) ? 'Firefox'
-    : /Version\/[\d.]+.*Safari/.test(ua) ? 'Safari' : '瀏覽器';
-  return `${os} · ${br}`;
-}
-
 // 知識庫:把 knowledge.json 的延伸知識整份攤開瀏覽(考題之外的觀念補充)。
 // 純閱讀,不寫任何進度;篩選與搜尋只存在本次瀏覽,不進 store。
 function knowledge() {
@@ -1000,9 +982,6 @@ const ROUTES = { home, study, knowledge, mock: mockSetup, wrong: wrongbook, note
 // ---- boot ----
 async function boot() {
   document.querySelectorAll('nav button').forEach((b) => (b.onclick = () => ROUTES[b.dataset.v]()));
-  // 「意見回饋」連結自動帶入裝置/瀏覽器(GitHub issue form 以 &env= 預填同名欄位)
-  const fbLink = document.getElementById('fb-link');
-  if (fbLink) fbLink.href += `&env=${encodeURIComponent(deviceLabel())}`;
   if (isStandalone() || installBarOff()) { const b = document.getElementById('installbar'); if (b) b.hidden = true; }
   const ib = document.getElementById('install-btn');
   if (ib) ib.onclick = async () => {
