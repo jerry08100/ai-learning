@@ -1,0 +1,434 @@
+{
+ "meta": {
+  "version": 1,
+  "note": "知識大陸：區域、層與開放條件。notes 為 knowledge.json 的 id；req 為「區域:層」須先通過試煉",
+  "passRate": 0.8
+ },
+ "regions": [
+  {
+   "id": "plain",
+   "name": "起源平原",
+   "domain": "AI 基礎概念・產業應用",
+   "layers": [
+    {
+     "name": "外圍",
+     "tier": 1,
+     "req": [],
+     "notes": [
+      "k-ai-ml-dl",
+      "k-ml-types",
+      "k-discriminative-generative",
+      "k-cv-tasks",
+      "k-intro-algorithms"
+     ]
+    },
+    {
+     "name": "內地",
+     "tier": 2,
+     "req": [
+      "plain:0"
+     ],
+     "notes": [
+      "k-b2-task-learning-match",
+      "k-ch-text-industry-apps",
+      "k-ch-azure-vision-services",
+      "k-ch-doc-intelligence-ocr"
+     ]
+    },
+    {
+     "name": "核心",
+     "tier": 3,
+     "req": [
+      "plain:1"
+     ],
+     "notes": [
+      "k-ch-custom-vision-model",
+      "k-ch-face-recognition-limits",
+      "k-ai-apps-and-tw-governance"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "forest",
+   "name": "演算森林",
+   "domain": "機器學習",
+   "layers": [
+    {
+     "name": "外圍",
+     "tier": 1,
+     "req": [
+      "plain:0"
+     ],
+     "notes": [
+      "k-overfit-underfit",
+      "k-data-split-cv",
+      "k-metrics",
+      "k-feature-eng",
+      "k-automl",
+      "k-rl",
+      "k-ch-regression-modeling",
+      "k-ch-azure-automl-experiment"
+     ]
+    },
+    {
+     "name": "內地",
+     "tier": 2,
+     "req": [
+      "forest:0"
+     ],
+     "notes": [
+      "k-data-leakage",
+      "k-imbalance",
+      "k-anomaly",
+      "k-dbscan-density-clustering",
+      "k-timeseries-validation-curve",
+      "k-b3-svm-crf",
+      "k-b3-regression-eval-pdp",
+      "k-b4-hyperparameter-search",
+      "k-b4-dimension-reduction",
+      "k-b4-clustering",
+      "k-b4-tree-split",
+      "k-b6-feature-transform-scaling",
+      "k-b3-autoencoder-ssl"
+     ]
+    },
+    {
+     "name": "核心",
+     "tier": 3,
+     "req": [
+      "forest:1"
+     ],
+     "notes": [
+      "k-gbdt-xgboost",
+      "k-b4-model-eval-design",
+      "k-b5-pca-curse",
+      "k-b6-dimension-reduction",
+      "k-b6-classic-model-assumptions",
+      "k-b6-validation-tuning-fairness",
+      "k-b3-softmax-collinearity",
+      "k-b6-pseudocode-algorithm-id",
+      "k-b6-threshold-roc-f1"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "valley",
+   "name": "數據河谷",
+   "domain": "資料處理・大數據・統計",
+   "layers": [
+    {
+     "name": "外圍",
+     "tier": 1,
+     "req": [
+      "plain:0"
+     ],
+     "notes": [
+      "k-data-cleaning",
+      "k-eda-viz",
+      "k-bigdata-5v",
+      "k-data-types-integration-quality",
+      "k-b2-data-types-transform",
+      "k-b3-data-prep-transfer",
+      "k-ch-binning-discretization",
+      "k-ch-kdd-datamining"
+     ]
+    },
+    {
+     "name": "內地",
+     "tier": 2,
+     "req": [
+      "valley:0"
+     ],
+     "notes": [
+      "k-stats-basic",
+      "k-data-governance",
+      "k-pandas-bigfile-seaborn",
+      "k-hypothesis-testing",
+      "k-association-rules",
+      "k-b4-probability-bayes",
+      "k-b4-pandas",
+      "k-b5-training-data-prep",
+      "k-b5-boxplot-chart",
+      "k-b6-pandas-missing-dtype",
+      "k-b6-describe-skew",
+      "k-b6-matrix-conditional-prob"
+     ]
+    },
+    {
+     "name": "核心",
+     "tier": 3,
+     "req": [
+      "valley:1"
+     ],
+     "notes": [
+      "k-acid-data-security",
+      "k-monte-carlo-simulation",
+      "k-b4-regression-correlation",
+      "k-b4-bigdata-streaming",
+      "k-b4-graph-knowledge",
+      "k-b5-stat-inference",
+      "k-b5-data-platform",
+      "k-b5-spark-batchsize",
+      "k-b5-feature-analysis",
+      "k-b5-timeseries-forecast",
+      "k-b6-modeling-pipeline-ols"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "fort",
+   "name": "守護城塞",
+   "domain": "治理・倫理・法規・資安",
+   "layers": [
+    {
+     "name": "外圍",
+     "tier": 1,
+     "req": [
+      "plain:0"
+     ],
+     "notes": [
+      "k-bias-fairness",
+      "k-privacy",
+      "k-hitl",
+      "k-b2-ethics-disclosure",
+      "k-ch-responsible-ai-principles",
+      "k-ch-taiwan-ai-basic-act"
+     ]
+    },
+    {
+     "name": "內地",
+     "tier": 2,
+     "req": [
+      "fort:0"
+     ],
+     "notes": [
+      "k-xai",
+      "k-ai-governance",
+      "k-genai-ip",
+      "k-b2-xai-methods",
+      "k-b2-bias-detect-mitigate",
+      "k-b2-provenance-watermark",
+      "k-ch-eu-ai-act",
+      "k-ch-fintech-ai-principles",
+      "k-ch-ai-lifecycle-governance"
+     ]
+    },
+    {
+     "name": "核心",
+     "tier": 3,
+     "req": [
+      "fort:1",
+      "forest:1"
+     ],
+     "notes": [
+      "k-b3-genai-data-risk",
+      "k-b4-adversarial-security",
+      "k-b4-bias-credit-model",
+      "k-b4-privacy-compute",
+      "k-b4-corpus-governance",
+      "k-b5-shap-gradcam",
+      "k-b6-membership-inference",
+      "k-ch-genai-risk-redteam"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "mount",
+   "name": "神經山脈",
+   "domain": "深度學習",
+   "layers": [
+    {
+     "name": "外圍",
+     "tier": 1,
+     "req": [
+      "forest:1"
+     ],
+     "notes": [
+      "k-nn-training",
+      "k-cnn-rnn-transformer",
+      "k-nlp-embedding",
+      "k-data-augmentation",
+      "k-b2-dl-architecture-training",
+      "k-b3-dl-training",
+      "k-ch-dl-training-stability"
+     ]
+    },
+    {
+     "name": "內地",
+     "tier": 2,
+     "req": [
+      "mount:0"
+     ],
+     "notes": [
+      "k-transfer-finetune",
+      "k-word2vec-sentiment",
+      "k-b3-cnn-seq-transformer",
+      "k-b3-text-representation",
+      "k-b5-nlp-tagging-embedding",
+      "k-b5-nn-building-blocks",
+      "k-b6-optimizer-batch-clip",
+      "k-b6-deep-degradation-regularization",
+      "k-b6-cnn-architecture-preprocess",
+      "k-b6-mlp-output-params",
+      "k-b6-augmentation-curves",
+      "k-ch-transformer-internals"
+     ]
+    },
+    {
+     "name": "核心",
+     "tier": 3,
+     "req": [
+      "mount:1"
+     ],
+     "notes": [
+      "k-compression-distill",
+      "k-b4-sequence-models",
+      "k-b4-multimodal-multitask",
+      "k-b4-optimization-training",
+      "k-b5-detection-segmentation",
+      "k-b5-multimodal-fusion",
+      "k-b6-bert-gpt-lora"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "sea",
+   "name": "生成之海",
+   "domain": "生成式 AI・LLM・RAG・Agent",
+   "layers": [
+    {
+     "name": "外圍",
+     "tier": 1,
+     "req": [
+      "plain:1"
+     ],
+     "notes": [
+      "k-llm-basics",
+      "k-hallucination",
+      "k-prompt-eng",
+      "k-rag",
+      "k-agent",
+      "k-diffusion",
+      "k-multimodal",
+      "k-genai-generation-control",
+      "k-b3-genai-apps-capability",
+      "k-ch-gpt-bert-family",
+      "k-ch-genai-tool-landscape",
+      "k-vibe-coding"
+     ]
+    },
+    {
+     "name": "內地",
+     "tier": 2,
+     "req": [
+      "sea:0"
+     ],
+     "notes": [
+      "k-context-eng",
+      "k-graph-prompting",
+      "k-rag-vs-finetune",
+      "k-mcp",
+      "k-llm-security",
+      "k-llm-eval",
+      "k-rag-tools-agents",
+      "k-b2-align-and-refresh",
+      "k-b2-peft-rl-finetune",
+      "k-b2-agent-tooling",
+      "k-b3-memory-context-design",
+      "k-b3-fewshot-finetune",
+      "k-b3-agent-architecture-coding",
+      "k-ch-peft-finetune"
+     ]
+    },
+    {
+     "name": "核心",
+     "tier": 3,
+     "req": [
+      "sea:1",
+      "mount:1"
+     ],
+     "notes": [
+      "k-solution-graph",
+      "k-a2a",
+      "k-b2-rag-engineering",
+      "k-b3-post-training-ops",
+      "k-b3-autoskill",
+      "k-b5-llm-peft-cost",
+      "k-b5-agent-orchestration",
+      "k-ch-advanced-rag-ops",
+      "k-ch-multi-agent-ops"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "capital",
+   "name": "規劃王城",
+   "domain": "AI 導入規劃・MLOps・部署",
+   "layers": [
+    {
+     "name": "外圍",
+     "tier": 1,
+     "req": [
+      "forest:0",
+      "valley:0",
+      "fort:0"
+     ],
+     "notes": [
+      "k-deploy-choice",
+      "k-genai-adoption",
+      "k-b2-cost-roi",
+      "k-b2-poc-pilot-eval",
+      "k-ch-ml-compute-endpoint",
+      "k-ch-ml-project-collab",
+      "k-ch-ai-adoption-poc",
+      "k-ch-lowcode-platform-arch",
+      "k-ch-nocode-industry-use"
+     ]
+    },
+    {
+     "name": "內地",
+     "tier": 2,
+     "req": [
+      "capital:0"
+     ],
+     "notes": [
+      "k-mlops-drift",
+      "k-phased-rollout",
+      "k-genai-testing-eval",
+      "k-genai-adoption-compliance",
+      "k-b2-inference-serving",
+      "k-b2-tech-selection",
+      "k-b2-lowcode-governance",
+      "k-b3-nocode-integration",
+      "k-b3-cost-and-eval",
+      "k-ch-lowcode-governance-risk",
+      "k-ch-lowcode-selection-tco"
+     ]
+    },
+    {
+     "name": "核心",
+     "tier": 3,
+     "req": [
+      "capital:1",
+      "sea:1"
+     ],
+     "notes": [
+      "k-b2-deploy-security",
+      "k-b3-k8s-model-serving",
+      "k-b4-ai-system-ops",
+      "k-b5-inference-serving",
+      "k-b5-rollout-monitoring",
+      "k-b5-roc-benefit-audit",
+      "k-b6-adoption-benefit-eval"
+     ]
+    }
+   ]
+  }
+ ]
+}
