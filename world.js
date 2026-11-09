@@ -2,6 +2,8 @@
 // 獨立頁面，進度只存在本機 localStorage 'ipas-world'，不碰主站的練習進度與同步。
 // 區域／層／開放條件來自 world.json；知識點內容來自 knowledge.json；小檢查與試煉題來自 questions.json。
 
+import { makeMap, TW, TH, T } from './world-map.js';
+
 const KEY = 'ipas-world';
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -76,76 +78,9 @@ function nextAction() {
   return null;
 }
 
-// ---- 地圖 ----
-const PAL = { k:'#1a1c2c', pu:'#5d275d', r:'#b13e53', o:'#ef7d57', y:'#ffcd75', lg:'#a7f070', g:'#38b764', dg:'#257179',
-  nv:'#29366f', b:'#3b5dc9', lb:'#41a6f6', c:'#73eff7', w:'#f4f4f4', gr:'#94b0c2', dgr:'#566c86', sl:'#333c57' };
-// 區域在地圖上的位置（格座標）與地標；world.json 只管內容，版面放這裡
-const LAYOUT = { plain:{ sx:28, sy:50, land:'house' }, forest:{ sx:11, sy:30, land:'bigtree' }, valley:{ sx:39, sy:33, land:'mill' },
-  fort:{ sx:12, sy:47, land:'tower' }, mount:{ sx:13, sy:13, land:'peak' }, sea:{ sx:35, sy:13, land:'crystal' }, capital:{ sx:25, sy:31, land:'castle' } };
-const TW = 48, TH = 64, T = 4; // 48×64 格、每格 4×4 像素點
-const hash = (x, y) => { let n = (x * 374761393 + y * 668265263) | 0; n = Math.imul(n ^ (n >>> 13), 1274126177); return ((n ^ (n >>> 16)) >>> 0) / 4294967295; };
-const vn = (x, y) => { const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi, s = (t) => t * t * (3 - 2 * t);
-  const a = hash(xi, yi), b = hash(xi + 1, yi), c = hash(xi, yi + 1), d = hash(xi + 1, yi + 1);
-  return a + (b - a) * s(xf) + (c - a) * s(yf) + (a - b - c + d) * s(xf) * s(yf); };
-const fbm = (x, y) => vn(x / 9, y / 9) * 0.6 + vn(x / 4, y / 4) * 0.3 + vn(x / 2, y / 2) * 0.1;
-let GRID = null;
-function buildGrid() {
-  const ids = Object.keys(LAYOUT); GRID = [];
-  for (let y = 0; y < TH; y++) for (let x = 0; x < TW; x++) {
-    const d = Math.hypot((x - 24) / 22, (y - 32) / 29.5) + (fbm(x, y) - 0.5) * 0.55;
-    let id = null;
-    if (d < 0.93) { let best = 1e9; ids.forEach((rid, i) => { const L = LAYOUT[rid];
-      const dd = Math.hypot(x - L.sx, (y - L.sy) * 0.95) + (vn(x / 5 + i * 13, y / 5 - i * 7) - 0.5) * 7; if (dd < best) { best = dd; id = rid; } }); }
-    GRID.push(id);
-  }
-}
-const at = (x, y) => (x < 0 || y < 0 || x >= TW || y >= TH) ? null : GRID[y * TW + x];
-const riverX = (y) => Math.round(39 + 2.5 * Math.sin(y / 4.2));
-const SPR = {
-  castle:['..r......r..','..rr.....rr.','..y.......y.','.yyy.yyy.yyy','.yyyyyyyyyyy','.yoyyyyyyyoy','.yyyyyyyyyyy','.yyyykkyyyyy','.yyyykkyyyyy','.ooooooooooo'],
-  tower:['.w.w.w.w.','.wwwwwww.','..gdgdg..','..ggggg..','..gdkdg..','..ggkgg..','..ggkgg..','.ddddddd.'],
-  bigtree:['...lll...','.llGGGll.','lGGGGGGGl','GGGDGGGDG','.GGGGGGG.','..DGGGD..','....p....','....p....','...ppp...'],
-  peak:['.....w.....','....www....','...wwdww...','..ddwdddk..','.ddddddkkk.','ddddddkkkkk'],
-  crystal:['..w..','.wcc.','wccbc','ccbbc','.cbb.','..b..'],
-  house:['...rr...','..rrrr..','.rrrrrr.','rrrrrrrr','.wwwwww.','.wkwwbw.','.wkwwww.'],
-  mill:['..w...w.','...w.w..','....b...','...w.w..','..bbbbb.','..bkbbb.','..bkbbb.'],
-  hero:['..kkk..','.kyyyk.','..yky..','.rbbbr.','rbbbbbr','..bbb..','..k.k..'],
-  mark:['.kkk.','kyyyk','kyyyk','kyyyk','.kyk.','.kkk.','kyyyk','.kkk.'],
-};
-const SPC = { r:PAL.r, y:PAL.y, o:PAL.o, k:PAL.k, w:PAL.w, g:PAL.gr, d:PAL.dgr, l:PAL.lg, p:PAL.pu, c:PAL.c, b:PAL.b, G:PAL.g, D:PAL.dg };
-let cx = null, frame = 0, timer = null;
-const px = (x, y, c) => { cx.fillStyle = c; cx.fillRect(x, y, 1, 1); };
-const rect = (x, y, w, h, c) => { cx.fillStyle = c; cx.fillRect(x, y, w, h); };
-const spr = (name, x, y) => SPR[name].forEach((row, j) => [...row].forEach((ch, i) => { if (ch !== '.') px(x + i, y + j, SPC[ch]); }));
-function tile(x, y, f) {
-  const id = at(x, y), X = x * T, Y = y * T, h = hash(x, y), h2 = hash(y + 99, x + 7);
-  if (!id) { rect(X, Y, T, T, PAL.nv); if ((h * 10 | 0) === ((f + x) % 10)) { px(X + 1, Y + 2, PAL.b); px(X + 2, Y + 2, PAL.b); } return; }
-  const coast = [[1,0],[-1,0],[0,1],[0,-1]].some(([a, b]) => at(x + a, y + b) === null);
-  if (id === 'sea') {
-    const isle = fbm(x * 2, y * 2) > 0.66;
-    rect(X, Y, T, T, isle ? PAL.y : (h > 0.5 ? PAL.lb : '#4ab0f8'));
-    if (!isle && (h2 * 6 | 0) === (f % 6)) { px(X + 1, Y + 1, PAL.c); px(X + 2, Y + 1, PAL.w); }
-    if (isle && h > 0.6) px(X + 1, Y + 1, PAL.g);
-  } else if (coast) { rect(X, Y, T, T, PAL.y); if (h > 0.6) px(X + (h2 * 3 | 0), Y + 2, PAL.o); }
-  else if (id === 'plain') { rect(X, Y, T, T, PAL.g); if (h > 0.55) px(X + 1, Y + 1, PAL.lg); if (h > 0.9) px(X + 2, Y + 2, PAL.y); if (h2 > 0.93) px(X + 1, Y + 2, PAL.r); }
-  else if (id === 'forest') { rect(X, Y, T, T, PAL.dg); if ((x + y) % 2 === 0 || h > 0.7) { px(X + 1, Y, PAL.g); rect(X, Y + 1, 3, 1, PAL.g); px(X + 1, Y + 1, PAL.lg); px(X + 1, Y + 2, PAL.pu); } }
-  else if (id === 'valley') { rect(X, Y, T, T, '#6fcf6a'); if (h > 0.7) px(X + 2, Y + 1, PAL.lg);
-    if (Math.abs(x - riverX(y)) < 1) { rect(X, Y, T, T, PAL.lb); if ((y + f) % 3 === 0) px(X + 1, Y + 1, PAL.c); } }
-  else if (id === 'fort') { rect(X, Y, T, T, PAL.gr); if (h > 0.5) rect(X, Y + 3, T, 1, PAL.dgr); if (h2 > 0.75) px(X + 1, Y + 1, PAL.w); }
-  else if (id === 'mount') { rect(X, Y, T, T, PAL.dgr); if ((x + (y % 2)) % 2 === 0) { px(X + 2, Y, PAL.gr); rect(X + 1, Y + 1, 3, 1, PAL.gr); rect(X, Y + 2, 4, 1, PAL.sl); if (y < 14) px(X + 2, Y, PAL.w); } }
-  else if (id === 'capital') { rect(X, Y, T, T, (x + y) % 2 ? PAL.y : '#f2bd62'); if (h > 0.8) px(X + 1, Y + 1, PAL.o); }
-  [[1,0],[0,1]].forEach(([a, b]) => { const n = at(x + a, y + b); if (n && n !== id) for (let i = 0; i < T; i += 2) a ? px(X + T - 1, Y + i, PAL.k) : px(X + i, Y + T - 1, PAL.k); });
-}
-function drawMap() {
-  const open = Object.fromEntries(W.regions.map((r) => [r.id, regionOpen(r)]));
-  for (let y = 0; y < TH; y++) for (let x = 0; x < TW; x++) tile(x, y, frame);
-  for (let y = 0; y < TH; y++) for (let x = 0; x < TW; x++) { const id = at(x, y); if (id && !open[id]) { const X = x * T, Y = y * T;
-    for (let j = 0; j < T; j++) for (let i = 0; i < T; i++) if ((X + i + Y + j) % 2 === 0) px(X + i, Y + j, PAL.sl); } }
-  for (const [rid, L] of Object.entries(LAYOUT)) { const s = SPR[L.land]; spr(L.land, L.sx * T + 2 - (s[0].length >> 1), L.sy * T - s.length + 2); }
-  const bob = frame % 2;
-  W.regions.filter(needsMark).forEach((r) => spr('mark', LAYOUT[r.id].sx * T + 9, LAYOUT[r.id].sy * T - 16 - bob));
-  const H = LAYOUT[ST.cur] || LAYOUT.plain; spr('hero', H.sx * T - 9, H.sy * T - 6 - bob);
-}
+// ---- 地圖（繪圖在 world-map.js）----
+let MAP = null, frame = 0, timer = null;
+const drawMap = () => MAP.draw({ open: Object.fromEntries(W.regions.map((r) => [r.id, regionOpen(r)])), marks: W.regions.filter(needsMark).map((r) => r.id), hero: ST.cur, frame });
 
 // ---- 畫面：地圖 ----
 let selId = null;
@@ -157,21 +92,21 @@ function showMap() {
   clearInterval(timer); $('#app').classList.add('map-mode'); hud();
   const na = nextAction();
   $('#view').innerHTML = `
-    <div class="mapwrap" id="mapwrap"><canvas id="cv" width="192" height="256" aria-label="世界地圖"></canvas></div>
+    <div class="mapwrap" id="mapwrap"><canvas id="cv" aria-label="世界地圖"></canvas></div>
     <div class="go"><button class="pbtn" id="go" ${na ? '' : 'disabled'}><span class="blink">▶</span> 繼續冒險<small>${na ? esc(`${na.r.name}・${na.label}`) : '目前沒有可做的事了'}</small></button></div>
     <p class="foot">點地圖上的區域看進度・進度只存在這台裝置　<button id="reset">重設進度</button></p>`;
-  const cv = $('#cv'); cx = cv.getContext('2d');
+  const cv = $('#cv'); MAP = makeMap(cv);
   const wrap = $('#mapwrap');
-  const layout = () => { const w = Math.min(wrap.parentElement.clientWidth - 16, 576); cv.style.width = w + 'px'; cv.style.height = w * 256 / 192 + 'px'; wrap.style.width = w + 'px'; };
+  const layout = () => { const w = Math.min(wrap.parentElement.clientWidth - 16, 576); cv.style.width = w + 'px'; cv.style.height = w * TH / TW + 'px'; wrap.style.width = w + 'px'; };
   layout(); window.onresize = layout;
   W.regions.forEach((r) => {
-    const L = LAYOUT[r.id], t = document.createElement('div'), c = cnt(r);
+    const P = MAP.tagPos(r.id), t = document.createElement('div'), c = cnt(r);
     t.className = 'tag' + (regionOpen(r) ? '' : ' lock') + (r.id === selId ? ' sel' : ''); t.dataset.id = r.id;
-    t.style.left = ((L.sx * T + 2) / 192 * 100) + '%'; t.style.top = ((L.sy * T + 4) / 256 * 100) + '%';
+    t.style.left = P.left + '%'; t.style.top = P.top + '%';
     t.innerHTML = regionOpen(r) ? `${esc(r.name)}<div class="seg">${segs(c, 8)}</div>` : `🔒 ${esc(r.name)}`;
     t.onclick = () => openSheet(r.id); wrap.appendChild(t);
   });
-  cv.onclick = (e) => { const b = cv.getBoundingClientRect(), id = at(Math.floor((e.clientX - b.left) / b.width * TW), Math.floor((e.clientY - b.top) / b.height * TH)); if (id) openSheet(id); };
+  cv.onclick = (e) => { const id = MAP.regionAt(e.clientX, e.clientY); if (id && W.regions.some((r) => r.id === id)) openSheet(id); };
   $('#go').onclick = () => { if (na) run(na); };
   $('#reset').onclick = () => { if (confirm('確定清除知識大陸的全部進度？這個動作無法復原（不影響題庫練習的紀錄）。')) { ST.notes = {}; ST.passed = {}; ST.cur = 'plain'; save(); selId = null; showMap(); } };
   drawMap();
@@ -189,7 +124,7 @@ function openSheet(id) {
     <div class="hp"><span>熟練</span><div class="bar">${segs(c, 12)}</div><span>${c.ok}/${c.all}</span></div>
     <div class="nums"><span style="color:var(--g)">✓ 熟練 ${c.ok}</span><span style="color:var(--r)">! 未通過 ${c.fail}</span><span>□ 未學 ${c.nw}</span></div>
     ${open ? '' : `<div class="cond">開放條件：通過「${esc(reqText(r.layers[0].req))}」試煉</div>`}`;
-  $('#sh-body').innerHTML = r.layers.map((l, i) => {
+  $('#sh-body').innerHTML = (r.cert ? certHtml(r) : '') + r.layers.map((l, i) => {
     const st = layerSt(r, i), [tag, cls] = LYT[st], ready = layerReady(r, i);
     return `<div class="layer ${st === 'lock' ? 'lock' : ''}">
       <div class="ly-h"><span>${esc(l.name)}・${l.notes.length} 則</span><span class="t ${cls}">${tag}</span></div>
@@ -204,6 +139,14 @@ function openSheet(id) {
   $('#sh-body').querySelectorAll('li').forEach((li) => li.onclick = () => { if (li.classList.contains('s-lock')) return toast('這層還沒開放'); run({ kind:'lesson', r, i:+li.dataset.i, id:li.dataset.id }); });
   $('#sh-body').querySelectorAll('button.trial').forEach((b) => b.onclick = () => { if (!b.disabled) run({ kind:'trial', r, i:+b.dataset.i }); });
   $('#sheet').classList.add('on');
+}
+// 官方證書由 Anthropic 在 Skilljar 發放，本站無法代為登錄完成狀態，只能帶使用者過去
+function certHtml(r) {
+  const done = r.layers.every((_, i) => ST.passed[key(r, i)]);
+  return `<div class="layer"><div class="ly-h"><span>🏅 官方證書</span><span class="t ${done ? 't-pass' : 't-lock'}">${done ? '可以領取' : '三層試煉都通過後解鎖'}</span></div>
+    <div class="lc" style="color:var(--w);padding:8px">${done
+      ? `你已經走完 ${esc(r.name)}。證書由 Anthropic 在 Skilljar 發放，本站沒辦法替你登錄完成，請到官方課程頁註冊（免費）、完成「${esc(r.cert.name)}」並通過課程測驗：<br><a href="${esc(r.cert.url)}" target="_blank" rel="noopener">前往 ${esc(r.cert.name)} 官方課程 ↗</a>`
+      : `這座島對應 Anthropic 官方的「${esc(r.cert.name)}」課程。三層試煉都通過後，這裡會帶你去官方課程頁考測驗、領證書。`}</div></div>`;
 }
 function run(a) {
   ST.cur = a.r.id; save();
@@ -320,6 +263,11 @@ function trial(r, i) {
   try {
     const [w, k, q] = await Promise.all(['world.json', 'knowledge.json', 'questions.json'].map((u) => fetch(u).then((x) => { if (!x.ok) throw new Error(u); return x.json(); })));
     W = w; KN = new Map(k.notes.map((n) => [n.id, n])); POOL = buildPool(k.notes, q.questions);
-    buildGrid(); showMap();
+    // Claude 工坊島：知識點與題目放獨立檔，不混進 iPAS 題庫；題目直接用 note 欄位對到知識點
+    try {
+      const [cn, cq] = await Promise.all(['claude-notes.json', 'claude-quiz.json'].map((u) => fetch(u).then((x) => { if (!x.ok) throw new Error(u); return x.json(); })));
+      cn.forEach((n) => { KN.set(n.id, n); POOL.set(n.id, []); }); cq.forEach((x) => POOL.get(x.note)?.push(x));
+    } catch { W.regions = W.regions.filter((x) => x.id !== 'claude'); }
+    showMap();
   } catch (e) { $('#view').innerHTML = `<p class="center" style="margin-top:40px">載入失敗：${esc(e.message)}，請重新整理。</p>`; }
 })();
