@@ -429,6 +429,56 @@
      ]
     }
    ]
+  },
+  {
+   "id": "claude",
+   "name": "Claude 工坊島",
+   "domain": "Claude Code（對應官方 Claude Code 101 課程）",
+   "cert": {
+    "name": "Claude Code 101",
+    "url": "https://anthropic.skilljar.com/claude-code-101"
+   },
+   "layers": [
+    {
+     "name": "外圍",
+     "tier": 1,
+     "req": [],
+     "notes": [
+      "cc-01",
+      "cc-02",
+      "cc-03",
+      "cc-04"
+     ]
+    },
+    {
+     "name": "內地",
+     "tier": 2,
+     "req": [
+      "claude:0"
+     ],
+     "notes": [
+      "cc-05",
+      "cc-06",
+      "cc-07",
+      "cc-08"
+     ]
+    },
+    {
+     "name": "核心",
+     "tier": 3,
+     "req": [
+      "claude:1"
+     ],
+     "notes": [
+      "cc-09",
+      "cc-10",
+      "cc-11",
+      "cc-12",
+      "cc-13",
+      "cc-14"
+     ]
+    }
+   ]
   }
  ]
 }

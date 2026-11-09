@@ -1,0 +1,548 @@
+[
+ {
+  "id": "cc-q01",
+  "note": "cc-01",
+  "question": "Claude Code 和一般「行內程式補全助手」最主要的差別是什麼？",
+  "options": [
+   "它只針對游標所在的檔案，建議下一行要寫的程式碼",
+   "它通常會自行搜尋並讀取相關檔案，再跨檔修改與驗證",
+   "它要等使用者先指定所有要讀的檔案，才能開始動手",
+   "它通常只負責解說程式碼，修改要交給其他工具來完成"
+  ],
+  "answer": 1,
+  "explanation": "正解 (B)。官方說明 Claude Code 會搜尋相關檔案、讀多個檔案理解脈絡、跨檔案協調修改並跑測試驗證，這和只看目前檔案的行內助手不同。(A) 這正是官方拿來對比的「只看目前檔案」的行內助手，不是 Claude Code；(C) 官方說不必指定要讀哪些檔案，Claude 會自己找；(D) 它本身就能編輯檔案、執行指令與 git 操作。記憶點：代理式＝自己找檔、自己動手、自己驗證。"
+ },
+ {
+  "id": "cc-q02",
+  "note": "cc-01",
+  "question": "你的團隊有人用 VS Code、有人用終端機。專案裡寫好的 CLAUDE.md 和 MCP 設定，在兩邊會怎樣？",
+  "options": [
+   "只在終端機 CLI 生效，VS Code 那邊需要另外重寫一份",
+   "只在 VS Code 生效，CLI 一般會改讀另一份全域設定",
+   "兩邊都不會讀取，必須每次在對話中手動貼上設定",
+   "兩邊都適用，因為各介面共用同一個 Claude Code 引擎"
+  ],
+  "answer": 3,
+  "explanation": "正解 (D)。官方說明每個介面都連到同一個底層引擎，所以專案的 CLAUDE.md、設定與 MCP 伺服器在各介面都能用。(A) 官方說各介面共用同一套 CLAUDE.md、設定與 MCP 伺服器；(B) 不是只有 IDE 讀得到，CLI 一樣會讀專案設定；(C) CLAUDE.md 會在每次工作階段開始時自動載入。記憶點：介面不同，引擎與設定相同。"
+ },
+ {
+  "id": "cc-q03",
+  "note": "cc-01",
+  "question": "下列哪一種帳號「不能」使用 Claude Code？",
+  "options": [
+   "免費的 claude.ai 方案",
+   "Claude Pro 或 Max 訂閱",
+   "Anthropic Console 帳號",
+   "Team 或 Enterprise 方案"
+  ],
+  "answer": 0,
+  "explanation": "正解 (A)。官方安裝文件寫明免費的 claude.ai 方案不含 Claude Code，需要 Pro、Max、Ultra、Team、Enterprise 或 Console 帳號，也可以透過 Amazon Bedrock 等第三方雲端供應商使用。(B) Pro、Max 都是可以使用 Claude Code 的付費方案；(C) Console 帳號（API 預付額度）可以登入使用；(D) Team 與 Enterprise 也在官方列出的可用方案中。記憶點：免費方案不含 Claude Code。"
+ },
+ {
+  "id": "cc-q04",
+  "note": "cc-02",
+  "question": "依官方說明，Claude Code 代理迴圈的三個階段是哪一組？",
+  "options": [
+   "撰寫計畫、等待核准、一次提交",
+   "讀取設定、壓縮對話、回報摘要",
+   "蒐集脈絡、採取行動、驗證結果",
+   "接收提示、產生文字、結束回合"
+  ],
+  "answer": 2,
+  "explanation": "正解 (C)。官方把代理迴圈描述為 gather context、take action、verify results 三個階段，並會依任務交錯反覆。(A) 這比較像規劃模式的操作，不是代理迴圈的三階段；(B) 讀設定與壓縮是 Claude Code 的其他機制，不是迴圈階段；(D) 只產生文字是沒有工具時的情況，代理迴圈的重點是用工具行動與驗證。記憶點：先看、再做、再驗。"
+ },
+ {
+  "id": "cc-q05",
+  "note": "cc-02",
+  "question": "在 Claude Code 的代理迴圈中，「工具」扮演什麼角色？",
+  "options": [
+   "讓模型實際讀寫檔案、執行指令，結果再回饋下一步",
+   "負責推理與判斷下一步，模型只把結果轉成文字輸出",
+   "一般只在安裝階段使用，對話開始後就不會再被呼叫",
+   "專門用來壓縮對話內容，避免脈絡視窗被歷史塞滿"
+  ],
+  "answer": 0,
+  "explanation": "正解 (A)。官方說模型負責推理、工具負責行動；沒有工具只能回文字，每次用工具得到的資訊都會回饋給下一步判斷。(B) 推理是模型的工作，工具負責行動，兩者角色顛倒了；(C) 工具在整個任務過程中持續被使用；(D) 壓縮是脈絡管理機制，不是工具在迴圈中的角色。記憶點：模型想，工具做。"
+ },
+ {
+  "id": "cc-q06",
+  "note": "cc-02",
+  "question": "Claude 剛把好幾個檔案改壞了，你想回到改動前的狀態，最直接的做法是？",
+  "options": [
+   "執行 /clear，檔案內容會跟著對話一起被清空還原",
+   "執行 /compact，讓 Claude 把檔案還原成摘要前版本",
+   "按 Shift+Tab 切到規劃模式，系統通常會撤銷修改",
+   "按兩下 Esc 或執行 /rewind，開啟回溯選單還原程式碼"
+  ],
+  "answer": 3,
+  "explanation": "正解 (D)。Claude 改檔前會存檢查點，按兩下 Esc（輸入框為空時）或執行 /rewind 可開啟回溯選單，選擇還原程式碼。(A) /clear 只清對話歷史，不會還原檔案；(B) /compact 是壓縮對話，跟檔案還原無關；(C) Shift+Tab 只切換權限模式，不會撤銷已做的修改。記憶點：改壞了：Esc Esc 或 /rewind。"
+ },
+ {
+  "id": "cc-q07",
+  "note": "cc-03",
+  "question": "關於 Claude Code 的安裝方式，下列哪一項正確？",
+  "options": [
+   "Homebrew 安裝會自動更新，所以官方最推薦這種方式",
+   "原生安裝會在背景自動更新，是官方推薦的方式",
+   "npm 安裝建議加 sudo，才能讓之後的更新順利進行",
+   "WinGet 安裝通常會自動更新，不需要手動執行升級"
+  ],
+  "answer": 1,
+  "explanation": "正解 (B)。官方把原生安裝標為推薦方式，並說明原生安裝會在背景自動更新；Homebrew 與 WinGet 預設要手動升級。(A) Homebrew 預設不會自動更新，官方推薦的是原生安裝；(C) 官方明確警告不要用 sudo npm install -g；(D) WinGet 預設不會自動更新，要定期手動升級。記憶點：原生安裝：推薦、自動更新。"
+ },
+ {
+  "id": "cc-q08",
+  "note": "cc-03",
+  "question": "同事用 npm 安裝時遇到權限錯誤，打算改用 sudo npm install -g。依官方建議你該怎麼回應？",
+  "options": [
+   "可以用 sudo，這是官方建議的標準解法，也能自動更新",
+   "可以用 sudo，但之後每次啟動 claude 都要加上 sudo",
+   "不要用 sudo，官方警告這可能造成權限問題與資安風險",
+   "不要用 npm，官方已經停止提供 npm 套件給使用者"
+  ],
+  "answer": 2,
+  "explanation": "正解 (C)。官方的 npm 安裝說明以警告框提醒不要使用 sudo npm install -g，因為可能導致權限問題與安全風險。(A) 官方明確寫著不要用 sudo npm install -g；(B) 問題不在啟動方式，官方是直接不建議用 sudo 安裝；(D) npm 套件仍可安裝，只是官方推薦原生安裝。記憶點：npm 安裝別加 sudo。"
+ },
+ {
+  "id": "cc-q09",
+  "note": "cc-03",
+  "question": "剛裝好 Claude Code，想確認 claude 指令能不能正常執行，最基本的檢查是？",
+  "options": [
+   "在專案中執行 /init，看看有沒有自動產生 CLAUDE.md",
+   "執行 claude mcp list，看看有沒有列出預設伺服器",
+   "開新的終端機執行 claude --version，看有沒有版本號",
+   "在對話中執行 /compact，看看能不能壓縮對話內容"
+  ],
+  "answer": 2,
+  "explanation": "正解 (C)。官方說安裝完成後開新的終端機執行 claude --version，印出版本號就代表安裝成功；更詳細的診斷用 claude doctor。(A) /init 是產生 CLAUDE.md 的工作階段指令，不是安裝檢查；(B) 這是管理 MCP 伺服器的指令，安裝後不一定有任何伺服器；(D) /compact 是脈絡管理指令，和確認安裝無關。記憶點：裝完先跑 claude --version。"
+ },
+ {
+  "id": "cc-q10",
+  "note": "cc-04",
+  "question": "你剛加入新專案，第一次打開 Claude Code，想先搞懂專案結構。比較好的第一個提示是？",
+  "options": [
+   "「說明這個專案在做什麼，以及資料夾的結構」",
+   "「我先把所有檔案內容貼給你，你再幫我解說」",
+   "「直接重構整個專案，改完再告訴我它的結構」",
+   "「先執行 /clear，你一般就能讀到全部檔案」"
+  ],
+  "answer": 0,
+  "explanation": "正解 (A)。官方快速入門建議先問「這個專案在做什麼」「說明資料夾結構」這類理解型問題，讓 Claude 先探索程式庫。(B) 官方說 Claude 會依需要自己讀檔，不必手動貼上；(C) 還沒理解就大改，違反先探索再動手的建議；(D) /clear 只清對話歷史，和能不能讀檔無關。記憶點：第一句先問「這是什麼」。"
+ },
+ {
+  "id": "cc-q11",
+  "note": "cc-04",
+  "question": "關於 Claude Code 讀取專案檔案的方式，哪一項正確？",
+  "options": [
+   "你必須先把相關檔案貼進對話，它才看得到內容",
+   "它會依任務需要自行讀取檔案，一般不必手動提供脈絡",
+   "它啟動時會把整個專案一次全部載入脈絡視窗",
+   "它通常只讀你用 @ 標記的檔案，其他都看不到"
+  ],
+  "answer": 1,
+  "explanation": "正解 (B)。官方快速入門註明 Claude Code 會依需要讀取專案檔案，你不必手動加入脈絡。(A) 官方明確說不需要手動加入脈絡；(C) 它是需要時才讀，不是啟動就全部載入；(D) @ 只是方便直接帶入檔案，沒標記的檔案它也會自己讀。記憶點：它會自己讀檔。"
+ },
+ {
+  "id": "cc-q12",
+  "note": "cc-04",
+  "question": "依官方建議，寫一個「具體」的修 bug 提示時，最該交代的是什麼？",
+  "options": [
+   "要讀哪些檔案、要跑哪些指令的完整清單",
+   "整個專案的架構與資料夾結構說明",
+   "加上 IMPORTANT 強調，並要求一定照做",
+   "症狀、發生在哪裡，以及怎樣才算修好"
+  ],
+  "answer": 3,
+  "explanation": "正解 (D)。官方建議與其只說「修 bug」，不如寫出症狀、發生位置與完成標準，讓 Claude 知道問題與何時算修好；讀哪些檔、跑哪些指令則交給它。(A) 官方說不必指定要讀哪些檔、跑哪些指令，Claude 會自己判斷；(B) Claude 會自己讀程式庫，官方說這類內容不必另外描述；(C) 官方把加強調字眼列為過時做法，它不會讓提示更具體。記憶點：寫症狀、位置、怎樣算修好。"
+ },
+ {
+  "id": "cc-q13",
+  "note": "cc-05",
+  "question": "你昨天和 Claude 在專案裡做到一半，今天想在同一個目錄接著做，最直接的指令是？",
+  "options": [
+   "claude --continue",
+   "claude --worktree",
+   "claude -p",
+   "claude doctor"
+  ],
+  "answer": 0,
+  "explanation": "正解 (A)。官方說 claude --continue 會接續目前目錄最近一次的對話；要從清單挑選則用 claude --resume。(B) 這是開新的獨立 worktree 工作階段，不是接續舊對話；(C) 這是執行一次就結束的非互動模式；(D) 這是安裝與設定診斷，不會開啟對話。記憶點：接著做：--continue。"
+ },
+ {
+  "id": "cc-q14",
+  "note": "cc-05",
+  "question": "你想讓 Claude 直接看到 src/utils/auth.js 的內容再解說，最方便的寫法是？",
+  "options": [
+   "在提示裡寫 #src/utils/auth.js",
+   "先執行 /init，再提到這個檔名",
+   "在提示裡寫 @src/utils/auth.js",
+   "先執行 /clear，再提到這個檔名"
+  ],
+  "answer": 2,
+  "explanation": "正解 (C)。官方的日常工作流程說明，用 @ 加路徑就能把檔案內容直接帶進對話，不必等 Claude 自己去讀。(A) 官方的檔案引用語法是 @，不是 #；(B) /init 是產生 CLAUDE.md，不會把檔案帶進對話；(D) /clear 只是清空對話，和引用檔案無關。記憶點：引用檔案用 @。"
+ },
+ {
+  "id": "cc-q15",
+  "note": "cc-05",
+  "question": "你想讓一個 Claude 修 bug、另一個同時開發新功能，又不想兩邊修改互相衝突。官方建議怎麼做？",
+  "options": [
+   "在同一個 claude 工作階段輪流交代兩件任務",
+   "各用 claude --worktree 開一個工作階段",
+   "用 claude --continue 輪流接續兩件任務",
+   "用 claude -p 在同一目錄一次執行兩件任務"
+  ],
+  "answer": 1,
+  "explanation": "正解 (B)。官方建議用 git worktree 執行平行工作階段：每個 worktree 是獨立的簽出與分支，修改不會互相碰撞。(A) 同一個工作階段沒有隔離，兩邊的修改還是落在同一份檔案上；(C) --continue 只是接續同一個對話，修改仍在同一個目錄；(D) -p 是單次非互動執行，不會把修改分開。記憶點：平行又不打架：worktree。"
+ },
+ {
+  "id": "cc-q16",
+  "note": "cc-06",
+  "question": "依 Anthropic 2025 年的最佳實務文章，「探索 → 規劃 → 實作 → 提交」的探索階段該怎麼指示 Claude？",
+  "options": [
+   "請它讀相關檔案，讀到有問題的地方就順手修掉",
+   "請它先列出要改的檔案，並直接套用初版修改",
+   "請它只看 README，其他檔案通常留到實作再讀",
+   "請它讀相關檔案與網址，並明確說先不要寫程式"
+  ],
+  "answer": 3,
+  "explanation": "正解 (D)。Anthropic 2025 年的最佳實務文章提出這套流程：探索時請 Claude 讀相關檔案、圖片或網址，並明確告訴它先不要寫程式；現行文件也建議改動前先讓 Claude 探索，或用規劃模式先看計畫。(A) 該文要求探索時先不要寫程式，順手修改正是要避免的事；(B) 套用修改屬於實作，探索階段只讀不寫；(C) 探索要讀和任務相關的檔案，不是只看 README。記憶點：探索＝只讀不寫。"
+ },
+ {
+  "id": "cc-q17",
+  "note": "cc-06",
+  "question": "規劃模式中 Claude 提出計畫後，你想先親手修改計畫內容再決定是否核准，該怎麼做？",
+  "options": [
+   "按 Ctrl+G，在文字編輯器中開啟並修改計畫",
+   "按兩下 Esc，在回溯選單中開啟並修改計畫",
+   "按 Shift+Tab，在權限選單中開啟並修改計畫",
+   "執行 /compact，把計畫濃縮成摘要再修改"
+  ],
+  "answer": 0,
+  "explanation": "正解 (A)。官方權限模式文件說明，核准計畫前可以按 Ctrl+G，先在你的文字編輯器裡修改計畫。(B) 兩下 Esc 開的是檢查點回溯選單，不是編輯計畫；(C) Shift+Tab 是切換權限模式，按了會離開規劃模式；(D) /compact 壓縮的是對話，不是開啟計畫來編輯。記憶點：改計畫：Ctrl+G。"
+ },
+ {
+  "id": "cc-q18",
+  "note": "cc-06",
+  "question": "你要做大型改動，想先看到 Claude 的整體改法，同意後才讓它動任何檔案。哪個權限模式最符合？",
+  "options": [
+   "acceptEdits 模式：直接改檔，改完你再逐一檢查",
+   "plan 模式：只讀檔並提出做法，等你放行再編輯",
+   "auto 模式：由分類器審查，安全的修改直接執行",
+   "default 模式：每次改檔前問你，但不先整理做法"
+  ],
+  "answer": 1,
+  "explanation": "正解 (B)。官方說規劃模式讓 Claude 研究並提出修改計畫，一般在你核准前不會編輯原始檔。(A) 它會不經詢問直接編輯檔案，沒有先看做法這一步；(C) 分類器只擋高風險動作，修改仍會直接進行；(D) 它是逐一詢問單次動作，不會先提出整體做法供你審閱。記憶點：先看做法再放行：plan mode。"
+ },
+ {
+  "id": "cc-q19",
+  "note": "cc-07",
+  "question": "關於 /compact 和 /clear，哪一項描述正確？",
+  "options": [
+   "/compact 清空對話重新開始；/clear 把對話濃縮成摘要延續",
+   "/compact 還原上一個檢查點的檔案；/clear 刪除磁碟快照",
+   "兩者效果相同，只是 /clear 通常會額外保留一份摘要",
+   "/compact 把對話濃縮成摘要後延續；/clear 清空對話重來"
+  ],
+  "answer": 3,
+  "explanation": "正解 (D)。官方說明 /compact 會把對話整理成摘要並可指定重點；/clear 則清除對話歷史，適合切換到不相關任務時使用。(A) 兩個指令的功能剛好對調了；(B) 還原檔案是 /rewind 的功能，兩者都不處理快照；(C) 兩者不同，/clear 是清空，不會保留摘要。記憶點：compact 濃縮，clear 清空。"
+ },
+ {
+  "id": "cc-q20",
+  "note": "cc-07",
+  "question": "長工作階段中，Claude 漸漸忘了一開始交代的命名規則。要讓這條規則持續有效，最好的做法是？",
+  "options": [
+   "每隔一段時間在對話裡重貼一次，通常就夠用了",
+   "執行 /clear 清空對話，Claude 會自動想起規則",
+   "把規則寫進專案的 CLAUDE.md，壓縮後也會重新載入",
+   "執行 /context，讓這條規則被鎖定在脈絡視窗裡"
+  ],
+  "answer": 2,
+  "explanation": "正解 (C)。官方說壓縮時早期的細節指示可能遺失，持久規則應寫進 CLAUDE.md；專案根目錄的 CLAUDE.md 在壓縮後會從磁碟重新載入。(A) 對話中的指示在壓縮時仍可能遺失，不是持久做法；(B) /clear 會清掉對話，規則只會消失得更徹底；(D) /context 只是查看脈絡用量，不能鎖定內容。記憶點：要長期記住的寫進 CLAUDE.md。"
+ },
+ {
+  "id": "cc-q21",
+  "note": "cc-07",
+  "question": "同一個錯誤你已經糾正 Claude 兩次，它還是沒改好。依官方建議，下一步該怎麼做？",
+  "options": [
+   "繼續第三次糾正，並加上 IMPORTANT 等強調字眼",
+   "執行 /clear，再寫一個融入前兩次教訓的新提示",
+   "執行 /compact，讓摘要保留兩次失敗嘗試當參考",
+   "切換到規劃模式，Claude 一般就能自己修正錯誤"
+  ],
+  "answer": 1,
+  "explanation": "正解 (B)。官方建議糾正兩次仍錯時，執行 /clear，再寫一個納入已知教訓的新提示，效果幾乎都比第三次糾正好。(A) 官方說加強調字眼是過時做法，第三次糾正也只會增加失敗紀錄；(C) 問題正是對話裡塞著失敗嘗試，保留它們沒有幫助；(D) 切換模式不會讓 Claude 自動修正，這不是官方建議。記憶點：錯兩次就 /clear 重寫提示。"
+ },
+ {
+  "id": "cc-q22",
+  "note": "cc-08",
+  "question": "官方為什麼建議讓「沒寫這段程式的審查者」來審查程式？",
+  "options": [
+   "因為它沒看過產生程式的推理過程，比較不會被說服",
+   "因為原本的工作階段沒有權限讀取已經修改過的檔案",
+   "因為子代理使用的模型，一定比主對話的模型更強",
+   "因為原本的對話通常會在寫完程式後被自動清除"
+  ],
+  "answer": 0,
+  "explanation": "正解 (A)。官方說 /code-review 在一個沒看過你對話的全新子代理中審查，不會被產生程式的那段推理左右。(B) 原工作階段可以讀檔，問題不在權限；(C) 重點是沒看過原本的推理，不是模型比較強；(D) 對話不會因為寫完程式就自動清除。記憶點：換一雙沒看過推理的眼睛。"
+ },
+ {
+  "id": "cc-q23",
+  "note": "cc-08",
+  "question": "關於在終端機執行 /code-review，哪一項正確？",
+  "options": [
+   "它會自動核准並合併目前分支，省去人工審查的步驟",
+   "它只檢查程式碼排版風格，一般不處理邏輯上的錯誤",
+   "它在全新子代理中審查目前分支變更，主要找正確性錯誤",
+   "它要先由組織擁有者在 GitHub 啟用託管服務才能用"
+  ],
+  "answer": 2,
+  "explanation": "正解 (C)。官方說 /code-review 預設審查目前分支的變更、找正確性錯誤，在終端機會以背景子代理執行，結果回到你的對話。(A) 它只回報發現，不會核准或合併分支；(B) 它主要找的是正確性錯誤，不是排版風格；(D) 需要擁有者啟用的是託管 Code Review；/code-review 任何方案都能用。記憶點：/code-review：找正確性錯誤。"
+ },
+ {
+  "id": "cc-q24",
+  "note": "cc-08",
+  "question": "你想做一個「只能看、不能改」的審查用子代理，最可靠的做法是？",
+  "options": [
+   "在 CLAUDE.md 加一行「審查時不可修改任何檔案」",
+   "把子代理的 model 設成 haiku 並設定 maxTurns",
+   "在子代理的 description 寫明「只能讀不能改」",
+   "在子代理的 tools 只列 Read、Grep、Glob"
+  ],
+  "answer": 3,
+  "explanation": "正解 (D)。官方最佳實務說明，自訂子代理只給 tools: Read, Grep, Glob，就成了不能編輯的審查者，這個限制由 Claude Code 強制執行。(A) CLAUDE.md 是請求，不是強制限制；(B) 換模型、限回合數都不會限制它能用哪些工具；(C) description 用來決定何時委派，不能限制工具。記憶點：唯讀靠工具清單，不靠一句話。"
+ },
+ {
+  "id": "cc-q25",
+  "note": "cc-09",
+  "question": "你想讓團隊每個人都套用同一組權限規則與 hooks，這些設定應該放在哪裡？",
+  "options": [
+   "專案的 .claude/settings.json，並提交到版本控制",
+   "專案的 .claude/settings.local.json，並提交到 git",
+   "自己的 ~/.claude/settings.json，同事通常會同步",
+   "專案根目錄的 CLAUDE.md，用文字描述每一條規則"
+  ],
+  "answer": 0,
+  "explanation": "正解 (A)。官方說共用專案設定 .claude/settings.json 提交後，clone 專案的人都會拿到同樣的權限規則、hooks 與外掛（allow 規則與 hooks 會在每個人信任該資料夾後生效）。(B) 這是個人用的本機設定，設計上不進版本控制；(C) 使用者層設定只在你的電腦生效，不會同步給同事；(D) CLAUDE.md 是給 Claude 讀的脈絡，不是權限設定。記憶點：團隊共用：.claude/settings.json。"
+ },
+ {
+  "id": "cc-q26",
+  "note": "cc-09",
+  "question": "某個 Bash 指令同時符合一條 deny 規則和一條更精確的 allow 規則，結果會是？",
+  "options": [
+   "被允許，因為比較精確的規則一般會優先被採用",
+   "被允許，因為 allow 規則可以在 deny 裡開出例外",
+   "被拒絕，因為規則固定依 deny、ask、allow 順序評估",
+   "改成詢問，由使用者當下決定允許還是拒絕執行"
+  ],
+  "answer": 2,
+  "explanation": "正解 (C)。官方權限文件寫明規則依 deny、ask、allow 的順序評估，先符合的決定結果，精確度不影響順序。(A) 官方說規則精確度不會改變評估順序；(B) allow 無法在 deny 中開例外；(D) 符合 deny 就直接拒絕，不會改成詢問。記憶點：deny 永遠先贏。"
+ },
+ {
+  "id": "cc-q27",
+  "note": "cc-09",
+  "question": "關於權限模式，哪一項描述正確？",
+  "options": [
+   "plan 自動接受所有檔案編輯，只有指令需要詢問",
+   "acceptEdits 自動接受檔案編輯，其他指令一般仍會詢問",
+   "default 完全不詢問，所有動作都直接執行",
+   "bypassPermissions 通常適合日常在自己電腦開發"
+  ],
+  "answer": 1,
+  "explanation": "正解 (B)。官方說 acceptEdits 會不經詢問編輯檔案並執行 mkdir、mv 等常見檔案指令，其他指令仍會詢問。(A) plan 模式在核准計畫前不修改原始檔；(C) default（手動）模式會先詢問；什麼都不問的是 bypassPermissions；(D) 官方只建議在隔離的容器或虛擬機中使用。記憶點：acceptEdits＝改檔免問。"
+ },
+ {
+  "id": "cc-q28",
+  "note": "cc-10",
+  "question": "你想讓 Claude 每次都知道「這個專案的測試要用 pnpm test 執行」，而且團隊成員共用。該怎麼做？",
+  "options": [
+   "寫進 CLAUDE.local.md，並提交到版本控制給大家",
+   "每次開新工作階段時，在第一個提示重新說明一次",
+   "寫成 SessionEnd hook，在結束時一般會提醒 Claude",
+   "寫進專案根目錄的 CLAUDE.md，並提交到版本控制"
+  ],
+  "answer": 3,
+  "explanation": "正解 (D)。官方說專案層 CLAUDE.md 放建置與測試指令等團隊共用的指示，透過版本控制分享，每次工作階段開始時自動載入。(A) CLAUDE.local.md 是個人偏好，應加入 .gitignore；(B) 這正是 CLAUDE.md 要省掉的重複說明；(C) 工作階段結束時才觸發，Claude 工作時根本用不到。記憶點：團隊慣例寫進專案 CLAUDE.md。"
+ },
+ {
+  "id": "cc-q29",
+  "note": "cc-10",
+  "question": "想讓 Claude 分析程式庫，替現有專案產生一份起始的 CLAUDE.md，官方提供的指令是？",
+  "options": [
+   "/memory",
+   "/init",
+   "/context",
+   "/config"
+  ],
+  "answer": 1,
+  "explanation": "正解 (B)。官方說執行 /init 會分析程式庫，產生含建置指令、測試方式與慣例的起始 CLAUDE.md；已有檔案時會建議改進。(A) /memory 是列出並開啟記憶檔，不會分析程式庫產生內容；(C) /context 是查看脈絡用量；(D) /config 是調整設定選項。記憶點：起手式：/init。"
+ },
+ {
+  "id": "cc-q30",
+  "note": "cc-10",
+  "question": "關於 CLAUDE.md 的性質，哪一項正確？",
+  "options": [
+   "它是給 Claude 的脈絡，多半會被遵守但不保證",
+   "它是強制設定，寫進去的規則系統一定都會攔截執行",
+   "它只在第一次安裝時讀取，之後的工作階段都不再讀",
+   "它通常只對子代理生效，主對話一般會忽略內容"
+  ],
+  "answer": 0,
+  "explanation": "正解 (A)。官方記憶文件說 Claude 把 CLAUDE.md 視為脈絡而非強制設定；要不論如何都擋下某動作，應改用 PreToolUse hook。(B) 官方明確說它是脈絡，不是強制設定；(C) 它在每次工作階段開始時都會載入；(D) 主對話每次都會載入 CLAUDE.md。記憶點：CLAUDE.md 是請求，不是鎖。"
+ },
+ {
+  "id": "cc-q31",
+  "note": "cc-11",
+  "question": "子代理最核心的特性是什麼？",
+  "options": [
+   "和主對話共用同一個脈絡視窗，讀檔過程全部都會保留",
+   "在每次工作階段開始時自動載入，提供持久的指示",
+   "在特定生命週期事件發生時，一般會自動執行指令",
+   "在自己的脈絡視窗工作，完成後只把摘要帶回主對話"
+  ],
+  "answer": 3,
+  "explanation": "正解 (D)。官方說子代理在自己的脈絡視窗中執行，有自訂系統提示與工具，只有摘要回到主對話。(A) 子代理有獨立的脈絡視窗，過程不會留在主對話；(B) 這描述的是 CLAUDE.md；(C) 這描述的是 hooks。記憶點：子代理＝獨立脈絡＋回傳摘要。"
+ },
+ {
+  "id": "cc-q32",
+  "note": "cc-11",
+  "question": "自訂子代理的定義檔中，哪個欄位讓 Claude 判斷何時把任務委派給它？",
+  "options": [
+   "tools",
+   "disallowedTools",
+   "description",
+   "model"
+  ],
+  "answer": 2,
+  "explanation": "正解 (C)。官方說 description 告訴 Claude 什麼時候該委派給這個子代理，Claude 依任務與各子代理的 description 決定。(A) tools 是限制它可以使用的工具；(B) disallowedTools 是排除不讓它使用的工具；(D) model 是指定它使用哪個模型。記憶點：何時用它，看 description。"
+ },
+ {
+  "id": "cc-q33",
+  "note": "cc-11",
+  "question": "你要研究大型程式庫中驗證系統怎麼更新 token，但不想讓大量讀檔內容塞滿主對話。該怎麼做？",
+  "options": [
+   "請 Claude 用子代理調查，讀檔過程一般不會進主對話",
+   "先執行 /clear，再請 Claude 在主對話一次讀完檔案",
+   "把整個驗證模組的程式碼貼進 CLAUDE.md 自動載入",
+   "設定 PostToolUse hook，讀過的檔案通常會被移除"
+  ],
+  "answer": 0,
+  "explanation": "正解 (A)。官方建議把研究交給子代理：它在自己的脈絡視窗讀檔，回報摘要，主對話的脈絡保持乾淨。(B) 讀檔內容仍會塞進主對話的脈絡；(C) 這會讓每次工作階段都占用大量脈絡；(D) hook 無法把讀過的內容從脈絡移出。記憶點：吵雜的研究交給子代理。"
+ },
+ {
+  "id": "cc-q34",
+  "note": "cc-12",
+  "question": "關於技能的載入方式，哪一項正確？",
+  "options": [
+   "每次工作階段開始時，所有技能的完整內容都會載入",
+   "平時只載入說明，被呼叫或判定相關時才載入完整內容",
+   "技能內容不會進入脈絡，一般只在背景執行指令",
+   "技能只能由使用者手動輸入觸發，Claude 不會自動使用"
+  ],
+  "answer": 1,
+  "explanation": "正解 (B)。官方說一般情況下只有技能說明在脈絡中，完整的 SKILL.md 等被呼叫才載入，所以長篇參考資料平時幾乎不占空間。(A) 開始時只載入說明，完整內容要用到才載入；(C) 在背景執行指令的是 hooks，技能內容會載入讓 Claude 照做；(D) Claude 會在需求符合 description 時自動載入。記憶點：技能：說明常駐，內容隨需。"
+ },
+ {
+  "id": "cc-q35",
+  "note": "cc-12",
+  "question": "你寫了一個會部署到正式環境的技能，希望只有你親手輸入 /deploy 才執行，Claude 不能自己決定使用。該怎麼設定？",
+  "options": [
+   "前置資料設定 user-invocable: false 與 paths",
+   "前置資料設定 context: fork 與 agent: Plan",
+   "前置資料設定 disable-model-invocation: true",
+   "前置資料設定 when_to_use: 只在我親手輸入時"
+  ],
+  "answer": 2,
+  "explanation": "正解 (C)。官方說 disable-model-invocation: true 讓 Claude 無法自動載入該技能，只能由你用 /名稱 執行，適合有副作用的流程。(A) user-invocable: false 剛好相反，是只讓 Claude 呼叫；paths 只限制自動載入的路徑；(B) 這只是讓技能在分叉的子代理中執行，不限制誰能觸發；(D) when_to_use 是補充觸發說明，Claude 仍可自動載入。記憶點：有副作用：禁止模型自動呼叫。"
+ },
+ {
+  "id": "cc-q36",
+  "note": "cc-12",
+  "question": "下列哪種內容最適合做成技能，而不是寫進 CLAUDE.md？",
+  "options": [
+   "每次都要遵守的建置指令與命名慣例",
+   "絕對不能違反的禁改 migrations 規則",
+   "連接外部資料庫並執行查詢的能力",
+   "通常只在發版時才需要的多步驟流程"
+  ],
+  "answer": 3,
+  "explanation": "正解 (D)。官方說多步驟流程或只在特定時候用到的內容，適合放進技能；它平時只占說明的脈絡，需要時才載入。(A) 每次都要知道的事適合放 CLAUDE.md；(B) 零例外的規則應做成 hook 或 deny 規則；(C) 連接外部系統是 MCP 的用途。記憶點：偶爾用的流程做成技能。"
+ },
+ {
+  "id": "cc-q37",
+  "note": "cc-13",
+  "question": "你常常從 Jira 複製議題內容貼給 Claude，想讓它直接讀取與更新議題。最適合的做法是？",
+  "options": [
+   "寫一個技能，把 Jira 議題內容全部存進 SKILL.md",
+   "接上 Jira 的 MCP 伺服器，讓 Claude 可以直接存取",
+   "設定 PostToolUse hook，讓 Claude 通常能讀 Jira",
+   "把議題匯出後貼進 CLAUDE.md，每次都自動載入"
+  ],
+  "answer": 1,
+  "explanation": "正解 (B)。官方說當你不斷從其他工具複製資料到對話時，就該接上 MCP 伺服器，讓 Claude 直接讀取並操作該系統。(A) 技能提供知識與流程，不能即時讀寫 Jira；(C) hook 是在事件時執行指令，不是給 Claude 存取外部系統的工具；(D) 只是靜態文字，無法更新議題，還會占用脈絡。記憶點：要連外部系統：MCP。"
+ },
+ {
+  "id": "cc-q38",
+  "note": "cc-13",
+  "question": "想讓團隊成員 clone 專案後都能用同一個 MCP 伺服器，加入時應該選哪個範圍？",
+  "options": [
+   "project 範圍，寫入可提交共用的 .mcp.json",
+   "local 範圍，它是預設值，一般也會自動分享給團隊成員",
+   "user 範圍，設定會自動同步到每位團隊成員的電腦",
+   "不必選範圍，伺服器加入後就會自動讓全體成員共用"
+  ],
+  "answer": 0,
+  "explanation": "正解 (A)。官方說 project 範圍會把設定存在專案根目錄的 .mcp.json，可透過版本控制和團隊共用；預設的 local 只給你自己。(B) local 是預設，但只有你在目前專案能用，不會共用；(C) user 範圍只套用到你自己的所有專案；(D) 要共用必須選 project 範圍並提交 .mcp.json。記憶點：共用 MCP：project → .mcp.json。"
+ },
+ {
+  "id": "cc-q39",
+  "note": "cc-13",
+  "question": "加入 MCP 伺服器之前，官方特別提醒要注意什麼？",
+  "options": [
+   "確認工具數量不超過上限，否則一般會占滿脈絡",
+   "確認它支援 SSE 傳輸，遠端伺服器通常只能用 SSE",
+   "確認信任它，會抓外部內容的伺服器有提示注入風險",
+   "確認先切到 bypass 模式，否則工具可能無法執行"
+  ],
+  "answer": 2,
+  "explanation": "正解 (C)。官方警告連接前要確認信任每個伺服器，會抓取外部內容的伺服器可能讓你暴露在提示注入風險中。(A) 官方提醒的重點是信任與提示注入，不是工具數量；而且工具搜尋預設開啟，MCP 工具定義會延後到需要時才載入，不會一開始就占滿脈絡；(B) SSE 已不建議使用，遠端服務官方建議用 HTTP；(D) MCP 工具不需要 bypass 模式，官方也不建議日常使用它。記憶點：只接信得過的 MCP。"
+ },
+ {
+  "id": "cc-q40",
+  "note": "cc-14",
+  "question": "你希望 Claude 每次編輯完檔案後，一定會自動執行 Prettier 格式化。最可靠的做法是？",
+  "options": [
+   "PostToolUse hook，matcher 設為 Edit|Write",
+   "SessionStart hook，matcher 設為 compact",
+   "CLAUDE.md 加一行：編輯後務必執行 Prettier",
+   "格式化技能，description 寫「每次編輯後使用」"
+  ],
+  "answer": 0,
+  "explanation": "正解 (A)。官方範例用 PostToolUse 搭配 Edit|Write 的 matcher，在每次編輯或寫檔後執行 Prettier，不依賴 Claude 記得。(B) SessionStart 在工作階段開始或壓縮後觸發，不是每次編輯後；(C) CLAUDE.md 是請求，Claude 不保證每次都照做；(D) 技能由 Claude 判斷是否使用，不是每次必定執行。記憶點：每次都要發生：用 hook。"
+ },
+ {
+  "id": "cc-q41",
+  "note": "cc-14",
+  "question": "PreToolUse hook 以結束碼 2 結束時，會發生什麼事？",
+  "options": [
+   "直接核准這次工具呼叫，並略過 Claude Code 的權限詢問",
+   "結束整個工作階段，並把這段對話紀錄另存成備份檔",
+   "忽略這個 hook 的結果，工具呼叫一般會照常繼續執行",
+   "擋下這次工具呼叫，並把 stderr 的說明回饋給 Claude"
+  ],
+  "answer": 3,
+  "explanation": "正解 (D)。官方說 PreToolUse hook 以結束碼 2 結束會擋下該動作，寫到 stderr 的原因會成為給 Claude 的回饋。(A) 結束碼 2 是擋下，不是核准；(B) 只影響這次工具呼叫，不會結束工作階段；(C) 結束碼 2 會擋下呼叫，不會被忽略。記憶點：結束碼 2＝擋下。"
+ },
+ {
+  "id": "cc-q42",
+  "note": "cc-14",
+  "question": "依官方最佳實務，「偏好具名匯出（named exports）」這條團隊慣例應該放在哪裡？",
+  "options": [
+   "PreToolUse hook",
+   "專案的 CLAUDE.md",
+   "權限的 deny 規則",
+   ".claude/settings.local.json"
+  ],
+  "answer": 1,
+  "explanation": "正解 (B)。官方最佳實務以「Prefer named exports」為例：它有很多例外，應留在 CLAUDE.md 讓 Claude 判斷；零例外的規則才做成 hook。(A) 官方說 hook 是給零例外的規則；這條慣例有很多例外，不該硬擋；(C) deny 規則管的是工具能不能用，管不到程式寫法；(D) 這是個人的本機設定，不是放團隊程式慣例的地方。記憶點：有例外留 CLAUDE.md，零例外才用 hook。"
+ }
+]
