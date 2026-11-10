@@ -185,10 +185,18 @@ function bindQ(q, onDone) {
 }
 // 學習與試煉頁的共用骨架：頂端一條（回地圖、標題、進度點），左卡片＋下方按鈕列，寬螢幕右側大綱
 function page({ title, dots = '', main, nav, side = '', onBack }) {
-  $('#view').innerHTML = `<div class="lbar win"><button class="back" id="back">回地圖</button><span class="ttl">${esc(title)}</span><span class="dots" aria-hidden="true">${dots}</span></div>
-    <div class="lgrid"><div class="lmain"><div class="card win" id="card">${main}</div><div class="nav">${nav}</div></div>
-    <aside class="lside win" aria-label="這一則的大綱與進度">${side}</aside></div>`;
+  $('#view').innerHTML = `<div class="lbar win"><button class="back" id="back">回地圖</button><span class="ttl">${esc(title)}</span><span class="dots" aria-hidden="true">${dots}</span>${side ? '<button class="pbtn-s" id="prog" aria-expanded="false" aria-controls="lside">進度</button>' : ''}</div>
+    <div class="lgrid"><div class="lmain"><div class="card win" id="card">${main}</div><div class="nav">${nav}</div></div></div>
+    ${side ? `<aside class="lside win" id="lside" aria-label="這一則的大綱與進度" hidden>${side}</aside>` : ''}`;
   $('#back').onclick = onBack || showMap;
+  const pb = $('#prog'), ls = $('#lside');
+  if (pb) {
+    const set = (on) => { ls.hidden = !on; pb.setAttribute('aria-expanded', on); };
+    pb.onclick = (e) => { e.stopPropagation(); set(ls.hidden); };
+    ls.onclick = (e) => e.stopPropagation();
+    $('#view').onclick = () => set(false);
+    $('#view').onkeydown = (e) => { if (e.key === 'Escape' && !ls.hidden) { set(false); pb.focus(); } };
+  }
 }
 // 右側：這一層的知識點與狀態
 function layerSide(r, i, curId) {
