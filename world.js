@@ -97,7 +97,10 @@ function showMap() {
     <p class="foot">點地圖上的區域看進度・進度只存在這台裝置　<button id="reset">重設進度</button></p>`;
   const cv = $('#cv'); MAP = makeMap(cv);
   const wrap = $('#mapwrap');
-  const layout = () => { const w = Math.min(wrap.parentElement.clientWidth - 16, 576); cv.style.width = w + 'px'; cv.style.height = w * TH / TW + 'px'; wrap.style.width = w + 'px'; };
+  // 手機：滿寬；電腦（三欄）：地圖依視窗高度放到最大，左欄放按鈕
+  const layout = () => { const wide = innerWidth >= 1200, desk = innerWidth >= 900, V = $('#view');
+    let w = V.clientWidth - (wide ? 340 : 16); if (desk) w = Math.min(w, (innerHeight - $('header').offsetHeight - (wide ? 40 : 150)) * TW / TH);
+    w = Math.max(240, Math.floor(w)); cv.style.width = w + 'px'; cv.style.height = w * TH / TW + 'px'; wrap.style.width = w + 'px'; };
   layout(); window.onresize = layout;
   W.regions.forEach((r) => {
     const P = MAP.tagPos(r.id), t = document.createElement('div'), c = cnt(r);
@@ -148,9 +151,11 @@ function certHtml(r) {
       ? `你已經走完 ${esc(r.name)}。證書由 Anthropic 在 Skilljar 發放，本站沒辦法替你登錄完成，請到官方課程頁註冊（免費）、完成「${esc(r.cert.name)}」並通過課程測驗：<br><a href="${esc(r.cert.url)}" target="_blank" rel="noopener">前往 ${esc(r.cert.name)} 官方課程 ↗</a>`
       : `這座島對應 Anthropic 官方的「${esc(r.cert.name)}」課程。三層試煉都通過後，這裡會帶你去官方課程頁考測驗、領證書。`}</div></div>`;
 }
-function run(a) {
+async function run(a) {
   ST.cur = a.r.id; save();
   clearInterval(timer); $('#sheet').classList.remove('on'); $('#sheet').hidden = true; $('#app').classList.remove('map-mode'); scrollTo(0, 0);
+  if (!POOL) { $('#view').innerHTML = '<p class="center" style="margin-top:40px">題目載入中…</p>';
+    try { await poolReady; } catch { $('#view').innerHTML = '<p class="center" style="margin-top:40px">題目載入失敗，請重新整理。</p>'; return; } }
   a.kind === 'lesson' ? lesson(a.r, a.i, a.id) : trial(a.r, a.i);
 }
 
@@ -259,15 +264,19 @@ function trial(r, i) {
 }
 
 // ---- 啟動 ----
+// 地圖只需要 world.json 與知識點；3.5MB 的題庫在背景下載，進入小檢查或試煉時才等它
+const getJSON = (u) => fetch(u).then((x) => { if (!x.ok) throw new Error(u); return x.json(); });
+let poolReady = null;
 (async () => {
   try {
-    const [w, k, q] = await Promise.all(['world.json', 'knowledge.json', 'questions.json'].map((u) => fetch(u).then((x) => { if (!x.ok) throw new Error(u); return x.json(); })));
-    W = w; KN = new Map(k.notes.map((n) => [n.id, n])); POOL = buildPool(k.notes, q.questions);
+    const [w, k, cn] = await Promise.all([getJSON('world.json'), getJSON('knowledge.json'), getJSON('claude-notes.json').catch(() => null)]);
+    W = w; KN = new Map(k.notes.map((n) => [n.id, n]));
     // Claude 工坊島：知識點與題目放獨立檔，不混進 iPAS 題庫；題目直接用 note 欄位對到知識點
-    try {
-      const [cn, cq] = await Promise.all(['claude-notes.json', 'claude-quiz.json'].map((u) => fetch(u).then((x) => { if (!x.ok) throw new Error(u); return x.json(); })));
-      cn.forEach((n) => { KN.set(n.id, n); POOL.set(n.id, []); }); cq.forEach((x) => POOL.get(x.note)?.push(x));
-    } catch { W.regions = W.regions.filter((x) => x.id !== 'claude'); }
+    if (cn) cn.forEach((n) => KN.set(n.id, n)); else W.regions = W.regions.filter((x) => x.id !== 'claude');
+    poolReady = Promise.all([getJSON('questions.json'), cn ? getJSON('claude-quiz.json') : []]).then(([q, cq]) => {
+      POOL = buildPool(k.notes, q.questions);
+      if (cn) { cn.forEach((n) => POOL.set(n.id, [])); cq.forEach((x) => POOL.get(x.note)?.push(x)); }
+    });
     showMap();
   } catch (e) { $('#view').innerHTML = `<p class="center" style="margin-top:40px">載入失敗：${esc(e.message)}，請重新整理。</p>`; }
 })();
