@@ -305,8 +305,10 @@ let poolReady = null;
     W = w; KN = new Map(k.notes.map((n) => [n.id, n]));
     // Claude 工坊島：知識點與題目放獨立檔，不混進 iPAS 題庫；題目直接用 note 欄位對到知識點
     if (cn) cn.forEach((n) => KN.set(n.id, n)); else W.regions = W.regions.filter((x) => x.id !== 'claude');
-    poolReady = Promise.all([getJSON('questions.json'), cn ? getJSON('claude-quiz.json') : []]).then(([q, cq]) => {
-      POOL = buildPool(k.notes, q.questions);
+    // 小檢查與試煉題優先用 world-pool.json（逐題人工判斷過「考的就是這則」的對應表），沒有才退回關鍵字自動配對
+    poolReady = Promise.all([getJSON('questions.json'), cn ? getJSON('claude-quiz.json') : [], getJSON('world-pool.json').catch(() => null)]).then(([q, cq, wp]) => {
+      if (wp) { const QM = new Map(q.questions.map((x) => [x.id, x])); POOL = new Map(k.notes.map((n) => [n.id, (wp[n.id] || []).map((id) => QM.get(id)).filter(Boolean)])); }
+      else POOL = buildPool(k.notes, q.questions);
       if (cn) { cn.forEach((n) => POOL.set(n.id, [])); cq.forEach((x) => POOL.get(x.note)?.push(x)); }
     });
     showMap();
