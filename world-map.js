@@ -5,7 +5,8 @@
 export const TW = 48, TH = 72, T = 8; // 48×72 格，每格 8×8 像素點 → 384×576
 // 區域在地圖上的中心（格座標）。claude 是西南外海的獨立小島
 export const LAYOUT = { plain:{ sx:28, sy:50 }, forest:{ sx:11, sy:30 }, valley:{ sx:39, sy:33 }, fort:{ sx:12, sy:46 },
-  mount:{ sx:13, sy:12 }, sea:{ sx:35, sy:13 }, capital:{ sx:25, sy:31 }, claude:{ sx:9, sy:65 } };
+  mount:{ sx:13, sy:12 }, sea:{ sx:35, sy:13 }, capital:{ sx:25, sy:31 }, claude:{ sx:9, sy:65 }, arena:{ sx:39, sy:67 } };
+const ISLES = ['claude', 'arena']; // 外海小島，不屬於主大陸
 const ROADS = [['plain','forest'],['plain','valley'],['plain','fort'],['forest','mount'],['forest','capital'],['valley','capital'],['capital','sea'],['plain','capital']];
 
 const C = { // 色盤
@@ -26,13 +27,13 @@ const fbm = (x, y) => vn(x / 9, y / 9) * 0.6 + vn(x / 4, y / 4) * 0.3 + vn(x / 2
 // ---- 地形格 ----
 const GRID = [], ROAD = new Set();
 (() => {
-  const main = Object.keys(LAYOUT).filter((k) => k !== 'claude');
+  const main = Object.keys(LAYOUT).filter((k) => !ISLES.includes(k));
   for (let y = 0; y < TH; y++) for (let x = 0; x < TW; x++) {
     let id = null;
     const d = Math.hypot((x - 24) / 22, (y - 32) / 29.5) + (fbm(x, y) - 0.5) * 0.55;
     if (d < 0.93) { let best = 1e9; main.forEach((rid, i) => { const L = LAYOUT[rid];
       const dd = Math.hypot(x - L.sx, (y - L.sy) * 0.95) + (vn(x / 5 + i * 13, y / 5 - i * 7) - 0.5) * 7; if (dd < best) { best = dd; id = rid; } }); }
-    const L = LAYOUT.claude; if (Math.hypot((x - L.sx) / 6.5, (y - L.sy) / 4.6) + (fbm(x + 50, y) - 0.5) * 0.5 < 1) id = 'claude';
+    ISLES.forEach((k, i) => { const L = LAYOUT[k]; if (Math.hypot((x - L.sx) / 6.5, (y - L.sy) / 4.6) + (fbm(x + 50 + i * 30, y) - 0.5) * 0.5 < 1) id = k; });
     GRID.push(id);
   }
   // 區域之間的土路（只鋪在陸地上）
@@ -69,7 +70,7 @@ function tile(x, y) {
   if (ROAD.has(y * TW + x)) { rect(X, Y, T, T, C.d1); px(X + ((h * 8) | 0), Y + ((h2 * 8) | 0), C.d2); px(X + ((h2 * 8) | 0), Y + ((h * 8) | 0), C.d3); return; }
   if (isRiver(x, y)) { rect(X, Y, T, T, C.w1); rect(X + 1, Y + 2, 3, 1, C.w2); return; }
   switch (id) {
-    case 'plain': case 'claude': grass(X, Y, h, h2, C.g2, C.g3, C.g1); if (h > 0.93) { px(X + 3, Y + 3, C.wh); px(X + 4, Y + 2, C.gold); } else if (h2 > 0.95) { px(X + 5, Y + 4, C.red); } break;
+    case 'plain': case 'claude': case 'arena': grass(X, Y, h, h2, C.g2, C.g3, C.g1); if (h > 0.93) { px(X + 3, Y + 3, C.wh); px(X + 4, Y + 2, C.gold); } else if (h2 > 0.95) { px(X + 5, Y + 4, C.red); } break;
     case 'valley': grass(X, Y, h, h2, C.g3, C.gl, C.g2); if (Math.abs(x - riverX(y)) < 2.2 && h > 0.5) { line(X + 2, Y + 7, X + 2, Y + 3, C.g4); line(X + 5, Y + 7, X + 6, Y + 2, C.g4); } break;
     case 'forest': grass(X, Y, h, h2, C.g1, C.g2, C.g4); break;
     case 'fort': rect(X, Y, T, T, C.st1); rect(X, Y + 3, T, 1, C.st2); rect(X, Y + 7, T, 1, C.st2); px(X + ((y % 2) ? 2 : 6), Y, C.st2); px(X + ((y % 2) ? 2 : 6), Y + 1, C.st2); px(X + ((y % 2) ? 2 : 6), Y + 2, C.st2);
@@ -138,6 +139,12 @@ const LM = {
     const w = f % 2; line(x, y - 27, x, y - 35, C.wd2); rect(x + 1, y - 35, 6, 3, C.gold); px(x + 7, y - 34 + w, C.gold);
     line(x - 12, y - 17, x - 12, y - 23, C.wd2); rect(x - 11, y - 23, 4, 2, C.red); line(x + 14, y - 17, x + 14, y - 23, C.wd2); rect(x + 15, y - 23, 4, 2, C.red);
   },
+  arena(x, y, f) { // 演武場：圓形石砌競技場＋兩面旗
+    ell(x, y + 2, 15, 3, C.shadow); ell(x, y - 4, 14, 7, C.st2); ell(x, y - 5, 13, 6, C.st1); ell(x, y - 5, 9, 4, C.d2); ell(x, y - 5, 8, 3, C.br1);
+    for (let i = -12; i <= 12; i += 4) rect(x + i, y - 2 + Math.round(Math.abs(i) / 5), 2, 3, C.st3);
+    rect(x - 2, y - 2, 5, 4, C.blk);
+    const w = f % 2; [-13, 13].forEach((dx) => { line(x + dx, y - 6, x + dx, y - 16, C.wd2); rect(x + dx + 1, y - 16, 5, 3, dx < 0 ? C.red : C.gold); px(x + dx + 6, y - 15 + w, dx < 0 ? C.red : C.gold); });
+  },
   claude(x, y, f) { // 工坊：珊瑚色屋頂＋煙囪冒煙＋招牌
     ell(x, y + 2, 12, 3, C.shadow); rect(x - 10, y - 11, 20, 12, C.cream); rect(x - 10, y, 20, 1, C.br2);
     for (let j = 0; j < 8; j++) rect(x - 12 + j, y - 19 + j, 24 - j * 2, 1, j % 2 ? C.coral : '#c4664a'); rect(x - 12, y - 12, 24, 1, '#a9533b');
@@ -160,7 +167,7 @@ const DECOR = []; // { y, draw }
     else if (id === 'valley' && h > 0.9) DECOR.push({ y: Y, d: () => tree(X, Y, 0.8) });
     else if (id === 'capital' && h > 0.9) DECOR.push({ y: Y, d: () => { rect(X - 2, Y - 3, 5, 3, C.br2); flower(X, Y - 4, C.red); } });
     else if (id === 'fort' && h > 0.93) DECOR.push({ y: Y, d: () => rock(X, Y) });
-    else if ((id === 'plain' || id === 'claude') && h > 0.94) DECOR.push({ y: Y, d: () => tree(X, Y, 0.85) });
+    else if ((id === 'plain' || id === 'claude' || id === 'arena') && h > 0.94) DECOR.push({ y: Y, d: () => tree(X, Y, 0.85) });
   }
   // 起源平原的農田（圍籬圍起來）與羊圈
   const P = LAYOUT.plain;
@@ -187,7 +194,7 @@ export function makeMap(canvas) {
     g = base.getContext('2d');
     for (let y = 0; y < TH; y++) for (let x = 0; x < TW; x++) tile(x, y);
     for (const d of DECOR) d.d();
-    for (const [id, L] of Object.entries(LAYOUT)) if (id !== 'plain' && id !== 'valley' && id !== 'fort' && id !== 'capital' && id !== 'claude') LM[id](L.sx * T + 4, L.sy * T + 4, 0);
+    for (const [id, L] of Object.entries(LAYOUT)) if (id !== 'plain' && id !== 'valley' && id !== 'fort' && id !== 'capital' && !ISLES.includes(id)) LM[id](L.sx * T + 4, L.sy * T + 4, 0);
     // 迷霧：未開放區域蓋上霧
     for (let y = 0; y < TH; y++) for (let x = 0; x < TW; x++) { const id = at(x, y); if (!id || open[id]) continue;
       const X = x * T, Y = y * T; g.fillStyle = 'rgba(38,44,64,.62)'; g.fillRect(X, Y, T, T);
@@ -200,7 +207,7 @@ export function makeMap(canvas) {
       for (const [x, y] of OCEAN) if (hash(x, y + frame) > 0.985) { rect(x * T + 2, y * T + 4, 4, 1, C.foam); }
       for (let y = 0; y < TH; y++) { const x = Math.round(riverX(y)); if (isRiver(x, y) && (y + frame) % 4 === 0) rect(x * T + 3, y * T + 4, 3, 1, C.w3); }
       const fogged = (id) => !open[id];
-      for (const id of ['plain', 'valley', 'fort', 'capital', 'claude']) { const L = LAYOUT[id]; LM[id](L.sx * T + 4, L.sy * T + 4, fogged(id) ? 0 : frame);
+      for (const id of ['plain', 'valley', 'fort', 'capital', ...ISLES]) { const L = LAYOUT[id]; LM[id](L.sx * T + 4, L.sy * T + 4, fogged(id) ? 0 : frame);
         if (fogged(id)) { const X = L.sx * T + 4, Y = L.sy * T + 4; g.fillStyle = 'rgba(38,44,64,.55)'; g.fillRect(X - 20, Y - 38, 40, 42); } }
       if (open.plain) SHEEP.forEach((s, i) => sheep(Math.round(s.x * T + Math.sin((frame + s.p) / 3) * 5), Math.round(s.y * T), frame + i));
       const bob = frame % 2;
