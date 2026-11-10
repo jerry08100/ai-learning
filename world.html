@@ -106,10 +106,12 @@
   .trial { margin:8px 10px 12px; width:calc(100% - 20px); font-size:17px; }
 
   /* 學習／試煉頁：手機單欄；寬螢幕「卡片＋大綱」兩欄 */
-  .lbar { display:flex; align-items:center; gap:12px; margin:8px var(--gut) 0; padding:6px 10px; position:sticky; top:0; z-index:3; }
+  .app:not(.map-mode) > header { display:none; } /* 學習頁頂端只留一條，把高度讓給內容 */
+  .lbar { display:flex; align-items:center; gap:12px; margin:10px var(--gut) 0; padding:6px 10px; position:sticky; top:0; z-index:3; }
   .back { min-height:44px; font-size:16px; background:var(--sl); color:var(--w); border:2px solid var(--w); padding:2px 12px; cursor:pointer; white-space:nowrap; }
   .ttl { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--y); font-size:18px; }
   .dots { display:flex; gap:4px; flex:none; }
+  @media (max-width:599px) { .ttl { white-space:normal; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; font-size:16px; line-height:1.35; } .dots i { width:10px; } }
   .dots i { width:14px; height:8px; background:var(--sl); } .dots i.on { background:var(--y); } .dots i.done { background:var(--gr); }
   .dots i.ok { background:var(--g); } .dots i.bad { background:var(--r); }
   .lgrid { flex:1; min-height:0; display:grid; grid-template-columns:minmax(0,1fr); gap:18px; padding:14px var(--gut) 0; }
@@ -132,7 +134,10 @@
   .fb { margin-top:12px; font-size:17px; line-height:1.8; background:var(--panel); border:2px solid var(--dgr); padding:12px 14px; max-width:60em; }
   .fb .res { font-size:19px; margin-bottom:6px; } .fb .ok { color:var(--g); } .fb .bad { color:#ff8a7a; }
   .nav { display:flex; gap:14px; padding:12px 0 calc(12px + env(safe-area-inset-bottom)); position:sticky; bottom:0; background:var(--nv); z-index:2; }
-  .lside { display:none; }
+  /* 進度清單：頂端按鈕開關的浮動視窗，不占版面 */
+  .pbtn-s { min-height:44px; font-size:16px; background:var(--sl); color:var(--w); border:2px solid var(--w); padding:2px 12px; cursor:pointer; white-space:nowrap; font-family:var(--f-pixel); }
+  .pbtn-s[aria-expanded="true"] { border-color:var(--y); color:var(--y); }
+  .lside { position:fixed; z-index:8; top:72px; right:var(--gut); width:min(440px, calc(100vw - 2 * var(--gut))); max-height:calc(100dvh - 96px); overflow-y:auto; padding:14px; box-shadow:0 8px 0 rgba(0,0,0,.35); }
   .lside h3 { margin:0 0 8px; font-size:17px; font-weight:400; color:var(--y); font-family:var(--f-pixel); }
   .lside section + section { margin-top:16px; }
   .olist { list-style:none; margin:0; padding:0; display:grid; gap:6px; }
@@ -157,11 +162,10 @@
     .app.map-mode .sheet .x { display:none; }
     /* 電腦版：整頁固定一屏，卡片與大綱各自在框內捲 */
     .app:not(.map-mode) { height:100dvh; }
-    .lgrid { grid-template-columns:minmax(0,1fr) minmax(300px,24vw); padding-bottom:12px; }
+    .lgrid { padding-bottom:12px; }
     .lmain { min-height:0; }
     .card { min-height:0; overflow-y:auto; padding:20px 24px; }
     .nav { position:static; padding-bottom:0; }
-    .lside { display:block; padding:14px; min-height:0; overflow-y:auto; }
     .card p { font-size:21px; } .card .big { font-size:26px; } .card ul { font-size:20px; } .q { font-size:21px; } .opt { font-size:19px; }
     .read { display:grid; grid-template-columns:minmax(0,3fr) minmax(0,2fr); gap:20px 36px; align-items:start; }
     .read h3 { margin:0 0 10px; font-size:17px; font-weight:400; font-family:var(--f-pixel); color:var(--k); background:var(--c); display:inline-block; padding:1px 10px; }
