@@ -222,6 +222,9 @@ function lesson(r, i, id) {
   const n = KN.get(id), qs = shuffle(POOL.get(id) || []).slice(0, 2);
   const cards = [{ kind:'重點', html:`<p class="big">${esc(n.summary)}</p>` }];
   String(n.body || '').split('\n').filter(Boolean).forEach((p, j, a) => cards.push({ kind:`內容 ${j + 1}/${a.length}`, html:`<p>${esc(p)}</p>` }));
+  // 名詞解釋：手機放在內容之後、容易搞混之前；電腦版放右欄上半
+  const terms = (n.terms || []).length ? `<dl class="terms">${n.terms.map((x) => `<dt>${esc(x.t)}</dt><dd>${esc(x.d)}</dd>`).join('')}</dl>` : '';
+  if (terms) cards.push({ kind:'名詞解釋', html: terms });
   if ((n.pitfalls || []).length) cards.push({ kind:'容易搞混', pit:true, html:`<ul>${n.pitfalls.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` });
   const refs = (n.refs || []).length ? `<div class="refs">出處：${n.refs.map((x) => x.u ? `<a href="${esc(x.u)}" target="_blank" rel="noopener">${esc(x.t)}</a>` : esc(x.t)).join('、')}</div>` : '';
   let refAt = cards.length - 1; // 出處掛在最後一張閱讀卡
@@ -229,7 +232,7 @@ function lesson(r, i, id) {
   if (matchMedia('(min-width:900px)').matches) {
     const body = String(n.body || '').split(/\n/).filter(Boolean).map((p) => `<p>${esc(p)}</p>`).join('');
     const pit = (n.pitfalls || []).length ? `<h3>容易搞混</h3><ul>${n.pitfalls.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : '';
-    cards.length = 0; cards.push({ kind:'閱讀', html:`<div class="read"><div><p class="big">${esc(n.summary)}</p>${body}</div><div class="pitcol">${pit}${refs}</div></div>` }); refAt = -1;
+    cards.length = 0; cards.push({ kind:'閱讀', html:`<div class="read"><div><p class="big">${esc(n.summary)}</p>${body}</div><div class="pitcol">${terms ? `<section class="tcol"><h3 class="th">名詞解釋</h3>${terms}</section>` : ''}${pit ? `<section>${pit}</section>` : ''}${refs}</div></div>` }); refAt = -1;
   }
   qs.forEach((q, j) => cards.push({ kind:`小檢查 ${j + 1}/${qs.length}`, chk:true, q }));
   if (!qs.length) cards.push({ kind:'小檢查', html:'<p>這則目前沒有對應的題目，讀完就算學過。</p>' });

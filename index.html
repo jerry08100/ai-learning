@@ -125,6 +125,9 @@
   .card p { margin:0 0 12px; font-size:20px; line-height:1.85; max-width:42em; }
   .card .big { font-size:24px; color:var(--y); line-height:1.7; }
   .card ul { margin:0; padding-left:24px; font-size:19px; line-height:1.8; max-width:42em; } .card li { margin-bottom:10px; }
+  .terms { margin:0; font-size:18px; line-height:1.7; max-width:42em; }
+  .terms dt { color:var(--c); font-weight:700; margin-top:10px; } .terms dt:first-child { margin-top:0; }
+  .terms dd { margin:2px 0 0; color:var(--w); }
   .refs { font-size:15px; color:var(--muted); margin-top:auto; padding-top:12px; line-height:1.7; }
   .q { font-size:20px; line-height:1.7; margin:0 0 12px; max-width:46em; }
   .q img { max-width:100%; display:block; margin:8px 0; background:#fff; }
@@ -170,10 +173,15 @@
     .card { min-height:0; overflow-y:auto; padding:20px 24px; }
     .nav { position:static; padding-bottom:0; }
     .card p { font-size:21px; } .card .big { font-size:26px; } .card ul { font-size:20px; } .q { font-size:21px; } .opt { font-size:19px; }
-    .read { display:grid; grid-template-columns:minmax(0,3fr) minmax(0,2fr); gap:20px 32px; align-items:start; }
+    .read { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:20px 32px; align-items:start; }
     .read h3 { margin:0 0 10px; font-size:17px; font-weight:400; font-family:var(--f-pixel); color:var(--k); background:var(--c); display:inline-block; padding:1px 10px; }
     .read .pitcol { border-left:3px solid var(--muted); padding-left:32px; align-self:stretch; }
     .read .pitcol h3 { background:var(--o); }
+    .read .pitcol .th { background:var(--c); }
+    .read .pitcol section + section { margin-top:18px; padding-top:16px; border-top:2px solid var(--sl); }
+    .read .terms { font-size:17px; line-height:1.6; }
+    .read .terms dt { display:inline; margin:0; } .read .terms dt::after { content:'：'; }
+    .read .terms dd { display:inline; margin:0; } .read .terms dd::after { content:''; display:block; margin-bottom:8px; }
     .read p, .read ul { max-width:none; }
   }
   @media (min-width:1200px) {
