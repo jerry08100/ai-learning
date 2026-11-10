@@ -14,6 +14,7 @@ let CONCEPTS = [];
 let KNOW = [];                 // 知識延伸：knowledge.json 的 notes
 const KTOPIC = new Map();      // 正規化 topic → notes（主要掛載）
 const KCHAP = new Map();       // chapter → notes（topic 沒中時的退路）
+const KBYQ = new Map();        // 題目 id → notes：知識大陸 world-pool.json 逐題判斷過的對應，有就優先用
 let EXAMINFO = null;
 let store = load();
 let pushTimer = null;
@@ -244,6 +245,7 @@ function rankByRelevance(list, q) {
 // 課程題的六個章節各只對到一則知識點,整章數百題都掛同一張卡且多半不對題
 // (問音訊特徵提取 → 掛「機器學習的四種學習類型」),使用者回報「裡面全部都是一樣的內容」。
 function notesFor(q) {
+  if (KBYQ.has(q.id)) return KBYQ.get(q.id).slice(0, 2); // ponytail: 沒在對應表的題目退回舊的 topic/章節規則
   const exact = KTOPIC.get(kNorm(q.topic));
   if (exact) return exact.slice(0, 2);
   const pool = KCHAP.get(q.chapter);
@@ -258,7 +260,9 @@ function noteBodyHtml(n) {
   const refs = (n.refs || []).length
     ? `<p class="krefs">出處：${n.refs.map((r) => r.u
         ? `<a href="${esc(r.u)}" target="_blank" rel="noopener">${esc(r.t)} ↗</a>` : esc(r.t)).join('、')}</p>` : '';
-  return `<p class="ksum">${esc(n.summary || '')}</p>${paras}${pit}${refs}`;
+  const terms = (n.terms || []).length
+    ? `<dl class="kterms">${n.terms.map((x) => `<dt>${esc(x.t)}</dt><dd>${esc(x.d)}</dd>`).join('')}</dl>` : '';
+  return `<p class="ksum">${esc(n.summary || '')}</p>${paras}${terms}${pit}${refs}`;
 }
 // 題卡下方的摺疊區塊(預設收合,不干擾作答節奏)
 function knowHtml(q) {
@@ -1001,6 +1005,9 @@ async function boot() {
   try { CONCEPTS = ((await (await fetch('concepts.json')).json()).cards) || []; } catch { CONCEPTS = []; }
   try { KNOW = ((await (await fetch('knowledge.json')).json()).notes) || []; } catch { KNOW = []; }
   buildKnowIndex();
+  try { const wp = await (await fetch('world-pool.json')).json(), KM = new Map(KNOW.map((n) => [n.id, n]));
+    for (const [nid, qids] of Object.entries(wp)) { const n = KM.get(nid); if (n) for (const qid of qids) { if (!KBYQ.has(qid)) KBYQ.set(qid, []); KBYQ.get(qid).push(n); } }
+  } catch { KBYQ.clear(); }
   try { EXAMINFO = await (await fetch('exam-dates.json')).json(); } catch { EXAMINFO = null; }
   if (DATA.meta?.title) $('#title').textContent = DATA.meta.title;
   if (DATA.meta?.note) { const n = $('#banner'); n.textContent = DATA.meta.note; n.hidden = false; }
