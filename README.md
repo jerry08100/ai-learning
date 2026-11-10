@@ -1,11 +1,11 @@
 # iPAS AI 應用規劃師 模擬考練習
 
-**線上版：https://jerry08100.github.io/ipas-ai-quiz/**
+**線上版：https://jerry08100.github.io/ai-learning/**
 
 > **這是個人化 fork。** 本站 fork 自 [`yazelin/ipas-ai-quiz`](https://github.com/yazelin/ipas-ai-quiz)（原作者 林亞澤，程式碼 MIT）。題庫、解析、資料維護與考生社群都留在上游，本 fork 只做兩處客製：
 >
 > - **預設初級**：第一次進站時「練習範圍」預設只勾初級（科目 1、2）；要練中級自己勾就好，之後會記住你的選擇。
-> - **部署網址**：部署在 <https://jerry08100.github.io/ipas-ai-quiz/>（`canonical` / `og:url` 指到這裡；雲端同步 worker 未接，`SYNC_URL` 留空＝純本機）。
+> - **部署網址**：部署在 <https://jerry08100.github.io/ai-learning/>（`canonical` / `og:url` 指到這裡；雲端同步 worker 未接，`SYNC_URL` 留空＝純本機）。
 >
 > 上游原站：<https://yazelin.github.io/ipas-ai-quiz/> ｜ 上游 repo：<https://github.com/yazelin/ipas-ai-quiz>
 
