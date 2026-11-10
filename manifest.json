@@ -1,7 +1,7 @@
 {
-  "name": "iPAS AI 應用規劃師 模擬考練習",
-  "short_name": "iPAS 模考",
-  "description": "iPAS AI 應用規劃師 790 題官方試題與範例線上模擬考",
+  "name": "AI 學習網站",
+  "short_name": "AI 學習",
+  "description": "用像素冒險地圖學 AI 知識點，也能做 iPAS 題庫練習",
   "lang": "zh-Hant",
   "start_url": "./",
   "scope": "./",

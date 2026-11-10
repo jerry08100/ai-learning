@@ -80,7 +80,9 @@ function nextAction() {
 
 // ---- 地圖（繪圖在 world-map.js）----
 let MAP = null, frame = 0, timer = null;
-const drawMap = () => MAP.draw({ open: Object.fromEntries(W.regions.map((r) => [r.id, regionOpen(r)])), marks: W.regions.filter(needsMark).map((r) => r.id), hero: ST.cur, frame });
+// 演武島：原本的 iPAS 題庫練習（practice.html），不走知識點與試煉，一開始就能進
+const PORT = { id: 'arena', name: '演武島', domain: 'iPAS 題庫練習' };
+const drawMap = () => MAP.draw({ open: { ...Object.fromEntries(W.regions.map((r) => [r.id, regionOpen(r)])), arena: true }, marks: W.regions.filter(needsMark).map((r) => r.id), hero: ST.cur, frame });
 
 // ---- 畫面：地圖 ----
 let selId = null;
@@ -98,7 +100,8 @@ function showMap() {
       <button class="pbtn" id="go" ${na ? '' : 'disabled'}>繼續冒險<small>${na ? `${esc(na.r.name)}<br>${esc(na.label)}` : '目前沒有可做的事了'}</small></button>
       <ul class="rlist" aria-label="區域列表">${W.regions.map((r) => { const c = cnt(r), open = regionOpen(r);
         return `<li><button data-id="${r.id}" class="${r.id === selId ? 'sel' : ''}"><span class="rname ${open ? '' : 'lock'}">${open ? '' : LOCK}${esc(r.name)}</span>
-          <span class="rst">${regionStatus(r)}</span>${open ? `<span class="seg">${segs(c, 12)}</span>` : ''}</button></li>`; }).join('')}</ul>
+          <span class="rst">${regionStatus(r)}</span>${open ? `<span class="seg">${segs(c, 12)}</span>` : ''}</button></li>`; }).join('')}
+        <li><button data-id="${PORT.id}" class="${PORT.id === selId ? 'sel' : ''}"><span class="rname">${PORT.name}</span><span class="rst">${PORT.domain}</span></button></li></ul>
       <p class="foot"><span>進度只存在這台裝置</span><button class="lite" id="reset">重設進度</button></p>
     </div>
     <div class="mapwrap" id="mapwrap"><canvas id="cv" aria-label="世界地圖，點區域看進度"></canvas></div>`;
@@ -118,8 +121,10 @@ function showMap() {
     t.innerHTML = regionOpen(r) ? `${esc(r.name)}<span class="seg">${segs(c, 8)}</span>` : `${LOCK}${esc(r.name)}`;
     t.setAttribute('aria-hidden', 'true'); wrap.appendChild(t);
   });
+  { const P = MAP.tagPos(PORT.id), t = document.createElement('div'); t.className = 'tag' + (selId === PORT.id ? ' sel' : ''); t.dataset.id = PORT.id;
+    t.style.left = P.left + '%'; t.style.top = P.top + '%'; t.textContent = PORT.name; t.setAttribute('aria-hidden', 'true'); wrap.appendChild(t); }
   document.querySelectorAll('.rlist button').forEach((b) => (b.onclick = () => openSheet(b.dataset.id)));
-  cv.onclick = (e) => { const id = MAP.regionAt(e.clientX, e.clientY); if (id && W.regions.some((r) => r.id === id)) openSheet(id); };
+  cv.onclick = (e) => { const id = MAP.regionAt(e.clientX, e.clientY); if (id && (id === PORT.id || W.regions.some((r) => r.id === id))) openSheet(id); };
   $('#go').onclick = () => { if (na) run(na); };
   $('#reset').onclick = () => { if (confirm('確定清除知識大陸的全部進度？這個動作無法復原（不影響題庫練習的紀錄）。')) { ST.notes = {}; ST.passed = {}; ST.cur = 'plain'; save(); selId = null; showMap(); } };
   drawMap();
@@ -128,7 +133,13 @@ function showMap() {
   if (selId) openSheet(selId); else if (matchMedia('(min-width:900px)').matches) openSheet(ST.cur); else $('#sheet').classList.remove('on');
 }
 const LYT = { pass:['通過試煉','t-pass'], learn:['冒險中','t-learn'], lock:['未開放','t-lock'] };
+function portSheet() {
+  $('#sh-head').innerHTML = `<h2><span>${PORT.name}</span><button class="x" id="sh-x" aria-label="關閉">✕</button></h2><div class="dom">${PORT.domain}</div>`;
+  $('#sh-body').innerHTML = `<div class="layer"><div class="lc plain">原本的 iPAS AI 應用規劃師題庫都在這座島：照章節練習、背題、模擬考、錯題本和筆記。紀錄跟知識大陸分開存。</div>
+    <a class="pbtn trial" href="practice.html">進入演武島</a></div>`;
+}
 function openSheet(id) {
+  if (id === PORT.id) { selId = id; document.querySelectorAll('.tag, .rlist button').forEach((t) => t.classList.toggle('sel', t.dataset.id === id)); portSheet(); bindSheetX(); $('#sheet').classList.add('on'); return; }
   const r = W.regions.find((x) => x.id === id), c = cnt(r), open = regionOpen(r); selId = id;
   document.querySelectorAll('.tag, .rlist button').forEach((t) => t.classList.toggle('sel', t.dataset.id === id));
   $('#sh-head').innerHTML = `
@@ -148,12 +159,13 @@ function openSheet(id) {
       ${st === 'pass' ? `<button class="pbtn sec trial" data-i="${i}">再挑戰一次試煉</button>` : ''}
     </div>`;
   }).join('');
-  $('#sh-x').onclick = () => { selId = null; $('#sheet').classList.remove('on'); document.querySelectorAll('.tag, .rlist button').forEach((t) => t.classList.remove('sel')); };
+  bindSheetX();
   $('#sh-body').querySelectorAll('li').forEach((li) => { const go = () => { if (li.classList.contains('s-lock')) return toast('這層還沒開放'); run({ kind:'lesson', r, i:+li.dataset.i, id:li.dataset.id }); };
     li.onclick = go; li.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } }; });
   $('#sh-body').querySelectorAll('button.trial').forEach((b) => b.onclick = () => { if (!b.disabled) run({ kind:'trial', r, i:+b.dataset.i }); });
   $('#sheet').classList.add('on');
 }
+function bindSheetX() { $('#sh-x').onclick = () => { selId = null; $('#sheet').classList.remove('on'); document.querySelectorAll('.tag, .rlist button').forEach((t) => t.classList.remove('sel')); }; }
 // 官方證書由 Anthropic 在 Skilljar 發放，本站無法代為登錄完成狀態，只能帶使用者過去
 function certHtml(r) {
   const done = r.layers.every((_, i) => ST.passed[key(r, i)]);
