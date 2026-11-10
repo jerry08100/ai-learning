@@ -1,7 +1,7 @@
 // 離線快取:app shell + 題庫。stale-while-revalidate(先給快取、背景更新)。
 // 改版要更新快取時,把 CACHE 版號 +1。
 
-const CACHE = 'ipas-v88';
+const CACHE = 'ipas-v89';
 const SHELL = ['./', 'index.html', 'practice.html', 'world.js', 'world-map.js', 'world.json', 'app.js', 'core.js', 'manifest.json', 'favicon.svg', 'questions.json', 'concepts.json', 'knowledge.json', 'exam-dates.json', 'icon-192.png', 'icon-512.png'];
 
 self.addEventListener('install', (e) => {
@@ -42,6 +42,8 @@ self.addEventListener('fetch', (e) => {
   const r = e.request;
   // 只接管同源 GET;跨網域(同步 worker)不攔
   if (r.method !== 'GET' || new URL(r.url).origin !== location.origin) return;
+  // 頁面本身先抓網路（改版後立刻看到新頁），離線才用快取；其他檔案維持先快取後更新
+  if (r.mode === 'navigate') { e.respondWith(caches.open(CACHE).then((c) => fetch(r).then((res) => { if (res && res.ok) c.put(r, res.clone()).catch(() => {}); return res; }).catch(async () => (await c.match(r)) || c.match('./')))); return; }
   e.respondWith(caches.open(CACHE).then(async (c) => {
     const cached = await c.match(r);
     const net = fetch(r).then((res) => { if (res && res.ok) c.put(r, res.clone()).catch(() => {}); return res; }).catch(() => cached);
