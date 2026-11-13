@@ -243,14 +243,25 @@ function lesson(r, i, id) {
       seen.add(x.t); slots.push(`<span class="tm" tabindex="0" role="button" data-d="${esc(x.d)}">${k}</span>`);
       h = h.slice(0, p) + `\u0000${slots.length - 1}\u0001` + h.slice(p + k.length); }
     return h.replace(/\u0000(\d+)\u0001/g, (_, j) => slots[+j]); };
-  const paras = String(n.body || '').split(/\n/).filter(Boolean);
-  const cards = [{ kind:'重點', html:`<p class="big">${mark(n.summary)}</p>` }];
-  paras.forEach((p, j) => cards.push({ kind:`內容 ${j + 1}/${paras.length}`, html:`<p>${mark(p)}</p>` }));
-  const refs = (n.refs || []).length ? `<div class="refs">出處：${n.refs.map((x) => x.u ? `<a href="${esc(x.u)}" target="_blank" rel="noopener">${esc(x.t)}</a>` : esc(x.t)).join('、')}</div>` : '';
-  if ((n.pitfalls || []).length) cards.push({ kind:'容易搞混', pit:true, html:`<ul>${n.pitfalls.map((x) => `<li>${mark(x)}</li>`).join('')}</ul>` });
-  const left = (n.terms || []).filter((x) => !seen.has(x.t)); // 沒在內文出現的名詞，另外一頁列出
-  if (left.length) cards.push({ kind:'名詞解釋', html:`<dl class="terms">${left.map((x) => `<dt>${esc(x.t)}</dt><dd>${esc(x.d)}</dd>`).join('')}</dl>` });
-  let refAt = cards.length - 1; // 出處掛在最後一張閱讀卡
+  // 閱讀內容切成區塊（重點、各段、容易搞混、補充名詞、出處），再依畫面高度把放得下的區塊排在同一頁，放不下才換頁
+  const blocks = [`<p class="big">${mark(n.summary)}</p>`, ...String(n.body || '').split(/\n/).filter(Boolean).map((p) => `<p>${mark(p)}</p>`)];
+  if ((n.pitfalls || []).length) blocks.push(`<h3 class="ph">容易搞混</h3><ul>${n.pitfalls.map((x) => `<li>${mark(x)}</li>`).join('')}</ul>`);
+  const left = (n.terms || []).filter((x) => !seen.has(x.t)); // 沒在內文出現的名詞，最後列出
+  if (left.length) blocks.push(`<h3 class="ph th">名詞解釋</h3><dl class="terms">${left.map((x) => `<dt>${esc(x.t)}</dt><dd>${esc(x.d)}</dd>`).join('')}</dl>`);
+  if ((n.refs || []).length) blocks.push(`<div class="refs">出處：${n.refs.map((x) => x.u ? `<a href="${esc(x.u)}" target="_blank" rel="noopener">${esc(x.t)}</a>` : esc(x.t)).join('、')}</div>`);
+  page({ title: n.title, main:'<span class="kind">閱讀</span><div id="meas"></div>', nav:'<button class="pbtn">下一張</button>' });
+  const meas = $('#meas'), navH = $('.nav').offsetHeight, groups = [[]];
+  // 寬螢幕（≥1200）用左右兩欄排滿整張卡：固定高度的分欄容器，溢出成第三欄就代表這頁放不下
+  const wide = matchMedia('(min-width:1200px)').matches, H = Math.floor($('#card').getBoundingClientRect().bottom - 18 - meas.getBoundingClientRect().top);
+  if (wide) { meas.className = 'flow'; meas.style.height = H + 'px'; }
+  const fits = wide ? () => meas.scrollWidth <= meas.clientWidth + 1
+    : () => meas.getBoundingClientRect().bottom <= Math.min($('#card').getBoundingClientRect().bottom - 18, innerHeight - navH - 16);
+  for (const b of blocks) {
+    const g = groups[groups.length - 1]; meas.insertAdjacentHTML('beforeend', b);
+    if (g.length && !fits()) { meas.innerHTML = b; groups.push([b]); } else g.push(b); // 單一區塊本身就太長時照樣放，卡片內可捲
+  }
+  const cards = groups.map((g, j) => ({ kind: groups.length > 1 ? `閱讀 ${j + 1}/${groups.length}` : '閱讀', html: wide ? `<div class="flow" style="height:${H}px">${g.join('')}</div>` : g.join('') }));
+  const refs = '', refAt = -1;
   qs.forEach((q, j) => cards.push({ kind:`小檢查 ${j + 1}/${qs.length}`, chk:true, q }));
   if (!qs.length) cards.push({ kind:'小檢查', html:'<p>這則目前沒有對應的題目，讀完就算學過。</p>' });
   let at = 0, wrongs = 0; const answered = new Set();
