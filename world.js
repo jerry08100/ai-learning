@@ -220,20 +220,21 @@ function layerSide(r, i, curId) {
 // ---- 畫面：學一則知識點（滑卡）----
 function lesson(r, i, id) {
   const n = KN.get(id), qs = shuffle(POOL.get(id) || []).slice(0, 2);
-  const cards = [{ kind:'重點', html:`<p class="big">${esc(n.summary)}</p>` }];
-  String(n.body || '').split('\n').filter(Boolean).forEach((p, j, a) => cards.push({ kind:`內容 ${j + 1}/${a.length}`, html:`<p>${esc(p)}</p>` }));
-  // 名詞解釋：手機放在內容之後、容易搞混之前；電腦版放右欄上半
-  const terms = (n.terms || []).length ? `<dl class="terms">${n.terms.map((x) => `<dt>${esc(x.t)}</dt><dd>${esc(x.d)}</dd>`).join('')}</dl>` : '';
-  if (terms) cards.push({ kind:'名詞解釋', html: terms });
-  if ((n.pitfalls || []).length) cards.push({ kind:'容易搞混', pit:true, html:`<ul>${n.pitfalls.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` });
+  // 一段一頁：左邊是這一段，右邊（手機在下方）只列這一段出現的名詞解釋；每個名詞只在第一次出現的那頁解釋
+  const seen = new Set();
+  const termsFor = (txt) => { const t = (n.terms || []).filter((x) => !seen.has(x.t) && txt.includes(x.t)); t.forEach((x) => seen.add(x.t));
+    return t.length ? `<aside class="tcol"><h3 class="th">名詞解釋</h3><dl class="terms">${t.map((x) => `<dt>${esc(x.t)}</dt><dd>${esc(x.d)}</dd>`).join('')}</dl></aside>` : ''; };
+  const page2 = (main, side) => `<div class="read${side ? '' : ' solo'}"><div>${main}</div>${side}</div>`;
+  const paras = String(n.body || '').split(/\n/).filter(Boolean);
+  const cards = [{ kind:'重點', html: page2(`<p class="big">${esc(n.summary)}</p>`, termsFor(n.summary)) }];
+  paras.forEach((p, j) => cards.push({ kind:`內容 ${j + 1}/${paras.length}`, html: page2(`<p>${esc(p)}</p>`, termsFor(p)) }));
   const refs = (n.refs || []).length ? `<div class="refs">出處：${n.refs.map((x) => x.u ? `<a href="${esc(x.u)}" target="_blank" rel="noopener">${esc(x.t)}</a>` : esc(x.t)).join('、')}</div>` : '';
+  const pitTxt = (n.pitfalls || []).join('');
+  if ((n.pitfalls || []).length) cards.push({ kind:'容易搞混', pit:true, html: page2(`<ul>${n.pitfalls.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>`, termsFor(pitTxt)) });
+  const left = (n.terms || []).filter((x) => !seen.has(x.t)); // 沒對到任何段落的名詞，放最後一張閱讀卡
+  if (left.length) {
+    cards.push({ kind:'名詞解釋', html: page2(`<dl class="terms">${left.map((x) => `<dt>${esc(x.t)}</dt><dd>${esc(x.d)}</dd>`).join('')}</dl>`, '') }); }
   let refAt = cards.length - 1; // 出處掛在最後一張閱讀卡
-  // 電腦版畫面寬：整則閱讀內容放同一張卡（左：重點＋內容；右：容易搞混＋出處），不必一段一段翻
-  if (matchMedia('(min-width:900px)').matches) {
-    const body = String(n.body || '').split(/\n/).filter(Boolean).map((p) => `<p>${esc(p)}</p>`).join('');
-    const pit = (n.pitfalls || []).length ? `<h3>容易搞混</h3><ul>${n.pitfalls.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : '';
-    cards.length = 0; cards.push({ kind:'閱讀', html:`<div class="read"><div><p class="big">${esc(n.summary)}</p>${body}</div><div class="pitcol">${terms ? `<section class="tcol"><h3 class="th">名詞解釋</h3>${terms}</section>` : ''}${pit ? `<section>${pit}</section>` : ''}${refs}</div></div>` }); refAt = -1;
-  }
   qs.forEach((q, j) => cards.push({ kind:`小檢查 ${j + 1}/${qs.length}`, chk:true, q }));
   if (!qs.length) cards.push({ kind:'小檢查', html:'<p>這則目前沒有對應的題目，讀完就算學過。</p>' });
   let at = 0, wrongs = 0; const answered = new Set();
