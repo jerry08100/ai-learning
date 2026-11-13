@@ -1,7 +1,7 @@
 // 離線快取:app shell + 題庫。stale-while-revalidate(先給快取、背景更新)。
 // 改版要更新快取時,把 CACHE 版號 +1。
 
-const CACHE = 'ipas-v94';
+const CACHE = 'ipas-v95';
 const SHELL = ['./', 'index.html', 'practice.html', 'world.js', 'world-map.js', 'world.json', 'app.js', 'core.js', 'manifest.json', 'favicon.svg', 'questions.json', 'concepts.json', 'knowledge.json', 'exam-dates.json', 'icon-192.png', 'icon-512.png'];
 
 self.addEventListener('install', (e) => {
@@ -43,8 +43,8 @@ self.addEventListener('fetch', (e) => {
   // 只接管同源 GET;跨網域(同步 worker)不攔
   if (r.method !== 'GET' || new URL(r.url).origin !== location.origin) return;
   // 頁面本身先抓網路（改版後立刻看到新頁），離線才用快取；其他檔案維持先快取後更新
-  // 頁面與資料檔（.json）都先抓網路，內容一改就看得到；離線才退回快取
-  if (r.mode === 'navigate' || new URL(r.url).pathname.endsWith('.json')) { e.respondWith(caches.open(CACHE).then((c) => fetch(r).then((res) => { if (res && res.ok) c.put(r, res.clone()).catch(() => {}); return res; }).catch(async () => (await c.match(r)) || (r.mode === 'navigate' ? c.match('./') : Response.error())))); return; }
+  // 頁面、程式與資料檔都先抓網路，內容一改就看得到；離線才退回快取
+  if (r.mode === 'navigate' || /\.(json|js|css|html)$/.test(new URL(r.url).pathname)) { e.respondWith(caches.open(CACHE).then((c) => fetch(r).then((res) => { if (res && res.ok) c.put(r, res.clone()).catch(() => {}); return res; }).catch(async () => (await c.match(r)) || (r.mode === 'navigate' ? c.match('./') : Response.error())))); return; }
   e.respondWith(caches.open(CACHE).then(async (c) => {
     const cached = await c.match(r);
     const net = fetch(r).then((res) => { if (res && res.ok) c.put(r, res.clone()).catch(() => {}); return res; }).catch(() => cached);

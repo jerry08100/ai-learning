@@ -218,22 +218,38 @@ function layerSide(r, i, curId) {
 }
 
 // ---- 畫面：學一則知識點（滑卡）----
+// 名詞小視窗：滑鼠移過去或鍵盤聚焦就顯示；手機點一下顯示、點別處關掉
+const tip = document.createElement('div'); tip.className = 'tip win'; tip.setAttribute('role', 'tooltip'); tip.hidden = true; document.body.appendChild(tip);
+let tipFor = null, tipAt = 0;
+function showTip(el) {
+  if (tipFor !== el) tipAt = Date.now(); tipFor = el; tip.textContent = el.dataset.d; tip.hidden = false;
+  const b = el.getBoundingClientRect(), w = Math.min(420, innerWidth - 24); tip.style.width = w + 'px';
+  tip.style.left = Math.max(12, Math.min(b.left + b.width / 2 - w / 2, innerWidth - w - 12)) + 'px';
+  const h = tip.offsetHeight; tip.style.top = (b.bottom + 8 + h < innerHeight ? b.bottom + 8 : b.top - h - 8) + 'px';
+}
+function hideTip() { tip.hidden = true; tipFor = null; }
+document.addEventListener('mouseover', (e) => { const t = e.target.closest?.('.tm'); if (t) showTip(t); else if (tipFor) hideTip(); });
+document.addEventListener('focusin', (e) => { const t = e.target.closest?.('.tm'); if (t) showTip(t); });
+document.addEventListener('focusout', (e) => { if (e.target.closest?.('.tm')) hideTip(); });
+document.addEventListener('click', (e) => { const t = e.target.closest?.('.tm'); if (!t) return hideTip(); if (tipFor === t && !tip.hidden && Date.now() - tipAt > 400) hideTip(); else showTip(t); }); // 手機點一下會先觸發 mouseover，0.4 秒內的點擊不當成關閉
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hideTip(); });
+addEventListener('scroll', hideTip, true);
 function lesson(r, i, id) {
   const n = KN.get(id), qs = shuffle(POOL.get(id) || []).slice(0, 2);
-  // 一段一頁：左邊是這一段，右邊（手機在下方）只列這一段出現的名詞解釋；每個名詞只在第一次出現的那頁解釋
-  const seen = new Set();
-  const termsFor = (txt) => { const t = (n.terms || []).filter((x) => !seen.has(x.t) && txt.includes(x.t)); t.forEach((x) => seen.add(x.t));
-    return t.length ? `<aside class="tcol"><h3 class="th">名詞解釋</h3><dl class="terms">${t.map((x) => `<dt>${esc(x.t)}</dt><dd>${esc(x.d)}</dd>`).join('')}</dl></aside>` : ''; };
-  const page2 = (main, side) => `<div class="read${side ? '' : ' solo'}"><div>${main}</div>${side}</div>`;
+  // 一段一頁、單欄。名詞在內文標色，滑鼠移過去（手機點一下）跳出解釋；每個名詞只標第一次出現的地方
+  const seen = new Set(), TERMS = (n.terms || []).slice().sort((x, y) => y.t.length - x.t.length);
+  const mark = (raw) => { let h = esc(raw); const slots = [];
+    for (const x of TERMS) { if (seen.has(x.t)) continue; const k = esc(x.t), p = h.indexOf(k); if (p < 0) continue;
+      seen.add(x.t); slots.push(`<span class="tm" tabindex="0" role="button" data-d="${esc(x.d)}">${k}</span>`);
+      h = h.slice(0, p) + `\u0000${slots.length - 1}\u0001` + h.slice(p + k.length); }
+    return h.replace(/\u0000(\d+)\u0001/g, (_, j) => slots[+j]); };
   const paras = String(n.body || '').split(/\n/).filter(Boolean);
-  const cards = [{ kind:'重點', html: page2(`<p class="big">${esc(n.summary)}</p>`, termsFor(n.summary)) }];
-  paras.forEach((p, j) => cards.push({ kind:`內容 ${j + 1}/${paras.length}`, html: page2(`<p>${esc(p)}</p>`, termsFor(p)) }));
+  const cards = [{ kind:'重點', html:`<p class="big">${mark(n.summary)}</p>` }];
+  paras.forEach((p, j) => cards.push({ kind:`內容 ${j + 1}/${paras.length}`, html:`<p>${mark(p)}</p>` }));
   const refs = (n.refs || []).length ? `<div class="refs">出處：${n.refs.map((x) => x.u ? `<a href="${esc(x.u)}" target="_blank" rel="noopener">${esc(x.t)}</a>` : esc(x.t)).join('、')}</div>` : '';
-  const pitTxt = (n.pitfalls || []).join('');
-  if ((n.pitfalls || []).length) cards.push({ kind:'容易搞混', pit:true, html: page2(`<ul>${n.pitfalls.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>`, termsFor(pitTxt)) });
-  const left = (n.terms || []).filter((x) => !seen.has(x.t)); // 沒對到任何段落的名詞，放最後一張閱讀卡
-  if (left.length) {
-    cards.push({ kind:'名詞解釋', html: page2(`<dl class="terms">${left.map((x) => `<dt>${esc(x.t)}</dt><dd>${esc(x.d)}</dd>`).join('')}</dl>`, '') }); }
+  if ((n.pitfalls || []).length) cards.push({ kind:'容易搞混', pit:true, html:`<ul>${n.pitfalls.map((x) => `<li>${mark(x)}</li>`).join('')}</ul>` });
+  const left = (n.terms || []).filter((x) => !seen.has(x.t)); // 沒在內文出現的名詞，另外一頁列出
+  if (left.length) cards.push({ kind:'名詞解釋', html:`<dl class="terms">${left.map((x) => `<dt>${esc(x.t)}</dt><dd>${esc(x.d)}</dd>`).join('')}</dl>` });
   let refAt = cards.length - 1; // 出處掛在最後一張閱讀卡
   qs.forEach((q, j) => cards.push({ kind:`小檢查 ${j + 1}/${qs.length}`, chk:true, q }));
   if (!qs.length) cards.push({ kind:'小檢查', html:'<p>這則目前沒有對應的題目，讀完就算學過。</p>' });
