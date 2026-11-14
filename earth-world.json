@@ -296,7 +296,8 @@
      "tier": 2,
      "req": [
       "carbon:0",
-      "inventory:1"
+      "inventory:1",
+      "climate:2"
      ],
      "notes": [
       "e-cb-voluntary-project-tw",
