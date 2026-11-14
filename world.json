@@ -39,7 +39,8 @@
      "name": "核心",
      "tier": 3,
      "req": [
-      "plain:1"
+      "plain:1",
+      "fort:0"
      ],
      "notes": [
       "k-ch-face-recognition-limits",
@@ -88,18 +89,20 @@
       "k-dbscan-density-clustering",
       "k-b4-dimension-reduction",
       "k-b4-tree-split",
-      "k-b3-svm-crf",
-      "k-anomaly",
-      "k-b3-autoencoder-ssl"
+      "k-b3-svm-crf"
      ]
     },
     {
      "name": "核心",
      "tier": 3,
      "req": [
-      "forest:1"
+      "forest:1",
+      "mount:0",
+      "fort:0"
      ],
      "notes": [
+      "k-anomaly",
+      "k-b3-autoencoder-ssl",
       "k-b3-softmax-collinearity",
       "k-b6-threshold-roc-f1",
       "k-gbdt-xgboost",
@@ -122,7 +125,8 @@
      "name": "外圍",
      "tier": 1,
      "req": [
-      "plain:0"
+      "plain:0",
+      "forest:0"
      ],
      "notes": [
       "k-bigdata-5v",
@@ -150,7 +154,6 @@
       "k-b6-describe-skew",
       "k-b6-pandas-missing-dtype",
       "k-pandas-bigfile-seaborn",
-      "k-b6-matrix-conditional-prob",
       "k-association-rules",
       "k-hypothesis-testing",
       "k-b4-probability-bayes"
@@ -160,13 +163,17 @@
      "name": "核心",
      "tier": 3,
      "req": [
-      "valley:1"
+      "valley:1",
+      "forest:1",
+      "mount:1",
+      "sea:0"
      ],
      "notes": [
       "k-acid-data-security",
       "k-b4-graph-knowledge",
       "k-b5-stat-inference",
       "k-monte-carlo-simulation",
+      "k-b6-matrix-conditional-prob",
       "k-b5-feature-analysis",
       "k-b4-regression-correlation",
       "k-b6-modeling-pipeline-ols",
@@ -202,7 +209,8 @@
      "name": "內地",
      "tier": 2,
      "req": [
-      "fort:0"
+      "fort:0",
+      "mount:0"
      ],
      "notes": [
       "k-xai",
@@ -221,7 +229,8 @@
      "tier": 3,
      "req": [
       "fort:1",
-      "forest:1"
+      "forest:2",
+      "sea:1"
      ],
      "notes": [
       "k-b5-shap-gradcam",
@@ -282,7 +291,8 @@
      "name": "核心",
      "tier": 3,
      "req": [
-      "mount:1"
+      "mount:1",
+      "sea:0"
      ],
      "notes": [
       "k-b4-optimization-training",
@@ -305,7 +315,8 @@
      "name": "外圍",
      "tier": 1,
      "req": [
-      "plain:1"
+      "plain:1",
+      "mount:1"
      ],
      "notes": [
       "k-llm-basics",
@@ -326,7 +337,8 @@
      "name": "內地",
      "tier": 2,
      "req": [
-      "sea:0"
+      "sea:0",
+      "mount:2"
      ],
      "notes": [
       "k-rag-vs-finetune",
@@ -353,7 +365,7 @@
      "tier": 3,
      "req": [
       "sea:1",
-      "mount:1"
+      "capital:1"
      ],
      "notes": [
       "k-ch-advanced-rag-ops",
@@ -394,7 +406,8 @@
      "name": "內地",
      "tier": 2,
      "req": [
-      "capital:0"
+      "capital:0",
+      "sea:1"
      ],
      "notes": [
       "k-b2-tech-selection",
@@ -415,7 +428,9 @@
      "tier": 3,
      "req": [
       "capital:1",
-      "sea:1"
+      "mount:1",
+      "forest:2",
+      "valley:1"
      ],
      "notes": [
       "k-b3-k8s-model-serving",

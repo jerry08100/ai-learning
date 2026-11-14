@@ -93,10 +93,10 @@ const drawMap = () => { MAP.draw({ open: { ...Object.fromEntries(W.regions.map((
 
 // ---- 畫面：地圖 ----
 let selId = null, foldList = false;
-// 區域清單照地圖位置由上往下、由左往右排，跟地圖對得上（使用者 2026-11-14）
-// 高度差 4 格內視為同一列、改由左往右（盤查谷地 sy23 與揭露海港 sy22 同列，左邊的先）
-// ponytail: 兩兩比較非嚴格遞移，區域數少且間距大就夠；之後區域密集再改成先分列
-const byMap = () => [...W.regions].sort((a, b) => { const A = LAYOUT[a.id] || { sx: 0, sy: 99 }, B = LAYOUT[b.id] || { sx: 0, sy: 99 }; return Math.abs(A.sy - B.sy) < 4 ? A.sx - B.sx : A.sy - B.sy; });
+// 區域清單照學習順序由上往下：開放前要先通過的層數少的在上（使用者 2026-11-14）；層數相同再照地圖由上往下、由左往右
+const need = (k, seen = new Set()) => { const [rid, i] = k.split(':'); for (const x of W.regions.find((r) => r.id === rid).layers[+i].req) if (!seen.has(x)) { seen.add(x); need(x, seen); } return seen; };
+const byMap = () => [...W.regions].map((r) => [r, need(`${r.id}:0`).size]).sort(([a, na], [b, nb]) => { if (na !== nb) return na - nb;
+  const A = LAYOUT[a.id] || { sx: 0, sy: 99 }, B = LAYOUT[b.id] || { sx: 0, sy: 99 }; return Math.abs(A.sy - B.sy) < 4 ? A.sx - B.sx : A.sy - B.sy; }).map(([r]) => r);
 const LOCK = '<i class="lk" aria-hidden="true"></i>';
 function hud() {
   const all = W.regions.flatMap((r) => r.layers.flatMap((l) => l.notes)), ok = all.filter((id) => ST.notes[id]?.s === 'ok').length;
