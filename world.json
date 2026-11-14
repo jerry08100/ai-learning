@@ -17,9 +17,9 @@
      "notes": [
       "k-ai-ml-dl",
       "k-ml-types",
-      "k-discriminative-generative",
       "k-cv-tasks",
-      "k-intro-algorithms"
+      "k-intro-algorithms",
+      "k-discriminative-generative"
      ]
     },
     {
@@ -42,8 +42,8 @@
       "plain:1"
      ],
      "notes": [
-      "k-ch-custom-vision-model",
       "k-ch-face-recognition-limits",
+      "k-ch-custom-vision-model",
       "k-ai-apps-and-tw-governance"
      ]
     }
@@ -61,12 +61,12 @@
       "plain:0"
      ],
      "notes": [
-      "k-overfit-underfit",
       "k-data-split-cv",
-      "k-metrics",
+      "k-overfit-underfit",
       "k-feature-eng",
-      "k-automl",
       "k-rl",
+      "k-automl",
+      "k-metrics",
       "k-ch-regression-modeling",
       "k-ch-azure-automl-experiment"
      ]
@@ -78,18 +78,18 @@
       "forest:0"
      ],
      "notes": [
+      "k-b6-feature-transform-scaling",
       "k-data-leakage",
       "k-imbalance",
-      "k-anomaly",
-      "k-dbscan-density-clustering",
-      "k-timeseries-validation-curve",
-      "k-b3-svm-crf",
-      "k-b3-regression-eval-pdp",
       "k-b4-hyperparameter-search",
-      "k-b4-dimension-reduction",
+      "k-timeseries-validation-curve",
+      "k-b3-regression-eval-pdp",
       "k-b4-clustering",
+      "k-dbscan-density-clustering",
+      "k-b4-dimension-reduction",
       "k-b4-tree-split",
-      "k-b6-feature-transform-scaling",
+      "k-b3-svm-crf",
+      "k-anomaly",
       "k-b3-autoencoder-ssl"
      ]
     },
@@ -100,15 +100,15 @@
       "forest:1"
      ],
      "notes": [
+      "k-b3-softmax-collinearity",
+      "k-b6-threshold-roc-f1",
       "k-gbdt-xgboost",
-      "k-b4-model-eval-design",
+      "k-b6-classic-model-assumptions",
       "k-b5-pca-curse",
       "k-b6-dimension-reduction",
-      "k-b6-classic-model-assumptions",
-      "k-b6-validation-tuning-fairness",
-      "k-b3-softmax-collinearity",
+      "k-b4-model-eval-design",
       "k-b6-pseudocode-algorithm-id",
-      "k-b6-threshold-roc-f1"
+      "k-b6-validation-tuning-fairness"
      ]
     }
    ]
@@ -125,14 +125,15 @@
       "plain:0"
      ],
      "notes": [
-      "k-data-cleaning",
-      "k-eda-viz",
       "k-bigdata-5v",
+      "k-ch-kdd-datamining",
+      "k-stats-basic",
+      "k-eda-viz",
+      "k-data-cleaning",
+      "k-ch-binning-discretization",
       "k-data-types-integration-quality",
       "k-b2-data-types-transform",
-      "k-b3-data-prep-transfer",
-      "k-ch-binning-discretization",
-      "k-ch-kdd-datamining"
+      "k-b3-data-prep-transfer"
      ]
     },
     {
@@ -142,18 +143,17 @@
       "valley:0"
      ],
      "notes": [
-      "k-stats-basic",
-      "k-data-governance",
-      "k-pandas-bigfile-seaborn",
-      "k-hypothesis-testing",
-      "k-association-rules",
-      "k-b4-probability-bayes",
-      "k-b4-pandas",
-      "k-b5-training-data-prep",
       "k-b5-boxplot-chart",
-      "k-b6-pandas-missing-dtype",
+      "k-data-governance",
+      "k-b5-training-data-prep",
+      "k-b4-pandas",
       "k-b6-describe-skew",
-      "k-b6-matrix-conditional-prob"
+      "k-b6-pandas-missing-dtype",
+      "k-pandas-bigfile-seaborn",
+      "k-b6-matrix-conditional-prob",
+      "k-association-rules",
+      "k-hypothesis-testing",
+      "k-b4-probability-bayes"
      ]
     },
     {
@@ -164,16 +164,16 @@
      ],
      "notes": [
       "k-acid-data-security",
-      "k-monte-carlo-simulation",
-      "k-b4-regression-correlation",
-      "k-b4-bigdata-streaming",
       "k-b4-graph-knowledge",
       "k-b5-stat-inference",
-      "k-b5-data-platform",
-      "k-b5-spark-batchsize",
+      "k-monte-carlo-simulation",
       "k-b5-feature-analysis",
-      "k-b5-timeseries-forecast",
-      "k-b6-modeling-pipeline-ols"
+      "k-b4-regression-correlation",
+      "k-b6-modeling-pipeline-ols",
+      "k-b4-bigdata-streaming",
+      "k-b5-spark-batchsize",
+      "k-b5-data-platform",
+      "k-b5-timeseries-forecast"
      ]
     }
    ]
@@ -190,12 +190,12 @@
       "plain:0"
      ],
      "notes": [
-      "k-bias-fairness",
-      "k-privacy",
-      "k-hitl",
-      "k-b2-ethics-disclosure",
       "k-ch-responsible-ai-principles",
-      "k-ch-taiwan-ai-basic-act"
+      "k-b2-ethics-disclosure",
+      "k-hitl",
+      "k-ch-taiwan-ai-basic-act",
+      "k-bias-fairness",
+      "k-privacy"
      ]
     },
     {
@@ -206,13 +206,13 @@
      ],
      "notes": [
       "k-xai",
-      "k-ai-governance",
+      "k-ch-eu-ai-act",
       "k-genai-ip",
+      "k-ai-governance",
+      "k-ch-fintech-ai-principles",
       "k-b2-xai-methods",
       "k-b2-bias-detect-mitigate",
       "k-b2-provenance-watermark",
-      "k-ch-eu-ai-act",
-      "k-ch-fintech-ai-principles",
       "k-ch-ai-lifecycle-governance"
      ]
     },
@@ -224,13 +224,13 @@
       "forest:1"
      ],
      "notes": [
-      "k-b3-genai-data-risk",
-      "k-b4-adversarial-security",
+      "k-b5-shap-gradcam",
       "k-b4-bias-credit-model",
       "k-b4-privacy-compute",
-      "k-b4-corpus-governance",
-      "k-b5-shap-gradcam",
+      "k-b4-adversarial-security",
       "k-b6-membership-inference",
+      "k-b4-corpus-governance",
+      "k-b3-genai-data-risk",
       "k-ch-genai-risk-redteam"
      ]
     }
@@ -249,11 +249,11 @@
      ],
      "notes": [
       "k-nn-training",
+      "k-b3-dl-training",
       "k-cnn-rnn-transformer",
+      "k-b2-dl-architecture-training",
       "k-nlp-embedding",
       "k-data-augmentation",
-      "k-b2-dl-architecture-training",
-      "k-b3-dl-training",
       "k-ch-dl-training-stability"
      ]
     },
@@ -264,18 +264,18 @@
       "mount:0"
      ],
      "notes": [
-      "k-transfer-finetune",
-      "k-word2vec-sentiment",
       "k-b3-cnn-seq-transformer",
       "k-b3-text-representation",
+      "k-word2vec-sentiment",
       "k-b5-nlp-tagging-embedding",
       "k-b5-nn-building-blocks",
-      "k-b6-optimizer-batch-clip",
-      "k-b6-deep-degradation-regularization",
+      "k-ch-transformer-internals",
+      "k-transfer-finetune",
+      "k-b6-augmentation-curves",
       "k-b6-cnn-architecture-preprocess",
       "k-b6-mlp-output-params",
-      "k-b6-augmentation-curves",
-      "k-ch-transformer-internals"
+      "k-b6-optimizer-batch-clip",
+      "k-b6-deep-degradation-regularization"
      ]
     },
     {
@@ -285,13 +285,13 @@
       "mount:1"
      ],
      "notes": [
+      "k-b4-optimization-training",
       "k-compression-distill",
       "k-b4-sequence-models",
-      "k-b4-multimodal-multitask",
-      "k-b4-optimization-training",
       "k-b5-detection-segmentation",
-      "k-b5-multimodal-fusion",
-      "k-b6-bert-gpt-lora"
+      "k-b6-bert-gpt-lora",
+      "k-b4-multimodal-multitask",
+      "k-b5-multimodal-fusion"
      ]
     }
    ]
@@ -309,17 +309,17 @@
      ],
      "notes": [
       "k-llm-basics",
+      "k-ch-gpt-bert-family",
       "k-hallucination",
       "k-prompt-eng",
-      "k-rag",
-      "k-agent",
-      "k-diffusion",
-      "k-multimodal",
       "k-genai-generation-control",
+      "k-multimodal",
+      "k-diffusion",
       "k-b3-genai-apps-capability",
-      "k-ch-gpt-bert-family",
       "k-ch-genai-tool-landscape",
-      "k-vibe-coding"
+      "k-vibe-coding",
+      "k-rag",
+      "k-agent"
      ]
     },
     {
@@ -329,20 +329,23 @@
       "sea:0"
      ],
      "notes": [
-      "k-context-eng",
-      "k-graph-prompting",
       "k-rag-vs-finetune",
+      "k-context-eng",
+      "k-b3-memory-context-design",
+      "k-graph-prompting",
       "k-mcp",
-      "k-llm-security",
-      "k-llm-eval",
+      "k-b2-rag-engineering",
       "k-rag-tools-agents",
+      "k-b2-agent-tooling",
+      "k-a2a",
+      "k-b3-agent-architecture-coding",
+      "k-solution-graph",
+      "k-b3-fewshot-finetune",
+      "k-ch-peft-finetune",
       "k-b2-align-and-refresh",
       "k-b2-peft-rl-finetune",
-      "k-b2-agent-tooling",
-      "k-b3-memory-context-design",
-      "k-b3-fewshot-finetune",
-      "k-b3-agent-architecture-coding",
-      "k-ch-peft-finetune"
+      "k-llm-security",
+      "k-llm-eval"
      ]
     },
     {
@@ -353,14 +356,11 @@
       "mount:1"
      ],
      "notes": [
-      "k-solution-graph",
-      "k-a2a",
-      "k-b2-rag-engineering",
-      "k-b3-post-training-ops",
+      "k-ch-advanced-rag-ops",
       "k-b3-autoskill",
       "k-b5-llm-peft-cost",
       "k-b5-agent-orchestration",
-      "k-ch-advanced-rag-ops",
+      "k-b3-post-training-ops",
       "k-ch-multi-agent-ops"
      ]
     }
@@ -380,15 +380,14 @@
       "fort:0"
      ],
      "notes": [
+      "k-ch-nocode-industry-use",
       "k-deploy-choice",
       "k-genai-adoption",
-      "k-b2-cost-roi",
-      "k-b2-poc-pilot-eval",
+      "k-ch-ai-adoption-poc",
       "k-ch-ml-compute-endpoint",
       "k-ch-ml-project-collab",
-      "k-ch-ai-adoption-poc",
       "k-ch-lowcode-platform-arch",
-      "k-ch-nocode-industry-use"
+      "k-b2-poc-pilot-eval"
      ]
     },
     {
@@ -398,17 +397,17 @@
       "capital:0"
      ],
      "notes": [
+      "k-b2-tech-selection",
+      "k-genai-adoption-compliance",
+      "k-b3-nocode-integration",
+      "k-ch-lowcode-selection-tco",
+      "k-ch-lowcode-governance-risk",
+      "k-b2-lowcode-governance",
       "k-mlops-drift",
       "k-phased-rollout",
-      "k-genai-testing-eval",
-      "k-genai-adoption-compliance",
-      "k-b2-inference-serving",
-      "k-b2-tech-selection",
-      "k-b2-lowcode-governance",
-      "k-b3-nocode-integration",
+      "k-b2-cost-roi",
       "k-b3-cost-and-eval",
-      "k-ch-lowcode-governance-risk",
-      "k-ch-lowcode-selection-tco"
+      "k-genai-testing-eval"
      ]
     },
     {
@@ -419,13 +418,14 @@
       "sea:1"
      ],
      "notes": [
-      "k-b2-deploy-security",
       "k-b3-k8s-model-serving",
-      "k-b4-ai-system-ops",
+      "k-b2-inference-serving",
       "k-b5-inference-serving",
+      "k-b4-ai-system-ops",
       "k-b5-rollout-monitoring",
-      "k-b5-roc-benefit-audit",
-      "k-b6-adoption-benefit-eval"
+      "k-b2-deploy-security",
+      "k-b6-adoption-benefit-eval",
+      "k-b5-roc-benefit-audit"
      ]
     }
    ]
@@ -445,8 +445,8 @@
      "req": [],
      "notes": [
       "cc-01",
-      "cc-02",
       "cc-03",
+      "cc-02",
       "cc-04"
      ]
     },
@@ -459,8 +459,8 @@
      "notes": [
       "cc-05",
       "cc-06",
-      "cc-07",
-      "cc-08"
+      "cc-10",
+      "cc-07"
      ]
     },
     {
@@ -471,10 +471,10 @@
      ],
      "notes": [
       "cc-09",
-      "cc-10",
       "cc-11",
-      "cc-12",
+      "cc-08",
       "cc-13",
+      "cc-12",
       "cc-14"
      ]
     }

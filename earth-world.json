@@ -28,9 +28,9 @@
       "climate:0"
      ],
      "notes": [
-      "e-cl-tw-climate-act",
       "e-cl-tw-energy",
-      "e-cl-policy-tools"
+      "e-cl-policy-tools",
+      "e-cl-tw-climate-act"
      ]
     },
     {
@@ -86,9 +86,9 @@
      ],
      "notes": [
       "e-dc-tw-ifrs",
-      "e-dc-materiality",
       "e-dc-sbti-practice",
-      "e-dc-tcfd-tnfd"
+      "e-dc-tcfd-tnfd",
+      "e-dc-materiality"
      ]
     }
    ]
@@ -107,7 +107,7 @@
      "notes": [
       "e-inv-org-inventory-intro",
       "e-inv-principles-gases",
-      "e-inv-tw-registry-rules"
+      "e-inv-scope3-categories"
      ]
     },
     {
@@ -119,7 +119,8 @@
      "notes": [
       "e-inv-org-boundary",
       "e-inv-report-boundary",
-      "e-inv-quantification"
+      "e-inv-quantification",
+      "e-inv-tw-registry-rules"
      ]
     },
     {
@@ -130,7 +131,6 @@
      ],
      "notes": [
       "e-inv-inventory-report",
-      "e-inv-scope3-categories",
       "e-inv-scope3-methods",
       "e-inv-supply-chain-risk"
      ]
@@ -150,8 +150,8 @@
      ],
      "notes": [
       "e-fp-cfp-basics",
-      "e-fp-cfp-principles",
-      "e-fp-lca-four-phases"
+      "e-fp-lca-four-phases",
+      "e-fp-cfp-principles"
      ]
     },
     {
@@ -192,10 +192,9 @@
       "inventory:1"
      ],
      "notes": [
-      "e-energy-target-setting",
-      "e-energy-bau-pathway",
       "e-energy-hotspot",
-      "e-energy-intensity-metrics"
+      "e-energy-intensity-metrics",
+      "e-energy-target-setting"
      ]
     },
     {
@@ -205,10 +204,11 @@
       "energy:0"
      ],
      "notes": [
-      "e-energy-finance-npv-irr",
-      "e-energy-macc-risk",
+      "e-energy-frontier-tech",
       "e-energy-utility-selection",
-      "e-energy-saving-payback"
+      "e-energy-saving-payback",
+      "e-energy-bau-pathway",
+      "e-energy-finance-npv-irr"
      ]
     },
     {
@@ -218,9 +218,9 @@
       "energy:1"
      ],
      "notes": [
-      "e-energy-esco",
       "e-energy-iso50001",
-      "e-energy-frontier-tech"
+      "e-energy-esco",
+      "e-energy-macc-risk"
      ]
     }
    ]
@@ -250,8 +250,8 @@
      ],
      "notes": [
       "e-renew-tw-policy",
-      "e-renew-benefit-eval",
-      "e-renew-big-user-clause"
+      "e-renew-green-power-models",
+      "e-renew-benefit-eval"
      ]
     },
     {
@@ -261,7 +261,7 @@
       "renew:1"
      ],
      "notes": [
-      "e-renew-green-power-models",
+      "e-renew-big-user-clause",
       "e-renew-trec",
       "e-renew-hourly-matching"
      ]
@@ -282,8 +282,7 @@
      "notes": [
       "e-cb-carbon-pricing-tools",
       "e-cb-credit-basics",
-      "e-cb-iso14068",
-      "e-cb-tw-neutral-guide"
+      "e-cb-iso14068"
      ]
     },
     {
@@ -295,7 +294,8 @@
      "notes": [
       "e-cb-voluntary-project-tw",
       "e-cb-intl-mechanisms",
-      "e-cb-carbon-removal"
+      "e-cb-carbon-removal",
+      "e-cb-tw-neutral-guide"
      ]
     },
     {
@@ -305,8 +305,8 @@
       "carbon:1"
      ],
      "notes": [
-      "e-cb-offset-quality",
       "e-cb-credit-trading-tw",
+      "e-cb-offset-quality",
       "e-cb-icp-carbon-asset"
      ]
     }
