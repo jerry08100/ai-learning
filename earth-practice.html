@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="zh-Hant" data-quiz="earth">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>iPAS 淨零碳規劃管理師 模擬考練習 | 地球永續國演武島</title>
+<meta name="description" content="iPAS 淨零碳規劃管理師（初級・中級）線上模擬考：115 年官方公告試題（答案皆官方），練習、背題、計時模擬考、錯題本、弱點統計。">
+<link rel="canonical" href="https://jerry08100.github.io/ai-learning/earth-practice.html">
+<meta name="theme-color" content="#2563eb">
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon.ico" sizes="32x32">
+<link rel="alternate icon" href="favicon.ico">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="淨零碳模考">
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="iPAS 淨零碳規劃管理師 模擬考練習">
+<meta property="og:title" content="iPAS 淨零碳規劃管理師 模擬考練習">
+<meta property="og:description" content="iPAS 淨零碳規劃管理師 115 年官方試題，練習、計時模擬考、錯題本。免費、免登入、可離線。">
+<meta property="og:url" content="https://jerry08100.github.io/ai-learning/earth-practice.html">
+<meta property="og:image" content="https://jerry08100.github.io/ai-learning/og.png">
+<meta property="og:image:secure_url" content="https://jerry08100.github.io/ai-learning/og.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="iPAS 淨零碳規劃管理師 模擬考練習">
+<meta name="twitter:description" content="iPAS 淨零碳規劃管理師官方試題，免費線上刷題。">
+<meta name="twitter:image" content="https://jerry08100.github.io/ai-learning/og.png">
+<style>
+  :root { --c-bg:#f6f7f9; --c-card:#fff; --c-ink:#1c2330; --c-muted:#6b7280; --c-line:#e5e7eb;
+          --c-accent:#2563eb; --c-ok:#16a34a; --c-bad:#dc2626; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif; background:var(--c-bg); color:var(--c-ink); line-height:1.6; }
+  header { padding:16px; text-align:center; }
+  header h1 { font-size:18px; margin:0; }
+  #banner { max-width:720px; margin:0 auto 8px; padding:8px 12px; font-size:13px; color:#92400e; background:#fef3c7; border-radius:8px; }
+  nav { display:flex; gap:4px; justify-content:center; flex-wrap:wrap; padding:0 8px 8px; }
+  nav button { border:0; background:none; padding:10px 12px; min-height:44px; border-radius:8px; color:var(--c-muted); font-size:15px; cursor:pointer; }
+  nav button.on { background:var(--c-card); color:var(--c-accent); font-weight:600; box-shadow:0 1px 2px rgba(0,0,0,.06); }
+  main { max-width:720px; margin:0 auto; padding:8px 12px 48px; }
+  .card { background:var(--c-card); border:1px solid var(--c-line); border-radius:14px; padding:20px; margin-bottom:16px; animation:card-in .18s ease both; }
+  @keyframes card-in { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+  h2 { margin-top:0; }
+  .muted { color:var(--c-muted); }
+  label { display:block; margin:12px 0 4px; font-size:14px; }
+  select, input, textarea { width:100%; padding:10px; border:1px solid var(--c-line); border-radius:8px; font-size:16px; font-family:inherit; }
+  button.primary { background:var(--c-accent); color:#fff; border:0; padding:12px 18px; border-radius:10px; font-size:16px; cursor:pointer; margin-top:14px; }
+  button.primary.alt { background:#fff; color:var(--c-accent); border:1px solid var(--c-accent); margin-left:8px; }
+  .card > button:not(.primary) { background:#eef0f3; border:0; padding:10px 14px; border-radius:8px; font-size:14px; cursor:pointer; margin:8px 8px 0 0; }
+  .opt { display:block; width:100%; text-align:left; padding:12px 14px; margin:8px 0; border:1px solid var(--c-line); border-radius:10px; background:#fff; font-size:15px; cursor:pointer; transition:background .12s, border-color .12s, transform .06s; }
+  .opt:active { transform:scale(.99); }
+  .opt:hover { border-color:var(--c-accent); }
+  .opt.correct { border-color:var(--c-ok); background:#f0fdf4; }
+  .opt.wrong { border-color:var(--c-bad); background:#fef2f2; }
+  .opt.picked { border-color:var(--c-accent); background:#eff6ff; }
+  .opt:disabled { cursor:default; }
+  .row { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+  .star { border:0; background:none; color:var(--c-muted); cursor:pointer; font-size:14px; }
+  .star.on { color:#f59e0b; }
+  .ok { color:var(--c-ok); font-weight:600; } .bad { color:var(--c-bad); font-weight:600; }
+  .exp { background:#f8fafc; border-left:3px solid var(--c-accent); padding:10px 12px; border-radius:0 8px 8px 0; }
+  .note textarea { margin-top:4px; }
+  .timer { font-variant-numeric:tabular-nums; font-weight:600; color:var(--c-accent); }
+  .score { font-size:48px; font-weight:700; color:var(--c-accent); margin:8px 0; }
+  .grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; text-align:center; margin:12px 0; }
+  .grid div { background:#f8fafc; border-radius:10px; padding:12px 4px; }
+  .grid b { display:block; font-size:24px; } .grid span { font-size:12px; color:var(--c-muted); }
+  table { width:100%; border-collapse:collapse; margin-top:8px; }
+  th, td { text-align:left; padding:8px; border-bottom:1px solid var(--c-line); font-size:14px; }
+  ul.wrong { padding-left:18px; } ul.wrong li { margin:6px 0; }
+  /* 範圍選單:題庫(select) → 級別(chip 單選) → 科目(chip 多選) */
+  .pick-lb { display:block; font-size:13px; font-weight:600; color:var(--c-muted); margin:12px 0 6px; }
+  .pick-lb .muted { font-weight:400; }
+  .pick-lb select { margin-top:4px; }
+  .chip-row { display:flex; flex-wrap:wrap; gap:8px; }
+  .chip { background:#fff; border:1px solid var(--c-line); border-radius:999px; padding:8px 14px; font-size:14px; line-height:1.3; cursor:pointer; color:var(--c-ink); }
+  .chip b { color:var(--c-muted); font-weight:600; font-variant-numeric:tabular-nums; }
+  .chip.on { border-color:var(--c-accent); background:#eff6ff; color:var(--c-accent); font-weight:600; }
+  .chip.on b { color:var(--c-accent); }
+  .chip:disabled { opacity:.4; cursor:default; }
+  .range-sum { margin:10px 0 0; }
+  .qfig { max-width:100%; border:1px solid var(--c-line); border-radius:8px; margin:10px 0; display:block; }
+  /* 背題模式:選項唯讀(不作答),正解沿用 .opt.correct 綠底;解析用原生 details/summary */
+  .study-opts .opt { cursor:default; }
+  .study-opts .opt:hover { border-color:var(--c-line); }
+  .study-opts .opt.correct:hover { border-color:var(--c-ok); }
+  .study-exp { margin-top:10px; }
+  .study-exp summary { cursor:pointer; color:var(--c-accent); font-size:14px; font-weight:600; }
+  .study-exp .exp { margin-top:8px; }
+  .study-toggle { display:flex; align-items:center; gap:8px; margin:10px 0 0; font-size:14px; cursor:pointer; }
+  .study-toggle input { width:auto; }
+  #installbar:not([hidden]) { display:flex; align-items:center; justify-content:space-between; gap:8px; max-width:720px; margin:0 auto; padding:10px 14px; background:#2563eb; color:#fff; font-size:14px; }
+  #installbar button { border:0; border-radius:8px; padding:6px 12px; font-size:14px; cursor:pointer; margin-left:6px; }
+  #install-btn { background:#fff; color:#2563eb; font-weight:600; }
+  #install-x { background:transparent; color:#fff; }
+  .guide { font-size:13px; color:var(--c-muted); background:#f1f5f9; border-radius:8px; padding:8px 10px; margin:8px 0; }
+  .guide a { color:var(--c-accent); white-space:nowrap; }
+  .exam-pick { background:#fff; border:1px solid var(--c-line); padding:5px 10px; border-radius:6px; font-size:13px; cursor:pointer; margin:4px 6px 0 0; color:var(--c-accent); font-variant-numeric:tabular-nums; }
+  /* 知識延伸:題卡下方的摺疊區塊 + 知識庫分頁 */
+  .kext { margin-top:10px; border:1px solid var(--c-line); border-radius:8px; background:#fbfdff; }
+  .kext > summary { cursor:pointer; padding:8px 12px; color:var(--c-accent); font-size:14px; font-weight:600; }
+  .kext .kbody { padding:0 12px 10px; }
+  .kbody p { margin:8px 0; line-height:1.75; }
+  .kbody .ksum { font-weight:600; color:var(--c-ink); }
+  .kbody .kpit { margin:8px 0; padding-left:20px; color:var(--c-ink); }
+  .kbody .kpit li { margin:4px 0; line-height:1.7; }
+  .kterms { margin:8px 0; line-height:1.7; } .kterms dt { font-weight:700; display:inline; } .kterms dt::after { content:'：'; } .kterms dd { display:inline; margin:0; } .kterms dd::after { content:''; display:block; margin-bottom:4px; }
+  .kbody .krefs { font-size:13px; color:var(--c-muted); margin-top:10px; }
+  .kbody .krefs a { color:var(--c-accent); }
+  .kfilter { display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end; margin-top:12px; }
+  .kfilter .chips { display:flex; gap:8px; }
+  .ksel { display:flex; flex-direction:column; gap:4px; font-size:13px; color:var(--c-muted); }
+  .ksel select, .ksel input { padding:8px 10px; border:1px solid var(--c-line); border-radius:8px; font-size:16px; max-width:100%; background:#fff; color:var(--c-ink); }
+  .src-tag { display:inline-block; font-size:11px; padding:1px 6px; border-radius:999px; background:#eef4ff; color:#2563eb; border:1px solid #dbe5f5; }
+  .site-footer { max-width:720px; margin:0 auto; padding:24px 12px 40px; text-align:center; border-top:1px solid var(--c-line); }
+  .site-footer nav { display:flex; flex-wrap:wrap; gap:14px; justify-content:center; margin-bottom:10px; }
+  .site-footer a { color:var(--c-accent); font-size:15px; text-decoration:none; display:inline-flex; align-items:center; min-height:44px; }
+  .site-footer .muted { font-size:12px; }
+  .concept-card { background:linear-gradient(135deg,#eef4ff,#f8fafc); border:1px solid #dbe5f5; }
+  .concept-card .ck { font-size:12px; color:var(--c-accent); font-weight:600; }
+  .concept-card h3 { margin:4px 0 6px; }
+  .note-item { border-top:1px solid var(--c-line); padding-top:12px; margin-top:12px; }
+  .note-item .qn { font-size:14px; margin:6px 0; }
+  .note-item .goto { background:#eef0f3; border:0; padding:4px 10px; border-radius:6px; font-size:13px; cursor:pointer; white-space:nowrap; }
+  .note-edit { margin-top:4px; }
+  .badges { display:flex; flex-wrap:wrap; gap:8px; margin:6px 0 14px; }
+  .badge { font-size:13px; padding:6px 10px; border-radius:999px; background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; }
+  .badge.lock { background:#f3f4f6; color:#9ca3af; border-color:#e5e7eb; }
+  .trend { display:flex; align-items:flex-end; gap:3px; height:78px; margin:8px 0 4px; }
+  .tcol { flex:1; height:100%; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; gap:2px; }
+  .tnum { font-size:10px; color:var(--c-muted); font-variant-numeric:tabular-nums; line-height:1; min-height:11px; }
+  .trend .bar { width:100%; background:var(--c-accent); border-radius:3px 3px 0 0; opacity:.85; }
+  .trend-lab { display:flex; justify-content:space-between; font-size:11px; color:var(--c-muted); }
+  .code { font-family:ui-monospace,monospace; font-size:20px; background:#f8fafc; padding:10px; border-radius:8px; text-align:center; letter-spacing:1px; }
+  h3.danger, button.danger { color:var(--c-bad); }
+  button.danger { border:1px solid var(--c-bad)!important; background:#fff!important; }
+  @media (prefers-reduced-motion: reduce) { .card { animation:none; } .opt { transition:none; } .opt:active { transform:none; } }
+</style>
+</head>
+<body>
+  <header>
+    <p class="muted" style="margin:0 0 4px"><a href="earth.html" style="display:inline-flex;align-items:center;min-height:44px">回地球永續國</a></p>
+    <h1 id="title">iPAS 淨零碳規劃管理師 模擬考練習</h1>
+    <p id="banner" hidden></p>
+    <nav>
+      <button data-v="home" class="on">練習</button>
+      <button data-v="study">背題</button>
+      <button data-v="knowledge">知識</button>
+      <button data-v="mock">模擬考</button>
+      <button data-v="wrong">錯題本</button>
+      <button data-v="notes">筆記</button>
+      <button data-v="stats">統計</button>
+      <button data-v="settings">設定</button>
+    </nav>
+  </header>
+  <div id="installbar" hidden>
+    <span>把模考裝成 App，離線也能刷</span>
+    <span><button id="install-btn">安裝</button><button id="install-x" aria-label="關閉">✕</button></span>
+  </div>
+  <main id="view"></main>
+  <footer class="site-footer">
+    <nav>
+      <a href="https://www.ipas.org.tw/certification/NZ/learning-resources" target="_blank" rel="noopener">官方學習資源</a>
+    </nav>
+    <p class="muted">題目為 iPAS 淨零碳規劃管理師官方公告試題（答案皆官方）與少量本站自製題；解析為本站自寫，僅供參考。</p>
+    <p class="muted">本站修改自 yazelin/ipas-ai-quiz（MIT）</p>
+  </footer>
+  <script type="module" src="app.js"></script>
+  <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});</script>
+</body>
+</html>
