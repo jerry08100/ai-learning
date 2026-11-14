@@ -1,9 +1,11 @@
 import { nextBox, isMastered, scoreExam, progressStats, wrongQuestionIds, toMarkdown, reviewPriority, MASTER_BOX,
   BANKS, LEVELS, bankOf, levelOf, countIn, firstLevelWith, subjectsIn, resolveSubs, rangeQuestions } from './core.js';
 
-const STORE_KEY = 'ipas_quiz_progress';
+// 同一支程式跑兩座演武島：practice.html（AI 智能國，iPAS AI 應用規劃師）、earth-practice.html（地球永續國，iPAS 淨零碳規劃管理師）
+const EARTH = document.documentElement.dataset.quiz === 'earth';
+const STORE_KEY = EARTH ? 'earth_quiz_progress' : 'ipas_quiz_progress';
 // 同步後端＝獨立 server 04_同步後端/（2026-08-26 從遊戲伺服器抽出，接手同一 Zeabur service，合約逐字相同）。/sync/:code。留空=只用本機。
-const SYNC_URL = 'https://ipas-sync-823719914514.asia-east1.run.app'; // 同步後端＝獨立 server（原始碼 04_同步後端/）
+const SYNC_URL = EARTH ? '' : 'https://ipas-sync-823719914514.asia-east1.run.app'; // ponytail: 永續國先不做雲端同步（同步碼會跟 AI 國互蓋），要做再分 key // 同步後端＝獨立 server（原始碼 04_同步後端/）
 const VAPID_PUBLIC = 'BNn4Lwq818aHx8cb0LrcQ6IpRgHb9B3P_BOqusct-uFyJPQ4hlDrIOirliHoNdbbg5tg8zWfzBg5SZ0yBhRq7zA';
 const PUSH_ENABLED = false; // Phase 3: 現行同步後端（04_同步後端/）無 push，關閉推播 UI 與 /push/* 呼叫（同步不受影響）
 const $ = (sel) => document.querySelector(sel);
@@ -16,6 +18,24 @@ const KTOPIC = new Map();      // 正規化 topic → notes（主要掛載）
 const KCHAP = new Map();       // chapter → notes（topic 沒中時的退路）
 const KBYQ = new Map();        // 題目 id → notes：知識大陸 world-pool.json 逐題判斷過的對應，有就優先用
 let EXAMINFO = null;
+// 永續國題庫：earth-quiz.json＋earth-notes.json 轉成跟 questions.json 一樣的形狀（level／round／subject／source），
+// 知識延伸直接用題目的 note 欄位對到知識點（KBYQ），不走關鍵字配對。
+const EARTH_SUBJ = { L11: '科目1：淨零碳規劃管理基礎概論', L12: '科目2：淨零碳盤查規範與程序概要', L21: '科目1：節能減碳技術實務', L22: '科目2：碳管理制度實務' };
+async function loadEarth() {
+  const [qs, notes] = await Promise.all(['earth-quiz.json', 'earth-notes.json'].map(async (u) => (await fetch(u)).json()));
+  const NM = new Map(notes.map((n) => [n.id, n])), code = (n) => String(n?.codes?.[0] || '').slice(0, 3);
+  KNOW = notes.map((n) => ({ ...n, subject: EARTH_SUBJ[code(n)] || '其他' }));
+  const KM = new Map(KNOW.map((n) => [n.id, n]));
+  const questions = qs.map((q) => {
+    const ids = [].concat(q.note || []), m = /^(.+?)・(初級|中級) (L\d\d)$/.exec(q.round || '');
+    const c = m ? m[3] : code(NM.get(ids[0]));
+    KBYQ.set(q.id, ids.map((id) => KM.get(id)).filter(Boolean));
+    return { ...q, level: m ? m[2] : (c.startsWith('L2') ? '中級' : '初級'), round: m ? m[1] : '本站自製', subject: EARTH_SUBJ[c] || '其他',
+      source: q.src === '官方' ? '歷屆' : '延伸題' };
+  });
+  return { meta: { title: 'iPAS 淨零碳規劃管理師 模擬考練習', defaultTimeLimitMin: 75,
+    note: '題目為 iPAS 115 年淨零碳規劃管理師官方公告試題（答案皆官方）與少量本站自製題；解析為本站自寫，僅供參考。' }, questions };
+}
 let store = load();
 let pushTimer = null;
 let dirty = false; // 有未上傳的本機變動才寫 KV(localStorage 才是本機真相,KV 只跨裝置)
@@ -343,8 +363,8 @@ const curSubs = () => resolveSubs(DATA.questions, curBank(), curLv(), store.subs
 const rangePool = () => rangeQuestions(DATA.questions, { bank: store.bank, lv: store.lv, subs: store.subs });
 function rangePickerHtml() {
   const bank = curBank(), lv = curLv(), subs = curSubs();
-  const banks = BANKS.map((b) =>
-    `<option value="${esc(b.key)}"${b.key === bank.key ? ' selected' : ''}>${esc(b.label)} ${DATA.questions.filter((q) => b.test(q)).length} 題</option>`).join('');
+  const banks = BANKS.filter((b) => b.key === bank.key || (DATA.questions.some((q) => b.test(q)) && !(EARTH && b.key === '歷屆'))).map((b) => // 只列有題目的題庫；永續國官方題只有公告試題，「只練歷屆」跟官方題重複就不列
+    `<option value="${esc(b.key)}"${b.key === bank.key ? ' selected' : ''}>${esc(EARTH && b.key === 'official' ? '官方題（115 年公告試題）' : b.label)} ${DATA.questions.filter((q) => b.test(q)).length} 題</option>`).join('');
   const lvs = LEVELS.map(([k, label]) => {
     const n = countIn(DATA.questions, bank, k);
     return `<button type="button" class="chip lv${k === lv ? ' on' : ''}" data-lv="${esc(k)}"${n ? '' : ' disabled'}>${label} <b>${n}</b></button>`;
@@ -816,7 +836,7 @@ function settings() {
       <h3>同步碼</h3>
       <p class="muted">${SYNC_URL
         ? '平常背景自動同步（答完題、切走 App、打開本頁時都會上傳；停在畫面沒動則最多 30 秒補傳一次）。換新裝置時：先在舊裝置打開這頁（會上傳），再到新裝置輸入這組碼。'
-        : '雲端同步尚未啟用（需在 app.js 填入 Worker 網址）。目前可用下方「匯出/匯入」轉移。'}</p>
+        : EARTH ? '永續國題庫的進度只存在這台裝置，換裝置請用下方「匯出/匯入」轉移。' : '雲端同步尚未啟用（需在 app.js 填入 Worker 網址）。目前可用下方「匯出/匯入」轉移。'}</p>
       <p class="code" id="code">${esc(store.syncCode)}</p>
       <label>在新裝置輸入既有同步碼
         <input id="code-in" placeholder="例如 fox-river-82">
@@ -997,18 +1017,18 @@ async function boot() {
   const ix = document.getElementById('install-x');
   if (ix) ix.onclick = dismissInstallBar;
   try {
-    DATA = await (await fetch('questions.json')).json();
+    DATA = EARTH ? await loadEarth() : await (await fetch('questions.json')).json();
   } catch {
     view.innerHTML = `<section class="card"><p class="bad">載入 questions.json 失敗。請用本機伺服器開啟（例如 <code>python3 -m http.server</code>）。</p></section>`;
     return;
   }
-  try { CONCEPTS = ((await (await fetch('concepts.json')).json()).cards) || []; } catch { CONCEPTS = []; }
-  try { KNOW = ((await (await fetch('knowledge.json')).json()).notes) || []; } catch { KNOW = []; }
+  if (!EARTH) try { CONCEPTS = ((await (await fetch('concepts.json')).json()).cards) || []; } catch { CONCEPTS = []; }
+  if (!EARTH) try { KNOW = ((await (await fetch('knowledge.json')).json()).notes) || []; } catch { KNOW = []; }
   buildKnowIndex();
-  try { const wp = await (await fetch('world-pool.json')).json(), KM = new Map(KNOW.map((n) => [n.id, n]));
+  if (!EARTH) try { const wp = await (await fetch('world-pool.json')).json(), KM = new Map(KNOW.map((n) => [n.id, n]));
     for (const [nid, qids] of Object.entries(wp)) { const n = KM.get(nid); if (n) for (const qid of qids) { if (!KBYQ.has(qid)) KBYQ.set(qid, []); KBYQ.get(qid).push(n); } }
   } catch { KBYQ.clear(); }
-  try { EXAMINFO = await (await fetch('exam-dates.json')).json(); } catch { EXAMINFO = null; }
+  if (!EARTH) try { EXAMINFO = await (await fetch('exam-dates.json')).json(); } catch { EXAMINFO = null; }
   if (DATA.meta?.title) $('#title').textContent = DATA.meta.title;
   if (DATA.meta?.note) { const n = $('#banner'); n.textContent = DATA.meta.note; n.hidden = false; }
   localStorage.setItem(STORE_KEY, JSON.stringify(store)); // 落地可能新生成的 syncCode(不動 updatedAt)

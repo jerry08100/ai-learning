@@ -8,8 +8,8 @@
 export const TW = 48, TH = 72, T = 16; // 48×72 格，每格 16×16 像素 → 768×1152
 const W = TW * T, H = TH * T, K = T >> 1, AW = W >> 1, AH = H >> 1, N = AW * AH; // 美術點 2×2 像素，每格 8×8 個美術點
 export const LAYOUT = { renew:{ sx:22, sy:10 }, inventory:{ sx:11, sy:23 }, disclose:{ sx:36, sy:22 }, climate:{ sx:24, sy:35 },
-  footprint:{ sx:10, sy:46 }, energy:{ sx:35, sy:44 }, carbon:{ sx:20, sy:57 } };
-const ISLES = []; // 右下角海面（約格 32–47, 55–71）預留給之後的演武島
+  footprint:{ sx:10, sy:46 }, energy:{ sx:35, sy:44 }, carbon:{ sx:20, sy:57 }, arena:{ sx:39, sy:64 } };
+const ISLES = ['arena']; // 右下角外海：演武島（官方題庫練習），不屬於主大陸
 const IDS = Object.keys(LAYOUT), MAIN = IDS.filter((k) => !ISLES.includes(k));
 const ROADS = [['climate','disclose'],['climate','inventory'],['climate','footprint'],['climate','energy'],['climate','renew'],['climate','carbon'],['inventory','renew'],['energy','carbon'],['footprint','carbon'],['renew','disclose']];
 // 主島：幾個橢圓疊起來（格座標 cx, cy, rx, ry）；右下角不放陸地
@@ -83,7 +83,7 @@ const R = {
   high:['#46583a','#66783e','#8c9a4c','#b4b862','#dcd486'], ind:['#2c3a40','#3e5250','#566c5c','#768a66','#9aa682'], wet:['#1a3638','#264e46','#3a6a52','#58865c','#86a46e'],
   alp:['#28424a','#3a5c52','#52785a','#749466','#a2b482'], sand:['#a0805a','#c4a472','#dbc28a','#eed9a4','#faeec6'], isle:['#245a3e','#357a44','#4f9a4a','#7cba56','#b4d672'],
 };
-const TER = { renew:'high', inventory:'vale', disclose:'grass', climate:'meadow', footprint:'wood', energy:'ind', carbon:'wet' };
+const TER = { renew:'high', inventory:'vale', disclose:'grass', climate:'meadow', footprint:'wood', energy:'ind', carbon:'wet', arena:'isle' };
 const OCN = ['#8ee0d0', '#5cc4c8', '#41a6c2', '#328bb3', '#2a72a0', '#225b8c', '#1b4878', '#163a64', '#122d52', '#0f2343'];
 const RIV = ['#235a86', '#2e71a0', '#4791b8', '#7cc0d4', '#c2eaea'];
 const S = { // 建物與物件色帶（暗→亮）
@@ -280,6 +280,19 @@ IDS.forEach((id) => (SET[id] = { st: [], anim: [] }));
     put('carbon', y - 22, () => { const X = x + 62, Y = y - 22; shadow(X + 3, Y + 1, 6, 2); rect(X - 5, Y - 16, 10, 16, R.rock[2]); rect(X + 2, Y - 16, 3, 16, R.rock[1]); rect(X - 5, Y - 16, 10, 1, R.rock[4]); rect(X - 2, Y - 12, 4, 7, '#7ef0a0'); px(X - 1, Y - 11, '#fff'); }, [x + 56, y - 40, x + 68, y - 22]);
     SET.carbon.anim.push((f) => { egret(x + 30 + Math.round(Math.sin(f / 3) * 3), y + 44, f); egret(x - 64, y - 26, f + 1); egret(x + 96, y - 14, f + 2); });
     [[-40, -10], [36, -20], [-90, -4], [70, 30], [-60, 50]].forEach(([dx, dy]) => put('carbon', y + dy, () => mangrove(x + dx, y + dy, 1.1)));
+  }
+  { // 演武島：圓形競技場＋旗＋火把＋帳篷（跟 AI 國的演武島同一套造型，永續國用綠旗）
+    const [x, y] = P0('arena'); TOPY.arena = y - 44;
+    occ(x - 52, y - 40, x + 52, y + 10);
+    put('arena', y, () => { shadow(x + 8, y + 3, 50, 8);
+      ell(x, y - 10, 46, 20, S.st[1]); ell(x, y - 12, 45, 19, S.st[2]); ell(x, y - 14, 44, 17, S.st[3]);
+      ell(x, y - 13, 34, 12, S.ws[1]); ell(x, y - 13, 32, 11, '#c8a46a'); ell(x, y - 12, 26, 8, '#d8b878');
+      for (let i = -42; i <= 42; i += 7) { const yy = y - 2 + Math.round((1 - (i / 46) ** 2) * 6), dk = i > 10; rect(x + i - 2, yy - 9, 5, 9, dk ? S.st[1] : S.st[2]); rect(x + i - 1, yy - 7, 3, 5, BLK); ell(x + i, yy - 7, 1, 1, BLK); }
+      rect(x - 46, y - 16, 92, 1, S.st[4]); rect(x - 5, y - 6, 10, 8, BLK); });
+    SET.arena.anim.push((f) => { flag(x - 44, y - 18, f, '#3f9a52', 18); flag(x + 44, y - 18, f + 1, GOLD, 18); flag(x, y - 30, f, '#3a8ac8', 14);
+      for (const dx of [-14, 14]) { rect(x + dx, y - 6, 1, 6, S.wd[1]); px(x + dx, y - 7 - (f % 2), '#ffd27a'); px(x + dx, y - 8, f % 2 ? '#f08a3a' : '#ffd27a'); } });
+    [[-62, 16], [62, 12]].forEach(([dx, dy], k) => put('arena', y + dy, () => { const X = x + dx, Y = y + dy; shadow(X + 4, Y + 1, 9, 2); for (let j = 0; j < 10; j++) rect(X - j, Y - 10 + j, j * 2 + 1, 1, k ? (j % 3 ? '#3f9a52' : WH) : (j % 3 ? '#3a8ac8' : WH)); rect(X - 1, Y - 4, 3, 4, BLK); }));
+    [[-34, 26], [36, 28]].forEach(([dx, dy]) => put('arena', y + dy, () => palm(x + dx, y + dy)));
   }
 })();
 

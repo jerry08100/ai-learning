@@ -9,7 +9,7 @@ import { mount, termsCard, trapsCard, KIND, GATED } from './lessonkit.js';
 const CC = document.body.dataset.country === 'earth' ? 'earth' : 'ai';
 const CFG = {
   ai: { key: 'ipas-world', start: 'plain', map: './world-map.js', name: '知識大陸', port: { id: 'arena', name: '演武島', domain: 'iPAS 題庫練習' } },
-  earth: { key: 'earth-world', start: 'climate', map: './earth-map.js', name: '地球永續國', port: null },
+  earth: { key: 'earth-world', start: 'climate', map: './earth-map.js', name: '地球永續國', port: { id: 'arena', name: '演武島', domain: 'iPAS 淨零碳題庫練習' } },
 }[CC];
 let makeMap, TW, TH, LAYOUT; // 地圖繪製器依國家動態載入
 const KEY = CFG.key;
@@ -160,8 +160,8 @@ function showMap() {
 const LYT = { pass:['通過試煉','t-pass'], learn:['冒險中','t-learn'], lock:['未開放','t-lock'] };
 function portSheet() {
   $('#sh-head').innerHTML = `<h2><span>${PORT.name}</span><button class="x" id="sh-x" aria-label="關閉">✕</button></h2><div class="dom">${PORT.domain}</div>`;
-  $('#sh-body').innerHTML = `<div class="layer"><div class="lc plain">原本的 iPAS AI 應用規劃師題庫都在這座島：照章節練習、背題、模擬考、錯題本和筆記。紀錄跟知識大陸分開存。</div>
-    <a class="pbtn trial" href="practice.html">進入演武島</a></div>`;
+  $('#sh-body').innerHTML = `<div class="layer"><div class="lc plain">${CC === 'earth' ? 'iPAS 淨零碳規劃管理師 115 年官方試題都在這座島：照科目練習、背題、模擬考、錯題本和筆記。紀錄跟永續國地圖分開存。' : '原本的 iPAS AI 應用規劃師題庫都在這座島：照章節練習、背題、模擬考、錯題本和筆記。紀錄跟知識大陸分開存。'}</div>
+    <a class="pbtn trial" href="${CC === 'earth' ? 'earth-practice.html' : 'practice.html'}">進入演武島</a></div>`;
 }
 function openSheet(id) {
   if (id === PORT?.id) { selId = id; document.querySelectorAll('.tag, .rlist button').forEach((t) => t.classList.toggle('sel', t.dataset.id === id)); portSheet(); bindSheetX(); $('#sheet').classList.add('on'); return; }
