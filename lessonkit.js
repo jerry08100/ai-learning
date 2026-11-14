@@ -95,7 +95,7 @@ const K = {
     el.append(pool, bins, msg); let pick = null, left = b.items.length;
     shuffle(b.items).forEach((x) => { const c = h('button', 'lk-chip', esc(x.t)); c.dataset.k = x.k;
       c.onclick = () => { pool.querySelectorAll('.lk-chip').forEach((y) => y.classList.remove('pick')); pick = c; c.classList.add('pick'); }; pool.append(c); });
-    b.bins.forEach((bin) => { const box = h('div', 'lk-bin', `<span>${esc(bin.label)}</span><div class="lk-chips"></div>`); box.tabIndex = 0; box.setAttribute('role', 'button'); // 籃子裡要放按鈕，籃子本身不能是 <button>
+    b.bins.forEach((bin) => { const box = h('div', 'lk-bin', `<span>${esc(bin.label)}</span><div class="lk-chips"></div>`); box.tabIndex = 0; box.setAttribute('role', 'button'); box.dataset.k = bin.k; // 籃子裡要放按鈕，籃子本身不能是 <button>
       box.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); box.click(); } };
       box.onclick = () => { if (!pick) return;
         if (pick.dataset.k === bin.k) { pick.classList.remove('pick'); pick.classList.add('ok'); pick.disabled = true; box.querySelector('.lk-chips').append(pick); pick = null;
@@ -126,7 +126,7 @@ const K = {
     if (b.presets) { const p = h('div', 'lk-pre', '試試這些情境：'); b.presets.forEach((x) => { const btn = h('button', null, esc(x.label)); btn.onclick = () => { Object.assign(val, x.vals); draw(); }; p.append(btn); }); el.append(p); }
     function draw() {
       const v = { ...val, ...(modes[mode].consts || {}) };
-      b.inputs.forEach((x) => { const r = el.querySelector(`#lk-${ctx.uid}-${x.k}`); r.value = val[x.k]; r.parentNode.querySelector('.v').textContent = `${fmt(val[x.k], 2)} ${x.unit || ''}`; });
+      b.inputs.forEach((x) => { const r = el.querySelector(`#lk-${ctx.uid}-${x.k}`); r.value = val[x.k]; r.parentNode.querySelector('.v').textContent = `${fmt(val[x.k], Math.max(2, (String(x.step || 1).split(/[.e-]/)[1] || '').length, x.step < 1e-3 ? 6 : 0))} ${x.unit || ''}`; }); // 小數位跟著 step，0.001 不會被顯示成 0
       const bv = bars.map((o) => [o.label, o.fn(v)]), mx = Math.max(1e-9, ...bv.map((x) => Math.abs(x[1])));
       barEl.innerHTML = bv.map(([l, n]) => `<div class="lk-bar"><span>${esc(l)}</span><i style="width:${Math.abs(n) / mx * 100}%"></i><em>${fmt(n, 1)}</em></div>`).join('');
       outEl.innerHTML = outs.map((o) => `<div><span>${esc(o.label)}</span><b>${fmt(o.fn(v), o.digits ?? 0)}</b> ${esc(o.unit || '')}</div>`).join('');
