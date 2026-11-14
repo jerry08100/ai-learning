@@ -4,6 +4,7 @@
 // 進度只存在本機，不碰主站的練習進度與同步；兩國互不解鎖。
 
 import { mountFx } from './fx.js';
+import { mount, termsCard, trapsCard, KIND, GATED } from './lessonkit.js';
 
 const CC = document.body.dataset.country === 'earth' ? 'earth' : 'ai';
 const CFG = {
@@ -31,7 +32,7 @@ const ST = (() => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } 
 ST.notes ||= {}; ST.passed ||= {}; ST.cur ||= CFG.start;
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(ST)); } catch {} };
 
-let W, KN, POOL; // world.json、知識點 id→內容、知識點 id→相關題目
+let W, KN, POOL, LS = new Map(); // world.json、知識點 id→內容、知識點 id→相關題目、知識點 id→互動關卡（*-lessons.json）
 const LN = (i) => W.regions[0].layers[i].name;
 
 // ---- 知識點↔題目對應：與 app.js 的 notesFor 同一套規則（topic 精準命中優先，否則章節內關鍵字重疊） ----
@@ -258,8 +259,10 @@ document.addEventListener('focusout', (e) => { if (e.target.closest?.('.tm')) hi
 document.addEventListener('click', (e) => { const t = e.target.closest?.('.tm'); if (!t) return hideTip(); if (tipFor === t && !tip.hidden && Date.now() - tipAt > 400) hideTip(); else showTip(t); }); // 手機點一下會先觸發 mouseover，0.4 秒內的點擊不當成關閉
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hideTip(); });
 addEventListener('scroll', hideTip, true);
-function lesson(r, i, id) {
-  const n = KN.get(id), qs = shuffle(POOL.get(id) || []).slice(0, 2);
+function lesson(r, i, id, plain = false) {
+  const n = KN.get(id), qs = shuffle(POOL.get(id) || []).slice(0, 2), LK = plain ? null : LS.get(id);
+  // 有互動關卡就用關卡（使用者 2026-11-14 選定）；隨時可切回原本的全文閱讀
+  const modeBtn = LS.has(id) ? `<button class="pbtn-s lk-mode" id="lkmode">${plain ? '互動版' : '看全文'}</button>` : '';
   // 一段一頁、單欄。名詞在內文標色，滑鼠移過去（手機點一下）跳出解釋；每個名詞只標第一次出現的地方
   const seen = new Set(), TERMS = (n.terms || []).slice().sort((x, y) => y.t.length - x.t.length);
   const mark = (raw) => { let h = esc(raw); const slots = [];
@@ -273,6 +276,13 @@ function lesson(r, i, id) {
   const left = (n.terms || []).filter((x) => !seen.has(x.t)); // 沒在內文出現的名詞，最後列出
   if (left.length) blocks.push(`<h3 class="ph th">名詞解釋</h3><dl class="terms">${left.map((x) => `<dt>${esc(x.t)}</dt><dd>${esc(x.d)}</dd>`).join('')}</dl>`);
   if ((n.refs || []).length) blocks.push(`<div class="refs">出處：${n.refs.map((x) => x.u ? `<a href="${esc(x.u)}" target="_blank" rel="noopener">${esc(x.t)}</a>` : esc(x.t)).join('、')}</div>`);
+  let cards;
+  if (LK) {
+    cards = LK.blocks.map((b) => ({ kind: KIND[b.type], blk: b }));
+    if ((n.terms || []).length) cards.push({ kind: '名詞卡', fn: (el) => termsCard(n.terms, el) });
+    if ((n.pitfalls || []).length) cards.push({ kind: '陷阱卡', pit: true, fn: (el) => trapsCard(n.pitfalls, el) });
+    cards.push({ kind: '記憶點', html: `<div class="lk-memo">${esc(LK.memo)}</div>${(n.refs || []).length ? `<div class="refs">出處：${n.refs.map((x) => x.u ? `<a href="${esc(x.u)}" target="_blank" rel="noopener">${esc(x.t)}</a>` : esc(x.t)).join('、')}</div>` : ''}` });
+  } else {
   page({ title: n.title, main:'<span class="kind">閱讀</span><div id="meas"></div>', nav:'<button class="pbtn">下一張</button>' });
   const meas = $('#meas'), navH = $('.nav').offsetHeight, groups = [[]];
   // 寬螢幕（≥1200）用左右兩欄排滿整張卡：固定高度的分欄容器，溢出成第三欄就代表這頁放不下
@@ -284,11 +294,12 @@ function lesson(r, i, id) {
     const g = groups[groups.length - 1]; meas.insertAdjacentHTML('beforeend', b);
     if (g.length && !fits()) { meas.innerHTML = b; groups.push([b]); } else g.push(b); // 單一區塊本身就太長時照樣放，卡片內可捲
   }
-  const cards = groups.map((g, j) => ({ kind: groups.length > 1 ? `閱讀 ${j + 1}/${groups.length}` : '閱讀', html: wide ? `<div class="flow" style="height:${H}px">${g.join('')}</div>` : g.join('') }));
+  cards = groups.map((g, j) => ({ kind: groups.length > 1 ? `閱讀 ${j + 1}/${groups.length}` : '閱讀', html: wide ? `<div class="flow" style="height:${H}px">${g.join('')}</div>` : g.join('') }));
+  }
   const refs = '', refAt = -1;
   qs.forEach((q, j) => cards.push({ kind:`小檢查 ${j + 1}/${qs.length}`, chk:true, q }));
   if (!qs.length) cards.push({ kind:'小檢查', html:'<p>這則目前沒有對應的題目，讀完就算學過。</p>' });
-  let at = 0, wrongs = 0; const answered = new Set();
+  let at = 0, wrongs = 0; const answered = new Set(), cleared = new Set(); // cleared：互動卡已完成（對話講完、猜題答完…）
   const finish = () => {
     const pass = wrongs === 0; ST.notes[id] = { s: pass ? 'ok' : 'fail', t: Date.now() }; save();
     const ready = layerSt(r, i) === 'learn' && layerReady(r, i), nx = r.layers[i].notes.find((x) => !ST.notes[x]);
@@ -309,10 +320,13 @@ function lesson(r, i, id) {
       const can = !x.chk || answered.has(j) || j <= at, cls = j === at ? 'cur' : j > at ? 'dim' : '';
       return `<li>${can && j !== at ? `<button data-j="${j}" class="${cls}">${esc(x.kind)}</button>` : `<span class="it ${cls}">${esc(x.kind)}</span>`}</li>`; }).join('')}</ul></section>`;
     page({ title: n.title, dots: cards.map((_, j) => `<i class="${j === at ? 'on' : j < at ? 'done' : ''}"></i>`).join(''),
-      main: `<span class="kind ${c.pit ? 'pit' : ''} ${c.chk ? 'chk' : ''}">${esc(c.kind)}</span>${c.q ? qHtml(c.q) : c.html}${at === refAt ? refs : ''}`,
+      main: `<div style="display:flex;align-items:flex-start;gap:10px"><span class="kind ${c.pit ? 'pit' : ''} ${c.chk ? 'chk' : ''}">${esc(c.kind)}</span>${at === 0 ? modeBtn : ''}</div>${c.q ? qHtml(c.q) : c.blk || c.fn ? '<div id="lkb"></div>' : c.html}${at === refAt ? refs : ''}`,
       nav: `<button class="pbtn sec" id="prev" ${at === 0 ? 'disabled' : ''}>上一張</button>
-        <button class="pbtn" id="next" ${c.q && !answered.has(at) ? 'disabled' : ''}>${last ? '完成' : c.q ? '下一題' : '下一張'}</button>`,
+        <button class="pbtn" id="next" ${(c.q && !answered.has(at)) || (c.blk && GATED.has(c.blk.type) && !cleared.has(at)) ? 'disabled' : ''}>${last ? '完成' : c.q ? '下一題' : '下一張'}</button>`,
       side: outline + layerSide(r, i, id) });
+    if ($('#lkmode')) $('#lkmode').onclick = () => lesson(r, i, id, !plain);
+    if (c.blk) { const here = at; mount(c.blk, $('#lkb'), { region: r.id, uid: `${id}-${at}` }, () => { cleared.add(here); if (at === here) $('#next').disabled = false; }); }
+    if (c.fn) c.fn($('#lkb'));
     $('#prev').onclick = () => { if (at > 0) { at--; draw(); } };
     $('#next').onclick = () => { if (last) finish(); else { at++; draw(); } };
     document.querySelectorAll('.lside button[data-j]').forEach((b) => (b.onclick = () => { at = +b.dataset.j; draw(); }));
@@ -322,9 +336,9 @@ function lesson(r, i, id) {
     }
     // 左右滑換卡（作答中的卡不能滑走）
     const card = $('#card'); let x0 = null;
-    card.onpointerdown = (e) => { x0 = e.clientX; };
+    card.onpointerdown = (e) => { x0 = e.target.closest('input, button, .lk-tl, .lk-tblw') ? null : e.clientX; }; // 拉滑桿、捲時間軸、點按鈕不當成換卡
     card.onpointerup = (e) => { if (x0 === null) return; const dx = e.clientX - x0; x0 = null;
-      if (Math.abs(dx) < 60 || (c.q && !answered.has(at))) return;
+      if (Math.abs(dx) < 60 || (c.q && !answered.has(at)) || (c.blk && GATED.has(c.blk.type) && !cleared.has(at))) return;
       if (dx < 0 && !last) { at++; draw(); } else if (dx > 0 && at > 0) { at--; draw(); } };
   };
   draw();
@@ -380,11 +394,13 @@ let poolReady = null;
     if (CC === 'earth') { // 永續國：知識點與題目都是獨立檔；題目的 note 可以是一個 id 或多個 id 的陣列
       const [w, notes] = await Promise.all([getJSON('earth-world.json'), getJSON('earth-notes.json')]);
       W = w; KN = new Map(notes.map((n) => [n.id, n]));
+      LS = new Map(Object.entries(await getJSON('earth-lessons.json').catch(() => ({}))));
       poolReady = getJSON('earth-quiz.json').then((q) => { POOL = new Map(notes.map((n) => [n.id, []])); q.forEach((x) => [].concat(x.note).forEach((id) => POOL.get(id)?.push(x))); });
       return showMap();
     }
     const [w, k, cn] = await Promise.all([getJSON('world.json'), getJSON('knowledge.json'), getJSON('claude-notes.json').catch(() => null)]);
     W = w; KN = new Map(k.notes.map((n) => [n.id, n]));
+    LS = new Map(Object.entries(await getJSON('ai-lessons.json').catch(() => ({}))));
     // Claude 工坊島：知識點與題目放獨立檔，不混進 iPAS 題庫；題目直接用 note 欄位對到知識點
     if (cn) cn.forEach((n) => KN.set(n.id, n)); else W.regions = W.regions.filter((x) => x.id !== 'claude');
     // 小檢查與試煉題優先用 world-pool.json（逐題人工判斷過「考的就是這則」的對應表），沒有才退回關鍵字自動配對
