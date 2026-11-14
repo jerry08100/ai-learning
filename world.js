@@ -94,7 +94,9 @@ const drawMap = () => { MAP.draw({ open: { ...Object.fromEntries(W.regions.map((
 // ---- 畫面：地圖 ----
 let selId = null, foldList = false;
 // 區域清單照地圖位置由上往下、由左往右排，跟地圖對得上（使用者 2026-11-14）
-const byMap = () => [...W.regions].sort((a, b) => (LAYOUT[a.id]?.sy ?? 99) - (LAYOUT[b.id]?.sy ?? 99) || (LAYOUT[a.id]?.sx ?? 0) - (LAYOUT[b.id]?.sx ?? 0));
+// 高度差 4 格內視為同一列、改由左往右（盤查谷地 sy23 與揭露海港 sy22 同列，左邊的先）
+// ponytail: 兩兩比較非嚴格遞移，區域數少且間距大就夠；之後區域密集再改成先分列
+const byMap = () => [...W.regions].sort((a, b) => { const A = LAYOUT[a.id] || { sx: 0, sy: 99 }, B = LAYOUT[b.id] || { sx: 0, sy: 99 }; return Math.abs(A.sy - B.sy) < 4 ? A.sx - B.sx : A.sy - B.sy; });
 const LOCK = '<i class="lk" aria-hidden="true"></i>';
 function hud() {
   const all = W.regions.flatMap((r) => r.layers.flatMap((l) => l.notes)), ok = all.filter((id) => ST.notes[id]?.s === 'ok').length;
