@@ -57,7 +57,7 @@
      "name": "外圍",
      "tier": 1,
      "req": [
-      "climate:0"
+      "inventory:0"
      ],
      "notes": [
       "e-dc-cdp",
@@ -69,7 +69,9 @@
      "name": "內地",
      "tier": 2,
      "req": [
-      "disclose:0"
+      "disclose:0",
+      "climate:1",
+      "inventory:1"
      ],
      "notes": [
       "e-dc-gri-sasb",
@@ -127,7 +129,8 @@
      "name": "核心",
      "tier": 3,
      "req": [
-      "inventory:1"
+      "inventory:1",
+      "disclose:1"
      ],
      "notes": [
       "e-inv-inventory-report",
@@ -189,7 +192,8 @@
      "name": "外圍",
      "tier": 1,
      "req": [
-      "inventory:1"
+      "inventory:1",
+      "disclose:0"
      ],
      "notes": [
       "e-energy-hotspot",
@@ -201,7 +205,8 @@
      "name": "內地",
      "tier": 2,
      "req": [
-      "energy:0"
+      "energy:0",
+      "climate:1"
      ],
      "notes": [
       "e-energy-frontier-tech",
@@ -246,7 +251,8 @@
      "name": "內地",
      "tier": 2,
      "req": [
-      "renew:0"
+      "renew:0",
+      "disclose:1"
      ],
      "notes": [
       "e-renew-tw-policy",
@@ -289,7 +295,8 @@
      "name": "內地",
      "tier": 2,
      "req": [
-      "carbon:0"
+      "carbon:0",
+      "inventory:1"
      ],
      "notes": [
       "e-cb-voluntary-project-tw",
