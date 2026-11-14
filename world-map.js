@@ -1,4 +1,5 @@
-// 知識大陸的像素地圖：俯視 3/4 視角、暖色系（參考星露谷類農場像素風）。
+// 知識大陸的像素地圖：俯視 3/4 視角。2026-11-14 起改用風格 A（HD-2D 光影）的色相偏移調色盤：暗部偏藍紫、亮部偏黃，
+// 海依離岸距離分深淺、草地逐點明暗；柔光、光暈、景深由 fx.js 疊在上面。
 // 地形是固定種子產生，每次長得一樣；靜態層（地形、裝飾、迷霧）只在開放狀態改變時重畫，
 // 每幀只疊動態物件（浪、河水、風車、水車、旗子、羊、勇者、驚嘆號）。
 
@@ -10,10 +11,10 @@ const ISLES = ['claude', 'arena']; // 外海小島，不屬於主大陸
 const ROADS = [['plain','forest'],['plain','valley'],['plain','fort'],['forest','mount'],['forest','capital'],['valley','capital'],['capital','sea'],['plain','capital']];
 
 const C = { // 色盤
-  g1:'#3f8a3a', g2:'#58ad45', g3:'#7cc95a', g4:'#2f6b33', gl:'#a6dc6e',
-  d1:'#c99a5c', d2:'#a97a43', d3:'#e0b878', s1:'#f2dca2', s2:'#e3c486', cliff:'#8a5a3a', cliff2:'#6a4128',
-  w1:'#3b82c6', w2:'#5aa8e2', w3:'#a6dcf6', oc:'#22507f', oc2:'#2c6196', foam:'#d8f0fb',
-  st1:'#a1a9b3', st2:'#7f8892', st3:'#c9cfd5', st4:'#5c646e',
+  g1:'#3b7340', g2:'#4f8f45', g3:'#7aa84c', g4:'#24503a', gl:'#b5c865',
+  d1:'#c9a06a', d2:'#9a7450', d3:'#e5cd93', s1:'#ecd9a4', s2:'#cfb07a', cliff:'#7a5a44', cliff2:'#4a3440',
+  w1:'#24577e', w2:'#33739a', w3:'#8cc8cf', oc:'#10213f', oc2:'#1b3a60', foam:'#d6efe6',
+  st1:'#958ea0', st2:'#6c6680', st3:'#c3bcc4', st4:'#4a4458',
   wd1:'#8c5b33', wd2:'#6a4225', wd3:'#b37c47', sn:'#f1f6fa', rk:'#8d8f97', rk2:'#6c6e78',
   br1:'#dca56a', br2:'#bb7d4c', gold:'#f3c34f', red:'#c94a3c', org:'#e9772f', pk:'#f08a3a', wh:'#f7f4ee', blk:'#2a2230',
   coral:'#d97757', cream:'#f5e8d8', sky:'#9fd3ff', shadow:'rgba(20,30,20,.28)',
@@ -41,6 +42,12 @@ const GRID = [], ROAD = new Set();
     for (let i = 0; i <= n; i++) { const x = Math.round(A.sx + (B.sx - A.sx) * i / n + Math.sin(i / 3) * 0.8), y = Math.round(A.sy + (B.sy - A.sy) * i / n);
       if (at(x, y) && at(x, y) !== 'sea') ROAD.add(y * TW + x); } }
 })();
+// 離岸距離（海格到最近陸地的格數，上限 5）：海依深度上色
+const OCEAN_RAMP = ['#3c86a6', '#2c6c94', '#1f5079', '#173a62', '#122c50', '#10213f'];
+const DEPTH = new Uint8Array(TW * TH).fill(9);
+(() => { let q = []; for (let y = 0; y < TH; y++) for (let x = 0; x < TW; x++) if (GRID[y * TW + x]) { DEPTH[y * TW + x] = 0; q.push([x, y]); }
+  for (let d = 1; d <= 5 && q.length; d++) { const nq = []; for (const [x, y] of q) for (const [a, b] of [[1,0],[-1,0],[0,1],[0,-1]]) { const X = x + a, Y = y + b;
+    if (X < 0 || Y < 0 || X >= TW || Y >= TH || DEPTH[Y * TW + X] !== 9) continue; DEPTH[Y * TW + X] = d; nq.push([X, Y]); } q = nq; } })();
 export function at(x, y) { return (x < 0 || y < 0 || x >= TW || y >= TH) ? null : GRID[y * TW + x]; }
 const riverX = (y) => 39 + 2.2 * Math.sin(y / 4.2);
 const isRiver = (x, y) => at(x, y) === 'valley' && Math.abs(x - riverX(y)) < 1.1;
@@ -62,7 +69,11 @@ function blob(cx, cy, r, lo, mid, hi, seed = 0) {
 // ---- 地形格繪製 ----
 function tile(x, y) {
   const id = at(x, y), X = x * T, Y = y * T, h = hash(x, y), h2 = hash(y + 99, x + 7);
-  if (!id) { rect(X, Y, T, T, C.oc); if (h > 0.82) rect(X + ((h2 * 4) | 0), Y + 3, 3, 1, C.oc2); return; }
+  if (!id) { // 海：離岸越遠越深，相鄰深度之間用棋盤格點混色
+    const d = DEPTH[y * TW + x], c0 = OCEAN_RAMP[Math.min(d, OCEAN_RAMP.length - 1)], c1 = OCEAN_RAMP[Math.min(d + 1, OCEAN_RAMP.length - 1)];
+    rect(X, Y, T, T, c0); for (let j = 0; j < T; j++) for (let i = 0; i < T; i++) if ((i + j) % 2 === 0 && vn((X + i) / 7, (Y + j) / 7) > 0.62) px(X + i, Y + j, c1);
+    if (d === 1 && h > 0.5) rect(X + ((h2 * 4) | 0), Y + 3, 3, 1, C.foam);
+    return; }
   const oceanS = at(x, y + 1) === null, coast = oceanS || [[1,0],[-1,0],[0,-1]].some(([a, b]) => at(x + a, y + b) === null);
   if (id === 'sea') { rect(X, Y, T, T, h > 0.5 ? C.w2 : C.w1); if (fbm(x * 2, y * 2) > 0.74) { ell(X + 4, Y + 4, 3, 2, C.s1); px(X + 3, Y + 3, C.g3); } return; }
   if (coast) { rect(X, Y, T, T, C.s1); for (let i = 0; i < 3; i++) px(X + ((h * 7 + i * 3) | 0) % 8, Y + ((h2 * 7 + i * 5) | 0) % 8, C.s2);
@@ -81,6 +92,8 @@ function tile(x, y) {
 }
 function grass(X, Y, h, h2, base, hi, lo) {
   rect(X, Y, T, T, base);
+  for (let j = 0; j < T; j++) for (let i = 0; i < T; i++) { const n = vn((X + i) / 6, (Y + j) / 6) * 0.8 + hash(X + i, Y + j) * 0.2; // 逐點明暗，像草叢起伏
+    if (n > 0.7) px(X + i, Y + j, hi); else if (n < 0.28) px(X + i, Y + j, lo); }
   const a = (h * 6) | 0, b = (h2 * 6) | 0; px(X + a, Y + b + 1, hi); px(X + a + 1, Y + b, hi); px(X + a + 2, Y + b + 1, hi);
   if (h2 > 0.5) px(X + ((a + 4) % 7), Y + ((b + 3) % 7), lo);
 }

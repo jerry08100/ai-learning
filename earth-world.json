@@ -1,0 +1,316 @@
+{
+ "meta": {
+  "version": 1,
+  "note": "地球永續國：區域、層與開放條件。notes 為 earth-notes.json 的 id；req 為「區域:層」須先通過試煉。分區依 iPAS 淨零碳規劃管理師考綱（03_素材/淨零碳考綱/分區分層規劃.md）",
+  "passRate": 0.8
+ },
+ "regions": [
+  {
+   "id": "climate",
+   "name": "氣候議事城",
+   "domain": "氣候治理與淨零政策",
+   "layers": [
+    {
+     "name": "外圍",
+     "tier": 1,
+     "req": [],
+     "notes": [
+      "e-cl-ghg-co2e",
+      "e-cl-netzero-terms",
+      "e-cl-cop-paris",
+      "e-cl-cop-recent"
+     ]
+    },
+    {
+     "name": "內地",
+     "tier": 2,
+     "req": [
+      "climate:0"
+     ],
+     "notes": [
+      "e-cl-tw-climate-act",
+      "e-cl-tw-energy",
+      "e-cl-policy-tools"
+     ]
+    },
+    {
+     "name": "核心",
+     "tier": 3,
+     "req": [
+      "climate:1"
+     ],
+     "notes": [
+      "e-cl-2050-pathway",
+      "e-cl-ndc-targets",
+      "e-cl-carbon-fee",
+      "e-cl-self-reduction"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "disclose",
+   "name": "揭露海港",
+   "domain": "國際倡議、揭露與碳關稅",
+   "layers": [
+    {
+     "name": "外圍",
+     "tier": 1,
+     "req": [
+      "climate:0"
+     ],
+     "notes": [
+      "e-dc-cdp",
+      "e-dc-sbti",
+      "e-dc-re100"
+     ]
+    },
+    {
+     "name": "內地",
+     "tier": 2,
+     "req": [
+      "disclose:0"
+     ],
+     "notes": [
+      "e-dc-gri-sasb",
+      "e-dc-tcfd-ifrs",
+      "e-dc-cbam",
+      "e-dc-cbam-calc"
+     ]
+    },
+    {
+     "name": "核心",
+     "tier": 3,
+     "req": [
+      "disclose:1"
+     ],
+     "notes": [
+      "e-dc-tw-ifrs",
+      "e-dc-materiality",
+      "e-dc-sbti-practice",
+      "e-dc-tcfd-tnfd"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "inventory",
+   "name": "盤查谷地",
+   "domain": "組織碳盤查與價值鏈",
+   "layers": [
+    {
+     "name": "外圍",
+     "tier": 1,
+     "req": [
+      "climate:0"
+     ],
+     "notes": [
+      "e-inv-org-inventory-intro",
+      "e-inv-principles-gases",
+      "e-inv-tw-registry-rules"
+     ]
+    },
+    {
+     "name": "內地",
+     "tier": 2,
+     "req": [
+      "inventory:0"
+     ],
+     "notes": [
+      "e-inv-org-boundary",
+      "e-inv-report-boundary",
+      "e-inv-quantification"
+     ]
+    },
+    {
+     "name": "核心",
+     "tier": 3,
+     "req": [
+      "inventory:1"
+     ],
+     "notes": [
+      "e-inv-inventory-report",
+      "e-inv-scope3-categories",
+      "e-inv-scope3-methods",
+      "e-inv-supply-chain-risk"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "footprint",
+   "name": "足跡森林",
+   "domain": "產品碳足跡與生命週期",
+   "layers": [
+    {
+     "name": "外圍",
+     "tier": 1,
+     "req": [
+      "inventory:0"
+     ],
+     "notes": [
+      "e-fp-cfp-basics",
+      "e-fp-cfp-principles",
+      "e-fp-lca-four-phases"
+     ]
+    },
+    {
+     "name": "內地",
+     "tier": 2,
+     "req": [
+      "footprint:0"
+     ],
+     "notes": [
+      "e-fp-pcr",
+      "e-fp-process-map",
+      "e-fp-boundary-cutoff"
+     ]
+    },
+    {
+     "name": "核心",
+     "tier": 3,
+     "req": [
+      "footprint:1"
+     ],
+     "notes": [
+      "e-fp-activity-data",
+      "e-fp-calc-example",
+      "e-fp-interpretation"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "energy",
+   "name": "節能工坊",
+   "domain": "減碳策略與節能技術",
+   "layers": [
+    {
+     "name": "外圍",
+     "tier": 1,
+     "req": [
+      "inventory:1"
+     ],
+     "notes": [
+      "e-energy-target-setting",
+      "e-energy-bau-pathway",
+      "e-energy-hotspot",
+      "e-energy-intensity-metrics"
+     ]
+    },
+    {
+     "name": "內地",
+     "tier": 2,
+     "req": [
+      "energy:0"
+     ],
+     "notes": [
+      "e-energy-finance-npv-irr",
+      "e-energy-macc-risk",
+      "e-energy-utility-selection",
+      "e-energy-saving-payback"
+     ]
+    },
+    {
+     "name": "核心",
+     "tier": 3,
+     "req": [
+      "energy:1"
+     ],
+     "notes": [
+      "e-energy-esco",
+      "e-energy-iso50001",
+      "e-energy-frontier-tech"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "renew",
+   "name": "風光高原",
+   "domain": "再生能源與綠電",
+   "layers": [
+    {
+     "name": "外圍",
+     "tier": 1,
+     "req": [
+      "energy:0"
+     ],
+     "notes": [
+      "e-renew-definition",
+      "e-renew-solar-wind",
+      "e-renew-baseload-types"
+     ]
+    },
+    {
+     "name": "內地",
+     "tier": 2,
+     "req": [
+      "renew:0"
+     ],
+     "notes": [
+      "e-renew-tw-policy",
+      "e-renew-benefit-eval",
+      "e-renew-big-user-clause"
+     ]
+    },
+    {
+     "name": "核心",
+     "tier": 3,
+     "req": [
+      "renew:1"
+     ],
+     "notes": [
+      "e-renew-green-power-models",
+      "e-renew-trec",
+      "e-renew-hourly-matching"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "carbon",
+   "name": "碳匯濕地",
+   "domain": "碳中和、碳權與碳資產",
+   "layers": [
+    {
+     "name": "外圍",
+     "tier": 1,
+     "req": [
+      "disclose:0"
+     ],
+     "notes": [
+      "e-cb-carbon-pricing-tools",
+      "e-cb-credit-basics",
+      "e-cb-iso14068",
+      "e-cb-tw-neutral-guide"
+     ]
+    },
+    {
+     "name": "內地",
+     "tier": 2,
+     "req": [
+      "carbon:0"
+     ],
+     "notes": [
+      "e-cb-voluntary-project-tw",
+      "e-cb-intl-mechanisms",
+      "e-cb-carbon-removal"
+     ]
+    },
+    {
+     "name": "核心",
+     "tier": 3,
+     "req": [
+      "carbon:1"
+     ],
+     "notes": [
+      "e-cb-offset-quality",
+      "e-cb-credit-trading-tw",
+      "e-cb-icp-carbon-asset"
+     ]
+    }
+   ]
+  }
+ ]
+}

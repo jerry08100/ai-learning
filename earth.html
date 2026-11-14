@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>地球永續國</title>
+<meta name="description" content="用像素冒險地圖一區一區學淨零碳知識：氣候治理、碳盤查、碳足跡、節能、綠電與碳權。">
+<link rel="canonical" href="https://jerry08100.github.io/ai-learning/earth.html">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="world.css">
+</head>
+<body data-country="earth">
+<div class="app map-mode" id="app">
+  <header class="win">
+    <div class="brand"><a class="home" href="./"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M10.8284 12.0007L15.7782 16.9504L14.364 18.3646L8 12.0007L14.364 5.63672L15.7782 7.05093L10.8284 12.0007Z"/></svg>世界地圖</a><h1>地球永續國</h1><div class="sub"><span>淨零碳規劃管理</span></div></div>
+    <div class="hud" id="hud"></div>
+  </header>
+  <main id="view"><p class="loading">載入中…</p></main>
+  <aside class="sheet win" id="sheet" hidden>
+    <div class="sh-head" id="sh-head"></div>
+    <div class="sh-body" id="sh-body"></div>
+  </aside>
+</div>
+<div class="toast win" id="toast" role="status"></div>
+<script type="module" src="world.js"></script>
+<script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});</script>
+</body>
+</html>

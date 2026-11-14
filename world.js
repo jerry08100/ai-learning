@@ -1,10 +1,17 @@
-// 知識大陸（雛形）：架空世界地圖上逐區學知識點。
-// 獨立頁面，進度只存在本機 localStorage 'ipas-world'，不碰主站的練習進度與同步。
-// 區域／層／開放條件來自 world.json；知識點內容來自 knowledge.json；小檢查與試煉題來自 questions.json。
+// 知識大陸：架空地圖上逐區學知識點。兩個國家共用這支，頁面 <body data-country> 決定是哪一國：
+// - ai（ai.html）：AI 智能國。world.json＋knowledge.json＋questions.json，進度存 'ipas-world'（沿用舊 key，舊進度不動）
+// - earth（earth.html）：地球永續國。earth-world.json＋earth-notes.json＋earth-quiz.json，進度存 'earth-world'
+// 進度只存在本機，不碰主站的練習進度與同步；兩國互不解鎖。
 
-import { makeMap, TW, TH, T } from './world-map.js';
+import { mountFx } from './fx.js';
 
-const KEY = 'ipas-world';
+const CC = document.body.dataset.country === 'earth' ? 'earth' : 'ai';
+const CFG = {
+  ai: { key: 'ipas-world', start: 'plain', map: './world-map.js', name: '知識大陸', port: { id: 'arena', name: '演武島', domain: 'iPAS 題庫練習' } },
+  earth: { key: 'earth-world', start: 'climate', map: './earth-map.js', name: '地球永續國', port: null },
+}[CC];
+let makeMap, TW, TH, LAYOUT; // 地圖繪製器依國家動態載入
+const KEY = CFG.key;
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 // 解析斷行與粗體，規則同 app.js 的 formatExp（雛形先複製一份；併回主站時改共用）
@@ -21,7 +28,7 @@ const toast = (m) => { const t = $('#toast'); t.textContent = m; t.classList.add
 // ---- 進度 ----
 // notes[id] = { s: 'ok' 熟練 | 'fail' 未通過, t }；passed['區域:層'] = 通過試煉時間；cur = 勇者所在區域
 const ST = (() => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch { return {}; } })();
-ST.notes ||= {}; ST.passed ||= {}; ST.cur ||= 'plain';
+ST.notes ||= {}; ST.passed ||= {}; ST.cur ||= CFG.start;
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(ST)); } catch {} };
 
 let W, KN, POOL; // world.json、知識點 id→內容、知識點 id→相關題目
@@ -79,13 +86,15 @@ function nextAction() {
 }
 
 // ---- 地圖（繪圖在 world-map.js）----
-let MAP = null, frame = 0, timer = null;
-// 演武島：原本的 iPAS 題庫練習（practice.html），不走知識點與試煉，一開始就能進
-const PORT = { id: 'arena', name: '演武島', domain: 'iPAS 題庫練習' };
-const drawMap = () => MAP.draw({ open: { ...Object.fromEntries(W.regions.map((r) => [r.id, regionOpen(r)])), arena: true }, marks: W.regions.filter(needsMark).map((r) => r.id), hero: ST.cur, frame });
+let MAP = null, FX = null, frame = 0, timer = null;
+// 演武島（只有 AI 國）：原本的 iPAS 題庫練習（practice.html），不走知識點與試煉，一開始就能進
+const PORT = CFG.port;
+const drawMap = () => { MAP.draw({ open: { ...Object.fromEntries(W.regions.map((r) => [r.id, regionOpen(r)])), ...(PORT ? { [PORT.id]: true } : {}) }, marks: W.regions.filter(needsMark).map((r) => r.id), hero: ST.cur, frame }); FX?.update(); };
 
 // ---- 畫面：地圖 ----
-let selId = null;
+let selId = null, foldList = false;
+// 區域清單照地圖位置由上往下、由左往右排，跟地圖對得上（使用者 2026-11-14）
+const byMap = () => [...W.regions].sort((a, b) => (LAYOUT[a.id]?.sy ?? 99) - (LAYOUT[b.id]?.sy ?? 99) || (LAYOUT[a.id]?.sx ?? 0) - (LAYOUT[b.id]?.sx ?? 0));
 const LOCK = '<i class="lk" aria-hidden="true"></i>';
 function hud() {
   const all = W.regions.flatMap((r) => r.layers.flatMap((l) => l.notes)), ok = all.filter((id) => ST.notes[id]?.s === 'ok').length;
@@ -93,27 +102,40 @@ function hud() {
 }
 const regionStatus = (r) => { if (!regionOpen(r)) return '未開放'; const n = r.layers.filter((_, i) => ST.passed[key(r, i)]).length; return n === 3 ? '全部通過' : `已過 ${n}/3 層`; };
 function showMap() {
-  clearInterval(timer); $('#app').classList.add('map-mode'); hud();
+  clearInterval(timer); FX?.stop(); $('#app').classList.add('map-mode'); hud();
   const na = nextAction();
   $('#view').innerHTML = `
-    <div class="side-col">
+    <div class="side-col win ${foldList ? 'fold' : ''}">
+      <button class="fold-btn" id="fold" aria-expanded="${!foldList}">${foldList ? '展開清單' : '收合清單'}</button>
       <button class="pbtn" id="go" ${na ? '' : 'disabled'}>繼續冒險<small>${na ? `${esc(na.r.name)}<br>${esc(na.label)}` : '目前沒有可做的事了'}</small></button>
-      <ul class="rlist" aria-label="區域列表">${W.regions.map((r) => { const c = cnt(r), open = regionOpen(r);
+      <ul class="rlist" aria-label="區域列表">${byMap().map((r) => { const c = cnt(r), open = regionOpen(r);
         return `<li><button data-id="${r.id}" class="${r.id === selId ? 'sel' : ''}"><span class="rname ${open ? '' : 'lock'}">${open ? '' : LOCK}${esc(r.name)}</span>
           <span class="rst">${regionStatus(r)}</span>${open ? `<span class="seg">${segs(c, 12)}</span>` : ''}</button></li>`; }).join('')}
-        <li><button data-id="${PORT.id}" class="${PORT.id === selId ? 'sel' : ''}"><span class="rname">${PORT.name}</span><span class="rst">${PORT.domain}</span></button></li></ul>
+        ${PORT ? `<li><button data-id="${PORT.id}" class="${PORT.id === selId ? 'sel' : ''}"><span class="rname">${PORT.name}</span><span class="rst">${PORT.domain}</span></button></li>` : ''}</ul>
       <p class="foot"><span>進度只存在這台裝置</span><button class="lite" id="reset">重設進度</button></p>
     </div>
-    <div class="mapwrap" id="mapwrap"><canvas id="cv" aria-label="世界地圖，點區域看進度"></canvas></div>`;
+    <div class="mapbox" id="mapbox"><div class="mapview" id="mapview"><div class="mapwrap" id="mapwrap"><canvas id="cv" aria-label="地圖，點區域看進度；可拖曳或滾輪移動"></canvas></div></div></div>`;
   const cv = $('#cv'); MAP = makeMap(cv);
-  const wrap = $('#mapwrap');
-  // 手機：地圖滿寬；電腦：地圖依視窗高度放到最大（≥1200 左欄放按鈕與區域列表）
-  const layout = () => { const wide = innerWidth >= 1200, desk = innerWidth >= 900, V = $('#view');
-    let w = V.clientWidth - (wide ? $('.side-col').offsetWidth + 36 : 20); if (desk) w = Math.min(w, (innerHeight - $('header').getBoundingClientRect().bottom - 30) * TW / TH);
-    w = Math.max(240, Math.floor(w)); cv.style.width = w + 'px'; cv.style.height = w * TH / TW + 'px'; wrap.style.width = w + 'px'; };
-  // 手機與窄螢幕把列表放到地圖下面
-  if (innerWidth < 1200) $('#view').appendChild($('.side-col'));
+  const wrap = $('#mapwrap'), view = $('#mapview'), box = $('#mapbox');
+  // 電腦版：地圖滿版吃滿頁首以下（使用者 2026-11-14），寬度貼齊、高度超出就拖曳／滾輪上下移動，像遊戲鏡頭；清單與區域面板浮在上面
+  // 手機：地圖滿寬、清單放在地圖下面、區域面板從底部滑上來
+  const layout = () => { const desk = innerWidth >= 900, V = $('#view');
+    // 電腦版寬度＝左右兩個浮動面板之間的空間（至少整張塞滿高度），外圍是同色深海，看起來一樣滿版
+    const w = Math.max(240, Math.floor(desk ? Math.min(V.clientWidth, Math.max(V.clientHeight * TW / TH, V.clientWidth - 2 * Math.min(380, V.clientWidth * .28))) : V.clientWidth - 20)), h = Math.round(w * TH / TW);
+    cv.style.width = w + 'px'; cv.style.height = h + 'px'; wrap.style.width = w + 'px'; wrap.style.height = h + 'px';
+    if (desk) { box.style.width = box.style.height = ''; document.documentElement.style.setProperty('--maptop', Math.round($('header').getBoundingClientRect().bottom + 12) + 'px'); }
+    else { box.style.width = w + 'px'; box.style.height = h + 'px'; } };
+  if (innerWidth < 900) $('#view').appendChild($('.side-col'));
+  $('#fold').onclick = () => { foldList = !foldList; const sc = $('.side-col'); sc.classList.toggle('fold', foldList); $('#fold').textContent = foldList ? '展開清單' : '收合清單'; $('#fold').setAttribute('aria-expanded', !foldList); };
   layout(); window.onresize = layout;
+  FX = mountFx(wrap, cv, { outer: box });
+  { const P = MAP.tagPos(ST.cur) || { top: 50 }; view.scrollTop = P.top / 100 * wrap.offsetHeight - view.clientHeight / 2; } // 鏡頭先對準勇者所在區域
+  // 滑鼠拖曳移動鏡頭；拖過就不算點擊
+  let drag = null, dragged = false;
+  view.onpointerdown = (e) => { if (e.pointerType !== 'mouse' || e.button) return; drag = { x: e.clientX, y: e.clientY, l: view.scrollLeft, t: view.scrollTop }; dragged = false; };
+  view.onpointermove = (e) => { if (!drag) return; const dx = e.clientX - drag.x, dy = e.clientY - drag.y; if (Math.abs(dx) + Math.abs(dy) > 5) { dragged = true; view.classList.add('drag'); }
+    if (dragged) { view.scrollLeft = drag.l - dx; view.scrollTop = drag.t - dy; } };
+  view.onpointerup = view.onpointerleave = () => { drag = null; view.classList.remove('drag'); };
   W.regions.forEach((r) => {
     const P = MAP.tagPos(r.id), t = document.createElement('div'), c = cnt(r);
     t.className = 'tag' + (regionOpen(r) ? '' : ' lock') + (r.id === selId ? ' sel' : ''); t.dataset.id = r.id;
@@ -121,12 +143,12 @@ function showMap() {
     t.innerHTML = regionOpen(r) ? `${esc(r.name)}<span class="seg">${segs(c, 8)}</span>` : `${LOCK}${esc(r.name)}`;
     t.setAttribute('aria-hidden', 'true'); wrap.appendChild(t);
   });
-  { const P = MAP.tagPos(PORT.id), t = document.createElement('div'); t.className = 'tag' + (selId === PORT.id ? ' sel' : ''); t.dataset.id = PORT.id;
+  if (PORT) { const P = MAP.tagPos(PORT.id), t = document.createElement('div'); t.className = 'tag' + (selId === PORT.id ? ' sel' : ''); t.dataset.id = PORT.id;
     t.style.left = P.left + '%'; t.style.top = P.top + '%'; t.textContent = PORT.name; t.setAttribute('aria-hidden', 'true'); wrap.appendChild(t); }
   document.querySelectorAll('.rlist button').forEach((b) => (b.onclick = () => openSheet(b.dataset.id)));
-  cv.onclick = (e) => { const id = MAP.regionAt(e.clientX, e.clientY); if (id && (id === PORT.id || W.regions.some((r) => r.id === id))) openSheet(id); };
+  cv.onclick = (e) => { if (dragged) { dragged = false; return; } const id = MAP.regionAt(e.clientX, e.clientY); if (id && (id === PORT?.id || W.regions.some((r) => r.id === id))) openSheet(id); };
   $('#go').onclick = () => { if (na) run(na); };
-  $('#reset').onclick = () => { if (confirm('確定清除知識大陸的全部進度？這個動作無法復原（不影響題庫練習的紀錄）。')) { ST.notes = {}; ST.passed = {}; ST.cur = 'plain'; save(); selId = null; showMap(); } };
+  $('#reset').onclick = () => { if (confirm(`確定清除${CFG.name}的全部進度？這個動作無法復原（不影響${CC === 'ai' ? '題庫練習的紀錄' : '另一國的進度'}）。`)) { ST.notes = {}; ST.passed = {}; ST.cur = CFG.start; save(); selId = null; showMap(); } };
   drawMap();
   if (!matchMedia('(prefers-reduced-motion: reduce)').matches) timer = setInterval(() => { frame++; drawMap(); }, 450);
   $('#sheet').hidden = false;
@@ -139,7 +161,7 @@ function portSheet() {
     <a class="pbtn trial" href="practice.html">進入演武島</a></div>`;
 }
 function openSheet(id) {
-  if (id === PORT.id) { selId = id; document.querySelectorAll('.tag, .rlist button').forEach((t) => t.classList.toggle('sel', t.dataset.id === id)); portSheet(); bindSheetX(); $('#sheet').classList.add('on'); return; }
+  if (id === PORT?.id) { selId = id; document.querySelectorAll('.tag, .rlist button').forEach((t) => t.classList.toggle('sel', t.dataset.id === id)); portSheet(); bindSheetX(); $('#sheet').classList.add('on'); return; }
   const r = W.regions.find((x) => x.id === id), c = cnt(r), open = regionOpen(r); selId = id;
   document.querySelectorAll('.tag, .rlist button').forEach((t) => t.classList.toggle('sel', t.dataset.id === id));
   $('#sh-head').innerHTML = `
@@ -176,7 +198,7 @@ function certHtml(r) {
 }
 async function run(a) {
   ST.cur = a.r.id; save();
-  clearInterval(timer); $('#sheet').classList.remove('on'); $('#sheet').hidden = true; $('#app').classList.remove('map-mode'); scrollTo(0, 0);
+  clearInterval(timer); FX?.stop(); $('#sheet').classList.remove('on'); $('#sheet').hidden = true; $('#app').classList.remove('map-mode'); scrollTo(0, 0);
   if (!POOL) { $('#view').innerHTML = '<p class="loading">題目載入中…</p>';
     try { await poolReady; } catch { $('#view').innerHTML = '<p class="loading">題目載入失敗，請重新整理。</p>'; return; } }
   a.kind === 'lesson' ? lesson(a.r, a.i, a.id) : trial(a.r, a.i);
@@ -352,6 +374,13 @@ const getJSON = (u) => fetch(u).then((x) => { if (!x.ok) throw new Error(u); ret
 let poolReady = null;
 (async () => {
   try {
+    ({ makeMap, TW, TH, LAYOUT } = await import(CFG.map));
+    if (CC === 'earth') { // 永續國：知識點與題目都是獨立檔；題目的 note 可以是一個 id 或多個 id 的陣列
+      const [w, notes] = await Promise.all([getJSON('earth-world.json'), getJSON('earth-notes.json')]);
+      W = w; KN = new Map(notes.map((n) => [n.id, n]));
+      poolReady = getJSON('earth-quiz.json').then((q) => { POOL = new Map(notes.map((n) => [n.id, []])); q.forEach((x) => [].concat(x.note).forEach((id) => POOL.get(id)?.push(x))); });
+      return showMap();
+    }
     const [w, k, cn] = await Promise.all([getJSON('world.json'), getJSON('knowledge.json'), getJSON('claude-notes.json').catch(() => null)]);
     W = w; KN = new Map(k.notes.map((n) => [n.id, n]));
     // Claude 工坊島：知識點與題目放獨立檔，不混進 iPAS 題庫；題目直接用 note 欄位對到知識點

@@ -1,8 +1,8 @@
 // 離線快取:app shell + 題庫。stale-while-revalidate(先給快取、背景更新)。
 // 改版要更新快取時,把 CACHE 版號 +1。
 
-const CACHE = 'ipas-v97';
-const SHELL = ['./', 'index.html', 'practice.html', 'world.js', 'world-map.js', 'world.json', 'app.js', 'core.js', 'manifest.json', 'favicon.svg', 'questions.json', 'concepts.json', 'knowledge.json', 'exam-dates.json', 'icon-192.png', 'icon-512.png'];
+const CACHE = 'ipas-v98';
+const SHELL = ['./', 'index.html', 'ai.html', 'earth.html', 'practice.html', 'world.css', 'fx.js', 'worldmap.js', 'world.js', 'world-map.js', 'earth-map.js', 'world.json', 'earth-world.json', 'earth-notes.json', 'earth-quiz.json', 'app.js', 'core.js', 'manifest.json', 'favicon.svg', 'questions.json', 'concepts.json', 'knowledge.json', 'exam-dates.json', 'icon-192.png', 'icon-512.png'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil((async () => {
