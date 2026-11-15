@@ -52,6 +52,12 @@ canvas { display:block; image-rendering:pixelated; image-rendering:crisp-edges; 
 .tag { position:absolute; z-index:4; transform:translate(-50%,0); padding:2px 9px 3px; background:rgba(12,14,32,.82); border:1px solid var(--gold); font-size:14px; line-height:1.3;
        white-space:nowrap; text-align:center; box-shadow:inset 0 0 0 2px rgba(12,14,32,.9), inset 0 0 0 3px var(--gold-d), 0 4px 12px rgba(6,8,22,.5); color:var(--w); pointer-events:none; }
 .tag.lock { border-color:var(--dgr); color:var(--muted); box-shadow:0 4px 12px rgba(6,8,22,.5); }
+.tag.here { border-color:var(--y); color:var(--y); }
+.here-pin { position:absolute; z-index:5; transform:translate(-50%,-100%); pointer-events:none; animation:here-bob 1.1s ease-in-out infinite; }
+.here-pin span { display:block; font:15px var(--f-pixel); color:var(--k); background:var(--y); padding:3px 10px; border:2px solid var(--k); box-shadow:0 0 0 2px var(--y), 0 6px 14px rgba(6,8,22,.55); white-space:nowrap; }
+.here-pin::after { content:""; position:absolute; left:50%; top:100%; margin-left:-8px; border:8px solid transparent; border-top:10px solid var(--y); }
+@keyframes here-bob { 50% { transform:translate(-50%,calc(-100% - 6px)); } }
+@media (prefers-reduced-motion:reduce) { .here-pin { animation:none; } }
 .tag.sel { border-color:var(--y); color:var(--y); box-shadow:inset 0 0 0 2px rgba(12,14,32,.9), inset 0 0 0 3px var(--gold), 0 0 16px rgba(232,200,119,.45); }
 .lk { display:inline-block; width:10px; height:11px; margin-right:5px; vertical-align:-1px; background:currentColor;
       clip-path:polygon(20% 45%,20% 20%,35% 5%,65% 5%,80% 20%,80% 45%,100% 45%,100% 100%,0 100%,0 45%,35% 45%,35% 25%,65% 25%,65% 45%,20% 45%); }
@@ -292,6 +298,8 @@ ul.pts li:hover:not(.s-lock), ul.pts li:focus-visible { background:var(--sl); }
 .lk-trap b { display:block; color:var(--o); font-weight:400; } .lk-trap span { display:block; }
 .lk-memo { border:2px solid var(--y); padding:16px; text-align:center; font:22px/1.7 var(--f-pixel); color:var(--y); background:#1c1a10; margin:auto 0; }
 .lk-mode { margin-left:auto; }
+.lk-stage { display:block; width:100%; max-width:720px; aspect-ratio:320/120; margin:0 auto 12px; image-rendering:pixelated; border:2px solid var(--gold); background:var(--nv); }
+.lk-pre-terms dl { margin:0; } .lk-pre-terms dt { color:var(--y); font:19px var(--f-pixel); margin-top:12px; } .lk-pre-terms dt:first-child { margin-top:0; } .lk-pre-terms dd { margin:4px 0 0; font-size:18px; line-height:1.7; }
 #lkb { margin:auto 0; } /* 內容短時在卡片裡垂直置中，不留下半空白 */
 .lbar .dots { flex:0 1 auto; min-width:0; max-width:40%; overflow:hidden; } /* 關卡卡數多時進度點不擠掉標題 */
 @media (min-width:900px) { .lk-cmp, .lk-cards > div, .lk-flow li, .lk-tlbox, .lk-why, .lk-trap { font-size:20px; } .lk-bub { font-size:22px; } .lk-q { font-size:22px; } .lk-opts button { font-size:19px; } }

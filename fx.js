@@ -6,8 +6,9 @@ const RM = matchMedia('(prefers-reduced-motion: reduce)');
 // outer：地圖可捲動時，光暈貼著地圖本身（wrap），其他疊層貼著固定的鏡頭框（outer）
 export function mountFx(wrap, src, { motes = 26, tint = ['255,226,170', '150,255,230'], outer = wrap } = {}) {
   const add = (tag, cls, to = outer) => { const e = document.createElement(tag); e.className = 'fx ' + cls; e.setAttribute('aria-hidden', 'true'); to.appendChild(e); return e; };
-  const bloom = add('canvas', 'fx-bloom', wrap); bloom.width = 96; bloom.height = Math.max(1, Math.round(96 * src.height / src.width));
-  const bg = bloom.getContext('2d');
+  // 光暈取樣 128 寬、用高品質縮小：每幀亮點不會因為取樣跳格而閃爍，放大後的模糊也不會出現方塊色帶
+  const bloom = add('canvas', 'fx-bloom', wrap); bloom.width = 128; bloom.height = Math.max(1, Math.round(128 * src.height / src.width));
+  const bg = bloom.getContext('2d'); bg.imageSmoothingEnabled = true; bg.imageSmoothingQuality = 'high';
   add('div', 'fx-grade'); add('div', 'fx-rays'); add('div', 'fx-tilt t'); add('div', 'fx-tilt b'); add('div', 'fx-vig');
   const mc = add('canvas', 'fx-mote'), mg = mc.getContext('2d');
   // 光粒：慢慢往上飄、明暗呼吸；位置用比例，視窗大小改變不用重算

@@ -28,12 +28,21 @@ const vn = (x, y) => { const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi
 const fbm = (x, y) => vn(x / 9, y / 9) * 0.6 + vn(x / 4, y / 4) * 0.3 + vn(x / 2, y / 2) * 0.1;
 const BAY = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map((v) => (v + 0.5) / 16); // 4×4 Bayer 抖色門檻
 const segD = (px, py, [ax, ay], [bx, by]) => { const dx = bx - ax, dy = by - ay, t = Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy))); return Math.hypot(px - ax - t * dx, py - ay - t * dy); };
+const sstep = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+// 美術點解析度的方框模糊（水平、垂直各一次，滑動總和），分區色帶過渡與迷霧羽化共用
+function boxBlur(A, r) { const tmp = new Float32Array(N), out = new Float32Array(N), s = 1 / (2 * r + 1);
+  for (let y = 0; y < AH; y++) { const o = y * AW; let acc = 0; for (let x = -r; x <= r; x++) acc += A[o + Math.max(0, Math.min(AW - 1, x))];
+    for (let x = 0; x < AW; x++) { tmp[o + x] = acc * s; acc += A[o + Math.min(AW - 1, x + r + 1)] - A[o + Math.max(0, x - r)]; } }
+  for (let x = 0; x < AW; x++) { let acc = 0; for (let y = -r; y <= r; y++) acc += tmp[Math.max(0, Math.min(AH - 1, y)) * AW + x];
+    for (let y = 0; y < AH; y++) { out[y * AW + x] = acc * s; acc += tmp[Math.min(AH - 1, y + r + 1) * AW + x] - tmp[Math.max(0, y - r) * AW + x]; } }
+  return out; }
 
 // ---- 地形格（美術點 384×576）----
 const REG = new Int8Array(N).fill(-1); // 區域索引，-1＝海
 const WAT = new Uint8Array(N);         // 1＝河、2＝潟湖
 const HG = new Float32Array(N), FN = new Float32Array(N), V = new Float32Array(N);
 const DO = new Uint8Array(N).fill(99), DL = new Uint8Array(N).fill(99), DW = new Uint8Array(N).fill(99); // 海→陸地、陸地→海水、潟湖→岸邊的距離（美術點）
+const DOF = new Float32Array(N); // 海→陸地的歐氏距離（倒角距離），海水色帶用它，等深線是圓弧不是菱形階梯
 const OCC = new Uint8Array(N); // 已被道路、建物、水佔用（樹不長在上面）
 (() => {
   // 低頻雜訊先在每 2 個美術點的節點上算，再雙線性內插（省掉四分之三的雜訊運算）
@@ -63,7 +72,13 @@ const OCC = new Uint8Array(N); // 已被道路、建物、水佔用（樹不長�
   const bfs = (D, src, pass) => { let q = []; for (let i = 0; i < N; i++) if (src(i)) { D[i] = 0; q.push(i); }
     for (let d = 1; d < 30 && q.length; d++) { const nq = []; for (const i of q) { const x = i % AW;
       for (const j of [x > 0 ? i - 1 : -1, x < AW - 1 ? i + 1 : -1, i - AW, i + AW]) if (j >= 0 && j < N && D[j] === 99 && pass(j)) { D[j] = d; nq.push(j); } } q = nq; } };
-  bfs(DO, (i) => REG[i] >= 0, (i) => REG[i] < 0);
+  bfs(DO, (i) => REG[i] >= 0 && WAT[i] !== 2, (i) => REG[i] < 0 || WAT[i] === 2); // 潟湖／海灣算海水，跟外海接成同一片色帶
+  for (let i = 0; i < N; i++) DOF[i] = REG[i] >= 0 && WAT[i] !== 2 ? 0 : 1e4;
+  for (let pass = 0; pass < 2; pass++) { const sg = pass ? -1 : 1;
+    for (let k = 0; k < N; k++) { const i = pass ? N - 1 - k : k; if (!DOF[i]) continue; const x = i % AW, y = (i / AW) | 0; let v = DOF[i];
+      const xb = x - sg, yb = y - sg; if (xb >= 0 && xb < AW) v = Math.min(v, DOF[i - sg] + 1);
+      if (yb >= 0 && yb < AH) { const j = i - sg * AW; v = Math.min(v, DOF[j] + 1); if (x > 0) v = Math.min(v, DOF[j - 1] + 1.4142); if (x < AW - 1) v = Math.min(v, DOF[j + 1] + 1.4142); }
+      DOF[i] = v; } }
   bfs(DL, (i) => REG[i] < 0 || WAT[i] === 2, (i) => REG[i] >= 0 && WAT[i] !== 2);
   bfs(DW, (i) => REG[i] >= 0 && WAT[i] !== 2, (i) => WAT[i] === 2);
   for (let i = AW + 1; i < N - AW - 1; i++) { const r = REG[i]; if (r < 0) continue;
@@ -198,6 +213,14 @@ const P0 = (id) => [ax0(id), ay0(id)];
 const SET = {}, TOPY = {};
 const put = (id, y, d, fp) => { SET[id].st.push({ y, d }); if (fp) occ(...fp); };
 function occ(x0, y0, x1, y1) { for (let y = Math.max(0, y0 >> 1); y <= Math.min(AH - 1, y1 >> 1); y++) for (let x = Math.max(0, x0 >> 1); x <= Math.min(AW - 1, x1 >> 1); x++) OCC[y * AW + x] = 1; }
+// 只准畫在陸地上的地面物件（梯田、農田、廠區地坪）：先畫到暫存畫布，再用陸地遮罩裁掉海上的部分（使用者 2026-11-15 回報梯田超出海岸線）
+let LANDMASK = null;
+function landOnly(fn) { return () => {
+  if (!LANDMASK) { LANDMASK = document.createElement('canvas'); LANDMASK.width = W; LANDMASK.height = H; const mx = LANDMASK.getContext('2d'), im = mx.createImageData(W, H), a = im.data;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (REG[(y >> 1) * AW + (x >> 1)] >= 0) a[(y * W + x) * 4 + 3] = 255;
+    mx.putImageData(im, 0, 0); }
+  const tc = document.createElement('canvas'); tc.width = W; tc.height = H; const g0 = g; g = tc.getContext('2d'); fn();
+  g.globalCompositeOperation = 'destination-in'; g.drawImage(LANDMASK, 0, 0); g = g0; g.drawImage(tc, 0, 0); }; }
 const GROUND = []; // 鋪在地面、不參與排序的東西（廣場、農田）
 IDS.forEach((id) => (SET[id] = { st: [], anim: [] }));
 (() => {
@@ -248,7 +271,7 @@ IDS.forEach((id) => (SET[id] = { st: [], anim: [] }));
   { // 起源平原：風車＋農舍＋穀倉＋大片農田＋羊圈＋水井
     const [x, y] = P0('plain'); TOPY.plain = y - 60;
     const FL = [[-116, -74, 56, 30, 0], [-52, -74, 36, 30, 1], [56, -66, 58, 26, 2], [62, 12, 54, 30, 0], [-120, 14, 40, 22, 1], [62, 50, 44, 22, 1]];
-    GROUND.push(() => FL.forEach(([dx, dy, w, h, k]) => field(x + dx, y + dy, w, h, k)));
+    GROUND.push(landOnly(() => FL.forEach(([dx, dy, w, h, k]) => field(x + dx, y + dy, w, h, k))));
     FL.forEach(([dx, dy, w, h]) => occ(x + dx, y + dy - 4, x + dx + w, y + dy + h));
     FL.forEach(([dx, dy, w, h], k) => put('plain', y + dy + h + 1, () => { fenceH(x + dx - 2, y + dy + h + 1, w + 3); if (k % 2) fenceV(x + dx - 2, y + dy, h); }));
     put('plain', y, () => { // 風車塔身
@@ -267,7 +290,7 @@ IDS.forEach((id) => (SET[id] = { st: [], anim: [] }));
       for (let j = 0; j < 12; j++) { const ins = Math.max(0, 3 - j); rect(X - 21 + ins, Y - 28 + j, 42 - ins * 2, 1, j === 0 ? '#9a8a8a' : j % 3 ? '#6a5a62' : '#54465a'); } }, [x + 56, y - 30, x + 100, y - 4]);
     put('plain', y + 18, () => { const X = x + 34, Y = y + 18; shadow(X + 3, Y + 1, 6, 2); cyl(X, Y, 10, 6, S.st); ell(X, Y - 6, 4, 1, '#2a4a6a'); rect(X - 5, Y - 15, 1, 9, S.wd[1]); rect(X + 4, Y - 15, 1, 9, S.wd[1]); for (let j = 0; j < 4; j++) rect(X - 6 + j, Y - 18 + j, 13 - j * 2, 1, S.rr[2 + (j === 0)]); }, [x + 28, y + 2, x + 40, y + 18]);
     [[-34, 24], [-26, 30], [100, 40]].forEach(([dx, dy]) => put('plain', y + dy, () => hay(x + dx, y + dy)));
-    GROUND.push(() => { const X = x - 116, Y = y + 44; rect(X, Y, 50, 26, '#5a9a48'); for (let k = 0; k < 40; k++) px(X + hash(k, 7) * 50, Y + hash(k, 8) * 26, '#86c055'); });
+    GROUND.push(landOnly(() => { const X = x - 116, Y = y + 44; rect(X, Y, 50, 26, '#5a9a48'); for (let k = 0; k < 40; k++) px(X + hash(k, 7) * 50, Y + hash(k, 8) * 26, '#86c055'); }));
     occ(x - 118, y + 38, x - 64, y + 72);
     put('plain', y + 70, () => { fenceH(x - 118, y + 44, 52); fenceH(x - 118, y + 70, 52); fenceV(x - 118, y + 44, 26); fenceV(x - 66, y + 44, 26); });
   }
@@ -299,14 +322,14 @@ IDS.forEach((id) => (SET[id] = { st: [], anim: [] }));
       for (let j = 0; j < 5; j++) { const ww = 13 - j * 2; rect(X - ww / 2, Y - 24 - j, ww, 1, S.rb[j ? 2 : 1]); } px(X - 4, Y - 26, S.rb[4]); rect(X - 2, Y - 16, 3, 2, (k % 2) ? GLOW : '#5ac8c8'); }, [x + dx - 7, y + dy - 30, x + dx + 7, y + dy]));
     put('valley', y + 30, () => house(x - 52, y + 30, 20, 9, S.ro, S.pl), [x - 64, y + 8, x - 40, y + 30]);
     put('valley', y - 40, () => house(x - 30, y - 40, 20, 9, S.rt, S.pl), [x - 42, y - 62, x - 18, y - 40]);
-    GROUND.push(() => { field(x - 108, y - 56, 34, 22, 1); field(x - 112, y + 16, 34, 20, 0); });
+    GROUND.push(landOnly(() => { field(x - 108, y - 56, 34, 22, 1); field(x - 112, y + 16, 34, 20, 0); }));
     occ(x - 112, y - 60, x - 72, y - 32); occ(x - 114, y + 12, x - 76, y + 38);
     [[-20, 22], [-12, 26], [-28, 26]].forEach(([dx, dy], k) => put('valley', y + dy, () => (k ? barrel(x + dx, y + dy) : crate(x + dx, y + dy))));
     // 東岸：漁家、曬網架、田
     put('valley', y + 2, () => house(x + 76, y + 2, 20, 9, S.rb, S.ws, { chim: true }), [x + 64, y - 20, x + 88, y + 2]);
     put('valley', y + 34, () => house(x + 96, y + 34, 18, 8, S.rr, S.pl), [x + 86, y + 14, x + 106, y + 34]);
     put('valley', y + 20, () => { const X = x + 62, Y = y + 20; rect(X, Y - 10, 1, 10, S.wd[1]); rect(X + 14, Y - 10, 1, 10, S.wd[1]); rect(X, Y - 10, 15, 1, S.wd[2]); for (let i = 1; i < 14; i += 2) line(X + i, Y - 9, X + i, Y - 4, 'rgba(220,230,220,.7)'); }, [x + 60, y + 8, x + 78, y + 20]);
-    GROUND.push(() => field(x + 64, y - 52, 40, 22, 0)); occ(x + 62, y - 56, x + 106, y - 28);
+    GROUND.push(landOnly(() => field(x + 64, y - 52, 40, 22, 0))); occ(x + 62, y - 56, x + 106, y - 28);
   }
   { // 神經山脈：三座雪峰＋峰頂之間發光的神經連線＋山腰觀測台
     const [x, y] = P0('mount'); TOPY.mount = y - 92;
@@ -392,22 +415,30 @@ const rgb = (h) => { const n = parseInt(h.slice(1), 16); return 0xff000000 | ((n
 function paintTerrain(ctx) {
   const img = ctx.createImageData(W, H), buf = new Uint32Array(img.data.buffer);
   const RP = {}; for (const k in R) RP[k] = R[k].map(rgb); const OC = OCN.map(rgb), RV = RIV.map(rgb), FM = rgb(FOAM), CL = ['#2a1e30', '#4a3438', '#6e5244', '#8a6c52'].map(rgb);
+  // 潟湖／海灣的淺水上限用模糊遮罩算，跟外海之間是漸層不是一圈硬邊
+  const LM = new Float32Array(N); for (let i = 0; i < N; i++) LM[i] = WAT[i] === 2 ? 1 : 0; const LG = boxBlur(boxBlur(LM, 4), 4);
   const terr = IDS.map((id) => RP[TER[id]]), RT = new Float32Array(128 * 128).map((_, k) => hash(k & 127, k >> 7)); // 逐像素小雜點用查表
+  const iM = IDS.indexOf('mount'), pal = (q, i, py, b) => { if (q !== iM) return terr[q]; const e = HG[i] + (8 - py / 32) * 0.045 + (b - 0.5) * 0.05; return e > 0.62 ? RP.snow : e < 0.36 ? RP.alp : terr[q]; };
+  // 各區權重：每區的遮罩模糊兩次（約 ±10 美術點），交界處兩區色帶漸層過渡
+  const LANDR = [], RW = IDS.map((_, q) => { const M = new Float32Array(N); let any = 0; for (let i = 0; i < N; i++) if (REG[i] === q) { M[i] = 1; any = 1; } if (any) LANDR.push(q); return any ? boxBlur(boxBlur(M, 5), 5) : M; });
   for (let py = 0; py < H; py++) for (let pX = 0; pX < W; pX++) {
     const i = (py >> 1) * AW + (pX >> 1), b = BAY[(py & 3) * 4 + (pX & 3)], r = REG[i]; let c;
     if (r < 0) { const d = DO[i], up1 = i >= AW && REG[i - AW] >= 0 && !WAT[i - AW], up2 = i >= 2 * AW && REG[i - 2 * AW] >= 0 && !WAT[i - 2 * AW];
       if (up1) c = CL[(py & 1) ? 2 : 3 - (hash(pX >> 1, py >> 2) > 0.6 ? 1 : 0)];
       else if (up2 && REG[i - AW] < 0) c = CL[(py & 1) ? 0 : 1];
       else if (d === 1 && FN[i] > 0.32) c = FM;
-      else { const t = (d - 1.2) * 0.5 + (FN[i] - 0.5) * 1.6 + b * 0.9; c = OC[Math.max(0, Math.min(9, Math.floor(t)))]; } }
+      else { const t = (DOF[i] - 1.2) * 0.44 + (HG[i] - 0.5) * 1.3 + (FN[i] - 0.5) * 0.5 + b * 0.9; c = OC[Math.max(0, Math.min(Math.floor(9 - LG[i] * 4 + b), Math.floor(t)))]; } }
     else if (WAT[i]) { const sh = i >= AW && REG[i - AW] >= 0 && !WAT[i - AW], rim = i + AW < N && !WAT[i + AW];
-      if (WAT[i] === 2) { if (DW[i] === 1 && FN[i] > 0.3) c = FM; else { const t = Math.min(DW[i], 30) * 0.16 + (FN[i] - 0.5) * 1.4 + b * 0.9 + (sh ? 0.8 : 0); c = OC[Math.max(0, Math.min(5, Math.floor(t)))]; } }
+      if (WAT[i] === 2) { if (DW[i] === 1 && FN[i] > 0.3) c = FM; else { const t = (DOF[i] - 1.2) * 0.44 + (HG[i] - 0.5) * 1.3 + (FN[i] - 0.5) * 0.5 + b * 0.9 + (sh ? 0.8 : 0); c = OC[Math.max(0, Math.min(Math.floor(9 - LG[i] * 4 + b), Math.floor(t)))]; } }
       else { const t = 1.4 + (FN[i] - 0.5) * 1.6 + b - (sh ? 1.2 : 0) + (rim ? 1.4 : 0); c = RV[Math.max(0, Math.min(4, Math.floor(t)))]; } }
-    else { const n = RT[(py & 127) * 128 + ((pX + (py >> 7) * 37) & 127)], v = V[i] + (n > 0.985 ? 0.35 : n < 0.012 ? -0.35 : 0); let P = terr[r];
-      if (IDS[r] === 'mount') { const e = HG[i] + (8 - py / 32) * 0.045; P = e > 0.62 ? RP.snow : e < 0.36 ? RP.alp : P; }
-      if (DL[i] === 1 || (DL[i] === 2 && b > 0.55)) P = RP.sand;
-      const wbank = (i + AW < N && WAT[i + AW] === 1) ? -0.5 : 0;
-      c = P[Math.max(0, Math.min(4, Math.floor(v * 5 + b - 0.5 + wbank)))]; }
+    else { const n = RT[(py & 127) * 128 + ((pX + (py >> 7) * 37) & 127)], v = V[i] + (n > 0.985 ? 0.35 : n < 0.012 ? -0.35 : 0);
+      const wbank = (i + AW < N && WAT[i + AW] === 1) ? -0.5 : 0, lv = Math.max(0, Math.min(4, Math.floor(v * 5 + b - 0.5 + wbank)));
+      if (DL[i] === 1 || (DL[i] === 2 && b > 0.55)) c = RP.sand[lv];
+      else if (RW[r][i] >= 0.995) c = pal(r, i, py, b)[lv];
+      else { // 分區交界：鄰近各區色帶依模糊後的權重混色，不再硬切
+        let sr = 0, sg = 0, sb = 0, sw = 0; for (const q of LANDR) { const w = RW[q][i]; if (w < 0.004) continue; const col = pal(q, i, py, b)[lv];
+          sr += w * (col & 255); sg += w * ((col >>> 8) & 255); sb += w * ((col >>> 16) & 255); sw += w; }
+        c = sw ? (0xff000000 | (Math.round(sb / sw) << 16) | (Math.round(sg / sw) << 8) | Math.round(sr / sw)) : pal(r, i, py, b)[lv]; } }
     buf[py * W + pX] = c;
   }
   ctx.putImageData(img, 0, 0);
@@ -446,21 +477,46 @@ function hero(x, y, bob) { y -= bob; shadow(x + 1, y + 1, 7, 2);
 function mark(x, y) { rect(x - 5, y - 20, 11, 21, BLK); rect(x - 4, y - 19, 9, 12, GOLD); rect(x - 4, y - 5, 9, 4, GOLD); rect(x - 2, y - 17, 4, 8, '#fff3b0'); rect(x - 2, y - 4, 4, 2, '#fff3b0'); }
 
 export function makeMap(canvas) {
+  // 地圖本體永遠畫在 768×1152 的離屏畫布（src）；顯示用的 canvas 依實際裝置像素重設大小再貼上去：
+  // 整數倍直接最近鄰放大；非整數倍先最近鄰放大到上一個整數倍、再平滑縮到螢幕大小（sharp-bilinear），
+  // 像素大小一致、線條不會斷，也不會整張糊掉。縮小（例如 1366 寬）一律平滑縮小，細線不會被抽掉。
   canvas.width = W; canvas.height = H;
   if (!STATIC) buildStatic();
-  const ctx = canvas.getContext('2d'), base = document.createElement('canvas'); base.width = W; base.height = H;
-  let key = '';
+  const src = document.createElement('canvas'); src.width = W; src.height = H;
+  const ctx = src.getContext('2d'), out = canvas.getContext('2d'), base = document.createElement('canvas'); base.width = W; base.height = H;
+  let key = '', up = null;
+  function present() {
+    const dw = canvas.width, dh = canvas.height, n = Math.round(dw / W);
+    if (n >= 1 && dw === W * n && dh === H * n) { out.imageSmoothingEnabled = false; out.drawImage(src, 0, 0, dw, dh); return; }
+    const k = Math.max(1, Math.ceil(dw / W - 0.001)); let s = src;
+    if (k > 1) { if (!up || up.width !== W * k) { up = document.createElement('canvas'); up.width = W * k; up.height = H * k; }
+      const ug = up.getContext('2d'); ug.imageSmoothingEnabled = false; ug.drawImage(src, 0, 0, W * k, H * k); s = up; }
+    out.imageSmoothingEnabled = true; out.imageSmoothingQuality = 'high'; out.drawImage(s, 0, 0, dw, dh);
+  }
+  if (typeof ResizeObserver === 'function') {
+    const ro = new ResizeObserver(([e]) => { if (!canvas.isConnected) { ro.disconnect(); return; }
+      // 裝置像素尺寸：devicePixelContentBoxSize 最準（分數縮放也對得上），但有些環境回報的是 CSS 像素，跟 dpr 換算差太多就改用換算值
+      const d = e.devicePixelContentBoxSize?.[0], cw = Math.round(e.contentRect.width * devicePixelRatio), ch = Math.round(e.contentRect.height * devicePixelRatio);
+      const ok = d && Math.abs(d.inlineSize - cw) <= 2 && Math.abs(d.blockSize - ch) <= 2, dw = ok ? d.inlineSize : cw, dh = ok ? d.blockSize : ch;
+      if (!dw || !dh) return; if (canvas.width !== dw || canvas.height !== dh) { canvas.width = dw; canvas.height = dh; } present(); });
+    try { ro.observe(canvas, { box: 'device-pixel-content-box' }); } catch { ro.observe(canvas); }
+  }
   function buildBase(open) {
     g = base.getContext('2d'); g.drawImage(STATIC, 0, 0);
     for (const id of IDS) if (!open[id]) SET[id].anim.forEach((a) => a(0)); // 未開放區的動畫物件停在第 0 幀，壓在迷霧底下
-    // 迷霧：未開放區（含整個聚落範圍）蓋上暗藍與霧絲，靠近已開放區的邊緣淡一點
-    const img = g.getImageData(0, 0, W, H), d = img.data, closed = IDS.map((id) => !open[id]);
-    for (let i = 0; i < N; i++) { const r = OWN[i]; if (r < 0 || !closed[r]) continue;
-      const ax = i % AW, ay = (i / AW) | 0; let edge = 0; for (const [a, b] of [[3, 0], [-3, 0], [0, 3], [0, -3]]) { const j = (ay + b) * AW + ax + a; if (ax + a >= 0 && ax + a < AW && OWN[j] >= 0 && !closed[OWN[j]]) edge = 1; }
-      const f = FOGN[i];
-      for (let k = 0; k < 4; k++) { const p = ((ay * 2 + (k >> 1)) * W + ax * 2 + (k & 1)) * 4, bay = BAY[(((ay * 2 + (k >> 1)) & 3) * 4) + ((ax * 2 + (k & 1)) & 3)];
-        const a = edge ? 0.45 : 0.62; d[p] = d[p] * (1 - a) + 30 * a; d[p + 1] = d[p + 1] * (1 - a) + 36 * a; d[p + 2] = d[p + 2] * (1 - a) + 62 * a;
-        if (f > 0.6 + bay * 0.1) { const w = edge ? 0.14 : 0.24; d[p] = d[p] * (1 - w) + 205 * w; d[p + 1] = d[p + 1] * (1 - w) + 216 * w; d[p + 2] = d[p + 2] * (1 - w) + 232 * w; } } }
+    // 迷霧：未開放區（含整個聚落範圍）蓋上暗藍與霧絲。遮罩先模糊成濃度場，邊緣是羽化漸層（約 20 像素）而不是一格一格的硬邊；
+    // 濃度與霧絲都逐像素雙線性內插，沒有抖色雜點
+    const closed = IDS.map((id) => !open[id]), M = new Float32Array(N), FOGC = [30, 36, 62], MISTC = [205, 216, 232]; let any = 0;
+    for (let i = 0; i < N; i++) { const r = OWN[i]; if (r >= 0 && closed[r]) { M[i] = 1; any = 1; } }
+    if (!any) return;
+    const A = boxBlur(boxBlur(M, 5), 5), img = g.getImageData(0, 0, W, H), d = img.data;
+    for (let py = 0; py < H; py++) { const fy = Math.max(0, Math.min(AH - 1.001, (py - 0.5) / 2)), y0 = fy | 0, ty = fy - y0;
+      for (let pX = 0; pX < W; pX++) { const fx = Math.max(0, Math.min(AW - 1.001, (pX - 0.5) / 2)), x0 = fx | 0, tx = fx - x0, j = y0 * AW + x0;
+        const a00 = A[j], a10 = A[j + 1], a01 = A[j + AW], a11 = A[j + AW + 1]; if (a00 + a10 + a01 + a11 < 0.02) continue;
+        const raw = (a00 * (1 - tx) + a10 * tx) * (1 - ty) + (a01 * (1 - tx) + a11 * tx) * ty, a = sstep(0.1, 0.78, raw); if (a <= 0) continue;
+        const f = (FOGN[j] * (1 - tx) + FOGN[j + 1] * tx) * (1 - ty) + (FOGN[j + AW] * (1 - tx) + FOGN[j + AW + 1] * tx) * ty, w = sstep(0.52, 0.8, f) * 0.26 * a;
+        const p = (py * W + pX) * 4, L = d[p] * 0.3 + d[p + 1] * 0.59 + d[p + 2] * 0.11, ds = 0.45 * a, dk = 0.6 * a;
+        for (let c = 0; c < 3; c++) { let v = d[p + c] + (L - d[p + c]) * ds; v = v * (1 - dk) + FOGC[c] * dk; d[p + c] = v * (1 - w) + MISTC[c] * w; } } }
     g.putImageData(img, 0, 0);
   }
   return {
@@ -474,6 +530,7 @@ export function makeMap(canvas) {
       const bob = frame % 2;
       for (const id of marks) if (LAYOUT[id]) mark(ax0(id) + 26, TOPY[id] - 4 - bob);
       const hid = LAYOUT[heroId] ? heroId : 'plain'; hero(ax0(hid) - 40, ay0(hid) + 22, bob);
+      present();
     },
     regionAt(clientX, clientY) { const b = canvas.getBoundingClientRect(); const i = cellAt(Math.floor((clientX - b.left) / b.width * W), Math.floor((clientY - b.top) / b.height * H)); return i < 0 || OWN[i] < 0 ? null : IDS[OWN[i]]; },
     tagPos(id) { return { left: ax0(id) / W * 100, top: (ay0(id) + 28) / H * 100 }; },

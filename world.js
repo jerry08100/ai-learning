@@ -145,6 +145,9 @@ function showMap() {
     t.style.left = P.left + '%'; t.style.top = P.top + '%';
     t.innerHTML = regionOpen(r) ? `${esc(r.name)}<span class="seg">${segs(c, 8)}</span>` : `${LOCK}${esc(r.name)}`;
     t.setAttribute('aria-hidden', 'true'); wrap.appendChild(t);
+    if (r.id === ST.cur) { // 目前所在區域：聚落上方插一支會跳的「你在這裡」旗標（使用者 2026-11-15：只有小人看不出在哪）
+      t.classList.add('here'); const pin = document.createElement('div'); pin.className = 'here-pin'; pin.innerHTML = '<span>你在這裡</span>';
+      pin.style.left = P.left + '%'; pin.style.top = Math.max(2, P.top - 12) + '%'; pin.setAttribute('aria-hidden', 'true'); wrap.appendChild(pin); }
   });
   if (PORT) { const P = MAP.tagPos(PORT.id), t = document.createElement('div'); t.className = 'tag' + (selId === PORT.id ? ' sel' : ''); t.dataset.id = PORT.id;
     t.style.left = P.left + '%'; t.style.top = P.top + '%'; t.textContent = PORT.name; t.setAttribute('aria-hidden', 'true'); wrap.appendChild(t); }
@@ -278,7 +281,20 @@ function lesson(r, i, id, plain = false) {
   if ((n.refs || []).length) blocks.push(`<div class="refs">出處：${n.refs.map((x) => x.u ? `<a href="${esc(x.u)}" target="_blank" rel="noopener">${esc(x.t)}</a>` : esc(x.t)).join('、')}</div>`);
   let cards;
   if (LK) {
-    cards = LK.blocks.map((b) => ({ kind: KIND[b.type], blk: b }));
+    // 對話（小劇場）前先認識名詞：這段對話第一次用到、但台詞裡沒解釋的名詞，先插一張名詞小卡（使用者 2026-11-15）
+    const keys = (t) => [t, ...t.split(/[（）()／/]/)].map((x) => x.trim()).filter((x) => x.length >= 2);
+    const said = new Set(); cards = [];
+    for (const b of LK.blocks) {
+      const txt = JSON.stringify(b);
+      if (b.type === 'talk') {
+        const lines = b.lines.map((l) => l[1]);
+        const need = (n.terms || []).filter((x) => !said.has(x.t) && keys(x.t).some((k) => txt.includes(k))
+          && !keys(x.t).some((k) => lines.some((l) => { const p = l.indexOf(k); return p >= 0 && /^[」』）)]?\s*(就是|是指|是|指的是|指|意思是|叫做)/.test(l.slice(p + k.length, p + k.length + 6)); })));
+        if (need.length) cards.push({ kind: '先認識名詞', html: `<div class="lk-pre-terms"><p class="lk-small" style="margin-top:0">下面的對話會用到這幾個詞，先看一下：</p><dl>${need.map((x) => `<dt>${esc(x.t)}</dt><dd>${esc(x.d)}</dd>`).join('')}</dl></div>` });
+      }
+      (n.terms || []).forEach((x) => { if (keys(x.t).some((k) => txt.includes(k))) said.add(x.t); });
+      cards.push({ kind: KIND[b.type], blk: b });
+    }
     if ((n.terms || []).length) cards.push({ kind: '名詞卡', fn: (el) => termsCard(n.terms, el) });
     if ((n.pitfalls || []).length) cards.push({ kind: '陷阱卡', pit: true, fn: (el) => trapsCard(n.pitfalls, el) });
     cards.push({ kind: '記憶點', html: `<div class="lk-memo">${esc(LK.memo)}</div>${(n.refs || []).length ? `<div class="refs">出處：${n.refs.map((x) => x.u ? `<a href="${esc(x.u)}" target="_blank" rel="noopener">${esc(x.t)}</a>` : esc(x.t)).join('、')}</div>` : ''}` });

@@ -3,6 +3,7 @@
 // 呼叫 mount(block, el, ctx, done)；done() 之後才能按下一張（對話講完、猜題答完、分類全對、時間軸看完）。
 // 名詞卡、陷阱卡、記憶點由 world.js 用知識點既有的 terms／pitfalls 與 memo 自動接在最後。
 
+import { makeStage } from './stage.js';
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const h = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
 const RM = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -53,11 +54,13 @@ const K = {
   // 對話：[["npc"|"me", "台詞"], ...]，點一下下一句
   talk(b, el, ctx, done) {
     const npc = NPC[ctx.region] || NPC.climate, row = h('div', 'lk-talk'), bub = h('div', 'lk-bub');
-    row.append(sprite(npc[1]), bub); el.append(row);
+    // 小劇場：NPC 與見習生站在舞台上，每句台詞的第三格是畫面指令（stage.js）
+    const stage = makeStage(ctx.region, sprite(npc[1]), sprite(ME[1])); el.append(stage.el);
+    row.append(bub); el.append(row);
     let i = 0, timer = null;
     const show = () => {
-      const [who, text] = b.lines[i], me = who === 'me', [name, pal] = me ? ME : npc;
-      row.replaceChild(sprite(pal), row.firstChild); bub.className = 'lk-bub' + (me ? ' me' : '');
+      const [who, text, fx] = b.lines[i], me = who === 'me', [name] = me ? ME : npc;
+      stage.say(who, fx); bub.className = 'lk-bub' + (me ? ' me' : '');
       bub.innerHTML = `<div class="who">${esc(name)}</div><div class="lk-t"></div><span class="nx">▼ 點一下</span>`;
       const t = bub.querySelector('.lk-t'); let k = 0; clearInterval(timer);
       if (RM()) { t.textContent = text; return; }
@@ -188,7 +191,12 @@ export function validate(id, L) {
   L.blocks.forEach((b, i) => {
     if (!K[b.type]) return at(i, `未知類型 ${b.type}`);
     try {
-      if (b.type === 'talk') { if (!b.lines?.length || b.lines.some((l) => !['npc', 'me'].includes(l[0]) || !l[1])) at(i, 'lines 格式要是 [["npc"|"me","台詞"]]'); }
+      if (b.type === 'talk') { if (!b.lines?.length || b.lines.some((l) => !['npc', 'me'].includes(l[0]) || !l[1] || (l[2] != null && typeof l[2] !== 'string'))) at(i, 'lines 格式要是 [["npc"|"me","台詞","畫面指令（可省略）"]]'); }
+      if (b.type === 'talk') for (const [j, l] of b.lines.entries()) for (const tk of String(l[2] || '').split(/\s+/).filter(Boolean)) { // 畫面指令：關鍵字或純 emoji；n= 的數字要出自這句台詞
+        const m = /^n=(.*)$/.exec(tk);
+        if (m) { for (const d of m[1].match(/\d[\d,.]*/g) || []) if (!l[1].replace(/,/g, '').includes(d.replace(/,/g, '').replace(/\.$/, ''))) at(i, `第 ${j + 1} 句畫面 n= 的數字 ${d} 不在台詞裡`); }
+        else if (!/^(bar|tilt|up|down)=|^(ok|no|\?|clear)$/.test(tk) && /[A-Za-z0-9一-鿿]/.test(tk.replace(/[>⃣️]/g, '').replace(/[#*0-9]️?⃣/g, ''))) at(i, `第 ${j + 1} 句畫面指令「${tk}」不是 emoji 也不是關鍵字`);
+      }
       if (b.type === 'guess') { if (!b.q || b.opts?.length < 2 || !(b.ans >= 0 && b.ans < b.opts.length) || !b.why) at(i, 'guess 要有 q、opts、ans、why'); }
       if (b.type === 'compare') { if (!b.cols?.length || !b.rows?.length || b.rows.some((r) => r.length !== b.cols.length)) at(i, 'compare 每列欄數要跟 cols 一樣'); }
       if (b.type === 'cards') { if (!(b.items?.length >= 2 && b.items.length <= 4) || b.items.some((x) => !x.t || !x.d)) at(i, 'cards 要 2～4 張且有 t、d'); }
