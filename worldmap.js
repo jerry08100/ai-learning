@@ -29,8 +29,12 @@ const pick = (ramp, t) => ramp[Math.max(0, Math.min(ramp.length - 1, Math.floor(
 
 // ---- 地形（設計座標）----
 const det = (u, v) => (vn(u / 9, v / 9) - .5) * .28 + (vn(u / 4, v / 4) - .5) * .1;
-const landE = (u, v) => 1 - Math.hypot((u - 138) / 104, (v - 142) / 108) + (fb(u, v) - .5) * .9 + det(u, v);
-const landA = (u, v) => 1 - Math.hypot((u - 352) / 100, (v - 132) / 100) + (fb(u + 600, v + 300) - .5) * .9 + det(u + 300, v);
+// 兩國之間留一道海峽（使用者 2026-11-15：不要緊貼，要有好幾個國家的感覺）：越過中線就快速沉到海裡
+const STRAIT = 245, GAP = 18;
+const sm = (t) => (t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t));
+const wob = (v, k) => (vn(v / 13, k) - .5) * 30 + (vn(v / 5, k + 7) - .5) * 10; // 海峽兩岸跟著雜訊起伏，不是一條直線
+const landE = (u, v) => 1 - Math.hypot((u - 138) / 104, (v - 142) / 108) + (fb(u, v) - .5) * .9 + det(u, v) - sm((u - (STRAIT - GAP - 34 + wob(v, 11))) / 46) * 1.3;
+const landA = (u, v) => 1 - Math.hypot((u - 352) / 100, (v - 132) / 100) + (fb(u + 600, v + 300) - .5) * .9 + det(u + 300, v) - sm(((STRAIT + GAP + 34 + wob(v, 23)) - u) / 46) * 1.3;
 const mtn = (u, v) => fb(u * 1.6 + 40, v * 1.6 + 70);
 const riverU = (v) => 112 + 10 * Math.sin(v / 15);
 export const CENTER = { earth: [138, 142], ai: [352, 132] };
