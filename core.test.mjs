@@ -60,9 +60,9 @@ const bank = [
   { id: 'p1', level: '初級', subject: '初1' },                    // 歷屆(無 source 欄)
   { id: 'p2', level: '初級', subject: '初1', source: '學習指引' },
   { id: 'p3', level: '初級', subject: '初2' },
-  { id: 'c1', level: '初級', subject: '初1', source: '課程題' },
-  { id: 'c2', level: '初級', subject: '初2', source: '課程題' },
-  { id: 'm1', level: '初級', subject: '初1', source: '模擬題' },
+  { id: 'c1', level: '初級', subject: '初1', source: '自製題' },
+  { id: 'c2', level: '初級', subject: '初2', source: '自製題' },
+  { id: 'm1', level: '初級', subject: '初1', source: '延伸題' },
   { id: 'g1', level: '中級', subject: '中1' },
   { id: 'g2', level: '中級', subject: '中2' },
 ];
@@ -79,8 +79,8 @@ assert.deepEqual(ids({ lv: 'all' }).length, 8, '全部級別+預設全題庫=整
 assert.deepEqual(ids({ bank: 'official' }), ['p1', 'p2', 'p3'], '官方題只出官方');
 assert.deepEqual(ids({ bank: 'official', lv: 'all' }), ['p1', 'p2', 'p3', 'g1', 'g2']);
 // 題庫
-assert.deepEqual(ids({ bank: '課程題' }), ['c1', 'c2']);
-assert.deepEqual(ids({ bank: '模擬題' }), ['m1']);
+assert.deepEqual(ids({ bank: '自製題' }), ['c1', 'c2']);
+assert.deepEqual(ids({ bank: '延伸題' }), ['m1']);
 assert.deepEqual(ids({ bank: '歷屆' }), ['p1', 'p3'], '歷屆=沒有 source 欄的題');
 assert.deepEqual(ids({ bank: '學習指引' }), ['p2']);
 assert.deepEqual(ids({ bank: 'all', lv: 'all' }).length, 8);
@@ -94,11 +94,11 @@ assert.deepEqual(ids({ bank: 'official', subs: [] }), ['p1', 'p2', 'p3'], '空�
 // 科目清單與題數
 assert.deepEqual(subjectsIn(bank, bankOf('official'), '初級'),
   [{ subject: '初1', count: 2 }, { subject: '初2', count: 1 }]);
-assert.deepEqual([...resolveSubs(bank, bankOf('課程題'), '初級', null)], ['初1', '初2']);
+assert.deepEqual([...resolveSubs(bank, bankOf('自製題'), '初級', null)], ['初1', '初2']);
 // 級別題數 + 該題庫沒中級時自動跳級
 assert.equal(countIn(bank, bankOf('official'), '中級'), 2);
-assert.equal(countIn(bank, bankOf('課程題'), '中級'), 0, '課程題沒有中級');
-assert.equal(firstLevelWith(bank, bankOf('課程題')), '初級');
+assert.equal(countIn(bank, bankOf('自製題'), '中級'), 0, '自製題沒有中級');
+assert.equal(firstLevelWith(bank, bankOf('自製題')), '初級');
 assert.equal(firstLevelWith(bank, bankOf('official')), '初級');
 
 console.log('PASS');

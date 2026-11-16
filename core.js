@@ -72,13 +72,12 @@ export function wrongQuestionIds(questions, progress) {
 }
 
 // ---- 練習範圍:題庫 → 級別 → 科目(三層)。純篩選,UI 在 app.js。----
-// 非官方題(模擬題/課程題)的隔離改由「題庫」這層負責,預設 official,不再靠章節名比對。
+// 非官方題(自製題/延伸題)的隔離改由「題庫」這層負責,預設 official,不再靠章節名比對。
 export const BANKS = [
-  { key: 'official', label: '官方題（歷屆＋學習指引）', test: (q) => q.source !== '模擬題' && q.source !== '課程題' && q.source !== '延伸題' },
+  { key: 'official', label: '官方題（歷屆＋學習指引）', test: (q) => q.source !== '自製題' && q.source !== '延伸題' },
   { key: '歷屆', label: '官方・只練歷屆考古題', test: (q) => (q.source || '歷屆') === '歷屆' },
   { key: '學習指引', label: '官方・只練學習指引範例', test: (q) => q.source === '學習指引' },
-  { key: '課程題', label: '課程練習題（非官方）', test: (q) => q.source === '課程題' },
-  { key: '模擬題', label: '模擬題（非官方）', test: (q) => q.source === '模擬題' },
+  { key: '自製題', label: '本站自製題（非官方）', test: (q) => q.source === '自製題' },
   { key: '延伸題', label: '延伸練習題（非官方）', test: (q) => q.source === '延伸題' },
   { key: 'all', label: '全部（官方＋非官方）', test: () => true },
 ];
@@ -89,7 +88,7 @@ export const bankOf = (key) => BANKS.find((b) => b.key === key) || BANKS.find((b
 export const levelOf = (lv) => (LEVELS.some(([k]) => k === lv) ? lv : '初級'); // 認不得就回初級
 const inLevel = (q, lv) => lv === 'all' || q.level === lv;
 export const countIn = (questions, bank, lv) => questions.filter((q) => bank.test(q) && inLevel(q, lv)).length;
-// 換題庫後若目前級別是空的(例:課程題沒有中級),跳到第一個有題的級別
+// 換題庫後若目前級別是空的(例:某題庫沒有中級),跳到第一個有題的級別
 export const firstLevelWith = (questions, bank) =>
   (LEVELS.find(([k]) => countIn(questions, bank, k)) || ['all'])[0];
 // 該題庫＋級別下有哪些科目(帶題數)。科目名跨級別唯一(初級科目1≠中級科目1),故直接拿科目名當 key。
