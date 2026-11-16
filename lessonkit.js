@@ -57,19 +57,38 @@ const K = {
     // 小劇場：NPC 與見習生站在舞台上，每句台詞的第三格是畫面指令（stage.js）
     const stage = makeStage(ctx.region, sprite(npc[1]), sprite(ME[1])); el.append(stage.el);
     row.append(bub); el.append(row);
-    let i = 0, timer = null;
+    let i = 0, timer = null, ended = false;
     const show = () => {
       const [who, text, fx] = b.lines[i], me = who === 'me', [name] = me ? ME : npc;
       stage.say(who, fx); bub.className = 'lk-bub' + (me ? ' me' : '');
-      bub.innerHTML = `<div class="who">${esc(name)}</div><div class="lk-t"></div><span class="nx">▼ 點一下</span>`;
+      bub.innerHTML = `<div class="who">${esc(name)}</div><div class="lk-t"></div><span class="nx">▼ 點畫面任何地方、按空白鍵或 → 繼續</span>`;
       const t = bub.querySelector('.lk-t'); let k = 0; clearInterval(timer);
       if (RM()) { t.textContent = text; return; }
       timer = setInterval(() => { t.textContent = text.slice(0, ++k); if (k >= text.length) clearInterval(timer); }, 20);
     };
-    const step = () => { const t = bub.querySelector('.lk-t'), full = b.lines[i][1];
+    const replay = () => { ended = false; i = 0; show(); };
+    const step = () => { if (ended) return; const t = bub.querySelector('.lk-t'), full = b.lines[i][1];
       if (t.textContent.length < full.length) { clearInterval(timer); t.textContent = full; return; }
-      if (i < b.lines.length - 1) { i++; show(); } else { bub.querySelector('.nx').textContent = '（對話結束）'; bub.onclick = null; bub.onkeydown = null; done(); } };
-    bub.tabIndex = 0; bub.setAttribute('role', 'button'); bub.onclick = step; bub.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); step(); } };
+      if (i < b.lines.length - 1) { i++; show(); return; }
+      ended = true; bub.querySelector('.nx').textContent = '（對話結束）';
+      const rb = h('button', 'lk-replay', '↻ 重看'); rb.type = 'button'; rb.onclick = (e) => { e.stopPropagation(); replay(); }; bub.append(rb);
+      done(); };
+    // 使用者 2026-11-15／16：整張卡點任何地方都能下一句（按鈕、連結、輸入框除外）；空白鍵、方向鍵右也行；看完可以重看
+    const onClick = (e) => {
+      if (!el.isConnected) return document.removeEventListener('click', onClick);
+      const card = el.closest('.card') || el;
+      if (!card.contains(e.target) || e.target.closest('button, a, input, select, textarea, label')) return;
+      step();
+    };
+    const onKey = (e) => {
+      if (!el.isConnected) return document.removeEventListener('keydown', onKey);
+      if (e.target.closest?.('input, textarea, select') || e.altKey || e.ctrlKey || e.metaKey) return;
+      if (e.key === ' ' || e.key === 'ArrowRight') {
+        e.preventDefault();
+        if (!ended) step(); else if (e.key === 'ArrowRight') document.querySelector('#next:not([disabled])')?.click();
+      }
+    };
+    document.addEventListener('click', onClick); document.addEventListener('keydown', onKey);
     show();
   },
   // 先猜再看：{q, opts, ans, why}

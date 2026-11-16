@@ -225,6 +225,10 @@ ul.pts li:hover:not(.s-lock), ul.pts li:focus-visible { background:var(--sl); }
 .lk-bub.me { border-color:var(--lb); } .lk-bub.me .who { color:var(--lb); }
 .lk-bub .nx { position:absolute; right:12px; bottom:4px; font-size:14px; color:var(--muted); animation:lk-blink 1s steps(2) infinite; }
 .lk-bub:focus-visible { outline:3px solid var(--y); }
+.lk-bub .lk-t { pointer-events:none; } /* 打字中換掉文字節點時點擊不會丟失 */
+.lk-bub .lk-replay { position:absolute; left:14px; bottom:4px; min-height:32px; padding:2px 12px; font:14px var(--f-pixel); color:var(--y); background:transparent; border:1px solid var(--y); cursor:pointer; }
+.lk-bub .lk-replay:hover, .lk-bub .lk-replay:focus-visible { background:rgba(232,200,119,.15); outline:2px solid var(--y); }
+.card:has(.lk-talk) { cursor:pointer; }
 @keyframes lk-blink { 50% { opacity:0; } }
 .lk-q { font-size:20px; line-height:1.7; margin:0 0 12px; }
 .lk-opts { display:grid; gap:10px; }
