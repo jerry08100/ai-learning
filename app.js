@@ -213,9 +213,37 @@ const subjects = () => [...new Set(DATA.questions.map((q) => q.subject))];
 const OFFICIAL_SRC = (q) => q.source !== '自製題' && q.source !== '延伸題'; // 非官方題不出現在模擬考試卷清單
 const papers = () => [...new Set(DATA.questions.filter(OFFICIAL_SRC).map((q) => `${q.level}｜${q.round}｜${q.subject}`))];
 const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+// 顯示層：英文詞（Human-over-the-loop、Low-code…）不在連字號斷行；不改資料
+const nb = (h) => h.replace(/(?<![\w-])[A-Za-z][A-Za-z0-9]*(?:-[A-Za-z0-9]+)+(?![\w-])/g, (m) => (m.length <= 28 ? `<span class="nw">${m}</span>` : m));
+// 中文詞不斷行：用 Intl.Segmenter 把 2～6 字的中文詞、數字+單位包成 nowrap span（只動文字節點，不碰標籤）
+const SEG = typeof Intl !== 'undefined' && Intl.Segmenter ? new Intl.Segmenter('zh-Hant', { granularity: 'word' }) : null;
+const zhCache = new Map();
+function zhSeg(t) {
+  if (!/[㐀-鿿]/.test(t)) return t.replace(/\d[\d.,]*\s?(?:%|[A-Za-z]+)/g, (m) => `<span class="nw">${m}</span>`);
+  let c = zhCache.get(t); if (c !== undefined) return c;
+  c = '';
+  for (const { segment, isWordLike } of SEG.segment(t)) {
+    c += isWordLike && /^[㐀-鿿]{2,6}$/.test(segment) ? `<span class="nw">${segment}</span>` : segment;
+  }
+  if (zhCache.size > 4000) zhCache.clear();
+  zhCache.set(t, c);
+  return c;
+}
+const zhWords = (h) => SEG ? h.split(/(<[^>]*>)/).map((p, i) => (i % 2 || !p ? p : zhSeg(p))).join('') : h;
+const tx = (s) => zhWords(nb(esc(s)));
+// 「(B) 選項內容摘要」；有些題的選項本身就是一串數字（排序題），只顯示選項文字會被誤讀成亂碼，所以一律帶字母
+const ansLabel = (q) => { const o = String(q.options[q.answer]); return `(${String.fromCharCode(65 + q.answer)}) ${tx(o.length > 28 ? o.slice(0, 28) + '…' : o)}`; };
+// 內嵌 SVG 圖示（RemixIcon，currentColor）
+const SVG = (d) => `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="${d}"/></svg>`;
+const ICO_STAR = SVG('M12.0006 18.26L4.94715 22.2082L6.52248 14.2799L0.587891 8.7918L8.61493 7.84006L12.0006 0.5L15.3862 7.84006L23.4132 8.7918L17.4787 14.2799L19.054 22.2082L12.0006 18.26ZM12.0006 15.968L16.2473 18.3451L15.2988 13.5717L18.8719 10.2674L14.039 9.69434L12.0006 5.27502L9.96214 9.69434L5.12921 10.2674L8.70231 13.5717L7.75383 18.3451L12.0006 15.968Z');
+const ICO_STAR_ON = SVG('M12.0006 18.26L4.94715 22.2082L6.52248 14.2799L0.587891 8.7918L8.61493 7.84006L12.0006 0.5L15.3862 7.84006L23.4132 8.7918L17.4787 14.2799L19.054 22.2082L12.0006 18.26Z');
+const ICO_OK = SVG('M9.9997 15.1709L19.1921 5.97852L20.6063 7.39273L9.9997 17.9993L3.63574 11.6354L5.04996 10.2212L9.9997 15.1709Z');
+const ICO_NO = SVG('M11.9997 10.5865L16.9495 5.63672L18.3637 7.05093L13.4139 12.0007L18.3637 16.9504L16.9495 18.3646L11.9997 13.4149L7.04996 18.3646L5.63574 16.9504L10.5855 12.0007L5.63574 7.05093L7.04996 5.63672L11.9997 10.5865Z');
+// 半形標點接在中文字旁邊時換成全形（資料裡的 meta.note 有這種寫法）
+const zhPunct = (t) => String(t).replace(/([\u3400-\u9fff）」』])\s*,/g, '$1，').replace(/([\u3400-\u9fff）」』])\s*;/g, '$1；').replace(/;(?=[\u3400-\u9fff])/g, '；').replace(/,(?=[\u3400-\u9fff])/g, '，');
 // 解析顯示用:在「。/；後面的 (A)-(D) 選項分析」與「記憶點」前斷行並加粗,把長段落變條列(不動資料)
 function formatExp(text) {
-  return esc(text)
+  return zhWords(nb(esc(text))
     // 學習指引題＝官方原文＋本站補充,兩段之間與補充的第一個選項都要斷開(官方原文結尾不一定有句號)
     .replace(/\s*(本站補充：)\s*/g, '<br>$1')
     .replace(/(本站補充：)\s*([(（][A-DＡ-Ｄ][)）])/g, '$1<br>$2')
@@ -223,7 +251,7 @@ function formatExp(text) {
     // 組合題/程式碼題不用 (A) 而是寫「原因 A：」「選項 B 的」,沒這條會整段擠成密文
     .replace(/([。；])\s*(原因\s*[A-DＡ-Ｄ]|選項\s*[A-DＡ-Ｄ])/g, '$1<br>$2')
     .replace(/([。；])\s*(核心概念|核心記憶點|記憶點)/g, '$1<br>$2')
-    .replace(/(^|<br>)\s*(正解\s*[(（][A-DＡ-Ｄ][)）]|本站補充|[(（][A-DＡ-Ｄ][)）]|原因\s*[A-DＡ-Ｄ]|選項\s*[A-DＡ-Ｄ]|核心概念|核心記憶點|記憶點)/g, '$1<strong>$2</strong>');
+    .replace(/(^|<br>)\s*(正解\s*[(（][A-DＡ-Ｄ][)）]|本站補充|[(（][A-DＡ-Ｄ][)）]|原因\s*[A-DＡ-Ｄ]|選項\s*[A-DＡ-Ｄ]|核心概念|核心記憶點|記憶點)/g, '$1<strong>$2</strong>'));
 }
 // ---- 知識延伸（knowledge.json）----
 // 每題掛 0~2 則延伸知識:先用 topic 對應(精準),沒中才退回 chapter(概括)。索引在載入時建一次。
@@ -343,8 +371,25 @@ function download(name, text, type = 'text/plain') {
 }
 
 // ---- views ----
+// 作答畫面要整頁不捲：把頁首、安裝列、頁尾與內容上下距的實際高度寫進 --chrome，
+// practice.css 用 calc(100dvh - var(--chrome)) 算欄高（頁首會因寬度換行，不能寫死）。
+function watchChrome() {
+  const els = ['.top', '#installbar', '.site-footer'].map((s) => $(s)).filter(Boolean);
+  const set = () => {
+    const cs = getComputedStyle(view);
+    const h = els.reduce((a, e) => a + (e.hidden ? 0 : e.offsetHeight), 0) + parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+    document.documentElement.style.setProperty('--chrome', `${Math.ceil(h) + 1}px`);
+  };
+  if ('ResizeObserver' in window) { const ro = new ResizeObserver(set); els.forEach((e) => ro.observe(e)); }
+  window.addEventListener('resize', set);
+  set();
+}
+// 手機分頁列單列橫向捲動：右側淡出提示還有內容，捲到底就拿掉
+function tabsEdge() { const t = $('.tabs'); if (t) { t.classList.toggle('end', t.scrollLeft + t.clientWidth >= t.scrollWidth - 4); t.classList.toggle('sl', t.scrollLeft > 4); } }
 function setNav(active) {
-  document.querySelectorAll('nav button').forEach((b) => b.classList.toggle('on', b.dataset.v === active));
+  document.querySelectorAll('.tabs button').forEach((b) => b.classList.toggle('on', b.dataset.v === active));
+  const on = $('.tabs button.on'); if (on) { const t = $('.tabs'); t.scrollLeft = Math.max(0, on.offsetLeft - (t.clientWidth - on.offsetWidth) / 2); tabsEdge(); }
+  window.scrollTo(0, 0);
 }
 
 // 範圍 = 章節（若題目尚未分類則退回科目），供「選擇練習範圍」用
@@ -370,10 +415,12 @@ function rangePickerHtml() {
     return `<button type="button" class="chip lv${k === lv ? ' on' : ''}" data-lv="${esc(k)}"${n ? '' : ' disabled'}>${label} <b>${n}</b></button>`;
   }).join('');
   const ss = subjectsIn(DATA.questions, bank, lv).map((s) =>
-    `<button type="button" class="chip sub${subs.has(s.subject) ? ' on' : ''}" data-sub="${esc(s.subject)}">${esc(s.subject)} <b>${s.count}</b></button>`).join('');
-  return `<label class="pick-lb">題庫<select id="bank-sel">${banks}</select></label>
-    <div class="pick-lb">級別</div><div class="chip-row">${lvs}</div>
-    <div class="pick-lb">科目<span class="muted">（可多選，至少留一個）</span></div><div class="chip-row">${ss}</div>`;
+    `<button type="button" class="chip sub${subs.has(s.subject) ? ' on' : ''}" data-sub="${esc(s.subject)}">${esc(s.subject).replace('規劃管理', '規劃管理<wbr>')} <b>${s.count}</b></button>`).join('');
+  return `<div class="pick-grid">
+    <label class="pk"><span class="pick-lb">題庫</span><select id="bank-sel">${banks}</select></label>
+    <div class="pk"><span class="pick-lb">級別</span><div class="chip-row">${lvs}</div></div>
+    <div class="pk wide"><span class="pick-lb">科目<span class="muted">（可多選，至少留一個）</span></span><div class="chip-row">${ss}</div></div>
+    </div>`;
 }
 // 綁事件:任一項改動 → 存 store → 重繪選單 → 回呼(更新題數/清單)。重繪會換掉 DOM,所以要重新綁一次。
 function wireRangePicker(onChange) {
@@ -398,39 +445,50 @@ function home() {
   setNav('home');
   // 首頁不再顯示每日戰績條與今日挑戰;數據照常累計,要看去「統計」頁
   const quickCard = `
-    <section class="card">
-      <div class="row"><h3 style="margin:0">快速做題 ${QUICK_N} 題</h3>
-        <button class="primary" id="quick-start" style="margin:0;padding:10px 18px">開始</button></div>
-      <p class="muted" style="margin:6px 0 0">用下面的範圍設定，優先出錯題與沒做過的，按了就開始。</p>
+    <section class="card quick">
+      <p class="big">快速做題 ${QUICK_N} 題</p>
+      <p class="muted" style="margin:0">用「練習模式」裡的範圍設定，優先出錯題與沒做過的，按了就開始。</p>
+      <button class="primary" id="quick-start">開始</button>
     </section>`;
   const cc = todayConcept();
   const conceptCard = cc ? `
     <section class="card concept-card">
-      <div class="ck">今日 AI 觀念${cc.chapter ? ' · ' + esc(cc.chapter) : ''}${cc.weak ? ' · 針對你還沒掌握的範圍' : ''}</div>
+      <div class="ck"><span>今日 AI 觀念${cc.chapter ? ' · ' + esc(cc.chapter) : ''}${cc.weak ? ' · 針對你還沒掌握的範圍' : ''}</span><button type="button" class="cc-more" hidden>看全文</button></div>
       <h3>${esc(cc.title)}</h3>
-      <p>${esc(cc.body)}</p>
+      <p class="cc-body">${esc(cc.body)}</p>
     </section>` : '';
-  view.innerHTML = `${quickCard}${conceptCard}
-    <section class="card">
-      <h2>練習模式</h2>
-      <p class="muted">即時看答案與解析。先挑題庫，再挑級別跟科目。</p>
-      <div id="range-picker">${rangePickerHtml()}</div>
-      <p class="muted range-sum" id="range-sum"></p>
-      <label>關鍵字（選填）
-        <input id="pr-kw" placeholder="例如 RAG、特徵工程、Transformer">
-      </label>
-      <label>出題方式
-        <select id="pr-mode">
-          <option value="smart">智慧複習（優先錯題與沒做過的）</option>
-          <option value="random">隨機</option>
-        </select>
-      </label>
-      <label>題數
-        <select id="pr-count"><option value="10">10</option><option value="20">20</option><option value="0">全部（選取範圍）</option></select>
-      </label>
-      <button class="primary" id="pr-start">開始練習</button>
-      <button class="primary alt" id="pr-images">只練看圖題（${DATA.questions.filter((q) => q.image).length} 題，全中級）</button>
-    </section>`;
+  const nImg = DATA.questions.filter((q) => q.image).length;
+  view.innerHTML = `<div class="home-grid">
+    <div class="col">${quickCard}${conceptCard}</div>
+    <div class="col"><section class="card practice">
+      <div><div class="ttl"><h2>練習模式</h2><p class="muted">即時看答案與解析。先挑題庫，再挑級別跟科目。</p></div>
+      <div id="range-picker">${rangePickerHtml()}</div></div>
+      <div class="form-row">
+        <label><span>關鍵字（選填）</span>
+          <input id="pr-kw" placeholder="例如 RAG、特徵工程、Transformer">
+        </label>
+        <label><span>出題方式</span>
+          <select id="pr-mode">
+            <option value="smart">智慧複習（優先錯題與沒做過的）</option>
+            <option value="random">隨機</option>
+          </select>
+        </label>
+        <label><span>題數</span>
+          <select id="pr-count"><option value="10">10</option><option value="20">20</option><option value="0">全部（選取範圍）</option></select>
+        </label>
+      </div>
+      <div class="btns">
+        <button class="primary" id="pr-start">開始練習</button>
+        ${nImg ? `<button class="primary alt" id="pr-images">只練看圖題（${nImg} 題，全中級）</button>` : ''}
+        <p class="muted range-sum" id="range-sum"></p>
+      </div>
+    </section></div>
+    </div>`;
+  { // 驗收第 1 輪：矮視窗觀念卡內文先顯示 5 行，超過才出現「看全文」，展開後可收回
+    const ccp = view.querySelector('.cc-body'), ccb = view.querySelector('.cc-more');
+    if (ccp && ccb) { const chk = () => { ccb.hidden = !ccp.classList.contains('open') && ccp.scrollHeight <= ccp.clientHeight + 1; }; chk(); addEventListener('resize', chk);
+      ccb.onclick = () => { const o = ccp.classList.toggle('open'); ccb.textContent = o ? '收起' : '看全文'; chk(); }; }
+  }
   const kw = () => $('#pr-kw').value.trim().toLowerCase();
   const matchKw = (q) => {
     const k = kw();
@@ -447,7 +505,7 @@ function home() {
     if (count) pool = pool.slice(0, count);
     runPractice(pool);
   };
-  $('#pr-images').onclick = () => runPractice(shuffle(DATA.questions.filter((q) => q.image)));
+  if ($('#pr-images')) $('#pr-images').onclick = () => runPractice(shuffle(DATA.questions.filter((q) => q.image)));
   // 快速做題:跳過下面所有選項,直接用目前範圍偏好智慧複習挑 QUICK_N 題
   $('#quick-start').onclick = () => runPractice(smartSort(rangePool()).slice(0, QUICK_N));
   updateSum();
@@ -457,23 +515,39 @@ function runPractice(pool, opts = {}) {
   let i = 0;
   let right = 0, wrong = 0;
   const sessionWrong = [];
+  const results = []; // 本組每題的對錯（右欄進度條用）
   if (!pool.length) {
     view.innerHTML = `<section class="card"><p>沒有符合的題目。</p></section>`;
     return;
   }
   const render = () => {
+    window.scrollTo(0, 0);
     const q = pool[i];
     const p = qp(q.id);
-    view.innerHTML = `
-      <section class="card">
-        <div class="row"><span class="muted">${i + 1} / ${pool.length}</span>
-          <button class="star ${p.starred ? 'on' : ''}" id="star">${p.starred ? '★ 已標' : '☆ 標記'}</button></div>
-        <p class="qmeta muted">${esc(q.subject)}${q.topic ? '・' + esc(q.topic) : ''}${srcTag(q)}</p>
-        <h3>${esc(q.question)}</h3>
-        ${q.image ? `<img class="qfig" src="${esc(q.image)}" alt="題目附圖" loading="lazy">` : ''}
-        <div id="opts">${q.options.map((o, k) => `<button class="opt" data-k="${k}">${esc(o)}</button>`).join('')}</div>
-        <div id="fb"></div>
-      </section>`;
+    const segs = pool.map((_, n) => `<i class="${n < i ? (results[n] ? 'ok' : 'bad') : n === i ? 'cur' : ''}"></i>`).join('');
+    const lvl = q.level ? `<dt>級別</dt><dd>${esc(q.level)}</dd>` : '';
+    const rng = q.chapter ? `<dt>章節</dt><dd>${esc(q.chapter)}</dd>` : '';
+    const rec = p.attempts ? `作答 ${p.attempts} 次・答對 ${p.correct} 次` : '新題，還沒做過';
+    const mas = !p.attempts ? '' : isMastered(p.box) ? '已掌握' : `練習中（再連對 ${Math.max(1, MASTER_BOX - (p.box || 1))} 次就掌握）`;
+    view.innerHTML = `<div class="qa">
+      <section class="card qa-col">
+        <div class="row"><p class="qmeta muted"><b>${i + 1} / ${pool.length}</b>・${esc(q.subject)}${q.topic ? '・' + esc(q.topic) : ''}${srcTag(q)}</p>
+          <button class="star ${p.starred ? 'on' : ''}" id="star" aria-pressed="${!!p.starred}">${p.starred ? ICO_STAR_ON + '已標記' : ICO_STAR + '標記'}</button></div>
+        <div class="qbody">
+          <h3 class="qtext">${tx(q.question)}</h3>
+          ${q.image ? `<img class="qfig" src="${esc(q.image)}" alt="題目附圖" loading="lazy">` : ''}
+          <div id="opts">${q.options.map((o, k) => `<button class="opt" data-k="${k}"><span class="ot">${tx(o)}</span></button>`).join('')}</div>
+        </div>
+      </section>
+      <section class="card qa-col pre" id="fb">
+        <h3 class="sys">作答提示</h3>
+        <p class="hint-line">選一個答案，這裡會顯示正解與解析。</p>
+        <dl class="facts">${lvl}${rng}<dt>這題紀錄</dt><dd>${rec}</dd>${mas ? `<dt>掌握度</dt><dd>${mas}</dd>` : ''}</dl>
+        <h3 class="sys">本組進度</h3>
+        <div class="segbar" aria-hidden="true">${segs}</div>
+        <p class="muted" style="margin:0">答對 ${right}・答錯 ${wrong}・還有 ${pool.length - i} 題（含這題）</p>
+      </section>
+      </div>`;
     $('#star').onclick = () => { p.starred = !p.starred; save(); render(); };
     view.querySelectorAll('.opt').forEach((btn) =>
       (btn.onclick = () => answer(q, +btn.dataset.k)));
@@ -483,6 +557,7 @@ function runPractice(pool, opts = {}) {
     const correct = k === q.answer;
     p.attempts++;
     if (correct) { p.correct++; right++; } else { p.wrong++; wrong++; sessionWrong.push(q); }
+    results[i] = correct;
     p.box = nextBox(p.box, correct);
     logRecent(correct);
     bumpDaily(correct);
@@ -492,14 +567,16 @@ function runPractice(pool, opts = {}) {
       if (idx === q.answer) b.classList.add('correct');
       if (idx === k && !correct) b.classList.add('wrong');
     });
+    $('#fb').classList.remove('pre');
     $('#fb').innerHTML = `
-      <p class="${correct ? 'ok' : 'bad'}">${correct ? '答對' : '答錯'}（正解：${esc(q.options[q.answer])}）</p>
+      <div class="fb-top"><p class="fb-res ${correct ? 'ok' : 'bad'}">${correct ? ICO_OK + '答對' : ICO_NO + '答錯'}（正解：${ansLabel(q)}）</p>
+        <button class="primary" id="next">${i + 1 < pool.length ? '下一題' : '完成'}</button></div>
       ${q.explanation ? `<p class="exp">${formatExp(q.explanation)}</p>` : ''}
       ${knowHtml(q)}
       ${guideLine(q)}
-      <label class="note">筆記<textarea id="note" rows="2" placeholder="寫下你的理解或記憶點…">${esc(p.note || '')}</textarea></label>
-      <button class="primary" id="next">${i + 1 < pool.length ? '下一題' : '完成'}</button>`;
+      <label class="note">筆記<textarea id="note" rows="2" placeholder="寫下你的理解或記憶點…">${esc(p.note || '')}</textarea></label>`;
     $('#note').oninput = (e) => { p.note = e.target.value; save(); };
+    if (window.innerWidth < 1000) $('#fb').scrollIntoView({ block: 'start', behavior: 'smooth' }); // 單欄（手機）：把解析與「下一題」捲進畫面
     $('#next').onclick = () => { i++; i < pool.length ? render() : finish(); };
   };
   const finish = () => {
@@ -507,13 +584,15 @@ function runPractice(pool, opts = {}) {
     const total = right + wrong;
     const pct = total ? Math.round((right / total) * 1000) / 10 : 0;
     view.innerHTML = `
-      <section class="card">
+      <section class="card result">
         <h2>練習完成</h2>
         <p class="score">${pct}％</p>
-        <p>這組 ${total} 題，答對 ${right}、答錯 ${wrong}</p>
-        ${sessionWrong.length ? '<button class="primary" id="redo-wrong">只練這次錯的</button>' : '<p class="muted">這組全對，讚！</p>'}
-        <button id="again">再練一次</button>
-        <button id="back">回首頁</button>
+        <p>這組 ${total} 題，答對 ${right}、答錯 ${wrong}${sessionWrong.length ? '' : '，全對，讚！'}</p>
+        <div class="btns">
+          ${sessionWrong.length ? '<button class="primary" id="redo-wrong">只練這次錯的</button>' : ''}
+          <button id="again">再練一次</button>
+          <button id="back">回首頁</button>
+        </div>
       </section>`;
     if (sessionWrong.length) $('#redo-wrong').onclick = () => runPractice(sessionWrong.slice());
     $('#again').onclick = () => runPractice(shuffle(pool.slice()));
@@ -529,13 +608,14 @@ function study() {
   let showExp = store.studyExp !== false; // 顯示解說開關,預設開(true);關則每題解說整段不渲染
   view.innerHTML = `
     <section class="card">
-      <h2>背題模式</h2>
-      <p class="muted">把題目、選項與正解直接攤開來背，不作答、不計分。範圍與練習頁共用同一份選擇。</p>
+      <div class="ttl"><h2>背題模式</h2><p class="muted">把題目、選項與正解直接攤開來背，不作答、不計分。範圍與練習頁共用同一份選擇。</p></div>
       <div id="range-picker">${rangePickerHtml()}</div>
-      <p class="muted range-sum" id="range-sum"></p>
-      <label class="study-toggle"><input type="checkbox" id="exp-toggle"${showExp ? ' checked' : ''}> 顯示解說</label>
+      <div class="study-bar">
+        <label class="study-toggle"><input type="checkbox" id="exp-toggle"${showExp ? ' checked' : ''}> 顯示解說</label>
+        <p class="muted range-sum" id="range-sum"></p>
+      </div>
     </section>
-    <div id="study-list"></div>
+    <div id="study-list" class="cards"></div>
     <div id="study-more"></div>`;
   const listEl = $('#study-list'), moreEl = $('#study-more');
   let pool = [], shown = 0;
@@ -543,10 +623,10 @@ function study() {
     const meta = `${esc(q.level)}・${esc(q.subject)}${q.chapter ? '・' + esc(q.chapter) : ''}`
       + srcTag(q);
     const opts = q.options.map((o, k) =>
-      `<div class="opt${k === q.answer ? ' correct' : ''}">${k === q.answer ? '✓ ' : ''}${esc(o)}</div>`).join('');
+      `<div class="opt${k === q.answer ? ' correct' : ''}"><span class="ot">${tx(o)}</span></div>`).join('');
     return `<section class="card">
       <p class="qmeta muted">${meta}</p>
-      <h3>${esc(q.question)}</h3>
+      <h3>${tx(q.question)}</h3>
       ${q.image ? `<img class="qfig" src="${esc(q.image)}" alt="題目附圖" loading="lazy">` : ''}
       <div class="study-opts">${opts}</div>
       ${showExp && q.explanation ? `<details class="study-exp" open><summary>解析</summary><div class="exp">${formatExp(q.explanation)}</div></details>` : ''}
@@ -580,11 +660,12 @@ function mockSetup() {
   const lim = DATA.meta.defaultTimeLimitMin || 60;
   view.innerHTML = `
     <section class="card">
-      <h2>模擬考模式</h2>
-      <p class="muted">整份計時作答，交卷前不顯示答案。練臨場與時間分配。</p>
-      <label>試卷<select id="mk-paper">${opts}</select></label>
-      <label>時間（分鐘）<input id="mk-min" type="number" value="${lim}" min="1"></label>
-      <button class="primary" id="mk-start">開始模擬考</button>
+      <div class="ttl"><h2>模擬考模式</h2><p class="muted">整份計時作答，交卷前不顯示答案。練臨場與時間分配。</p></div>
+      <div class="mk-row">
+        <label><span>試卷</span><select id="mk-paper">${opts}</select></label>
+        <label><span>時間（分鐘）</span><input id="mk-min" type="number" value="${lim}" min="1"></label>
+        <button class="primary" id="mk-start">開始模擬考</button>
+      </div>
     </section>`;
   $('#mk-start').onclick = () => {
     const paper = $('#mk-paper').value;
@@ -607,25 +688,36 @@ function runMock(pool, mins) {
   }, 1000);
 
   const render = () => {
+    window.scrollTo(0, 0);
     const q = pool[i];
-    view.innerHTML = `
-      <section class="card">
-        <div class="row"><span class="muted">${i + 1} / ${pool.length}</span><span id="timer" class="timer">${fmt()}</span></div>
-        <p class="qmeta muted">${esc(q.subject)}</p>
-        <h3>${esc(q.question)}</h3>
-        ${q.image ? `<img class="qfig" src="${esc(q.image)}" alt="題目附圖" loading="lazy">` : ''}
-        <div id="opts">${q.options.map((o, k) =>
-          `<button class="opt ${answers[i] === k ? 'picked' : ''}" data-k="${k}">${esc(o)}</button>`).join('')}</div>
-        <div class="row">
-          <button id="prev" ${i === 0 ? 'disabled' : ''}>上一題</button>
-          ${i + 1 < pool.length ? '<button id="next">下一題</button>' : '<button class="primary" id="submit">交卷</button>'}
+    const nDone = answers.filter((a) => a !== null).length;
+    view.innerHTML = `<div class="qa mock">
+      <section class="card qa-col">
+        <div class="row"><p class="qmeta muted"><b>${i + 1} / ${pool.length}</b>・${esc(q.subject)}</p><span id="timer" class="timer">${fmt()}</span></div>
+        <div class="qbody">
+          <h3 class="qtext">${tx(q.question)}</h3>
+          ${q.image ? `<img class="qfig" src="${esc(q.image)}" alt="題目附圖" loading="lazy">` : ''}
         </div>
-      </section>`;
+        <div class="qnav"><h3 class="sys">題號（已答 ${nDone} / ${pool.length}，點題號可跳題）</h3>
+          <div class="qnav-g">${pool.map((_, n) => `<button class="qj${answers[n] !== null ? ' done' : ''}${n === i ? ' now' : ''}" data-n="${n}" aria-label="第 ${n + 1} 題${answers[n] !== null ? '，已作答' : ''}"${n === i ? ' aria-current="true"' : ''}>${n + 1}</button>`).join('')}</div></div>
+      </section>
+      <section class="card qa-col">
+        <div class="qbody"><div id="opts">${q.options.map((o, k) =>
+          `<button class="opt ${answers[i] === k ? 'picked' : ''}" data-k="${k}"><span class="ot">${tx(o)}</span></button>`).join('')}</div></div>
+        <div class="row qa-nav">
+          <button id="prev" ${i === 0 ? 'disabled' : ''}>上一題</button>
+          ${i + 1 < pool.length ? '<button class="primary" id="next">下一題</button>' : '<button class="primary" id="submit">交卷</button>'}
+        </div>
+      </section>
+      </div>`;
     // 點選項只切換 picked class,不整卡重 render(否則 #timer 被重建會閃 --:--)
     view.querySelectorAll('.opt').forEach((b) => (b.onclick = () => {
       answers[i] = +b.dataset.k;
       view.querySelectorAll('.opt').forEach((x) => x.classList.toggle('picked', +x.dataset.k === answers[i]));
+      const qj = view.querySelector(`.qj[data-n="${i}"]`); if (qj) qj.classList.add('done');
+      const h = view.querySelector('.qnav .sys'); if (h) h.textContent = `題號（已答 ${answers.filter((a) => a !== null).length} / ${pool.length}，點題號可跳題）`;
     }));
+    view.querySelectorAll('.qj').forEach((b) => (b.onclick = () => { i = +b.dataset.n; render(); }));
     if ($('#prev')) $('#prev').onclick = () => { i--; render(); };
     if ($('#next')) $('#next').onclick = () => { i++; render(); };
     if ($('#submit')) $('#submit').onclick = submit;
@@ -646,13 +738,15 @@ function runMock(pool, mins) {
     pushSync(); // checkpoint:交卷立即上傳
     const r = scoreExam(pool, answers);
     view.innerHTML = `
-      <section class="card">
+      <section class="card result">
         <h2>結果</h2>
         <p class="score">${r.percent}％</p>
         <p>答對 ${r.correct} / ${r.total}，答錯 ${r.wrong}</p>
-        <button class="primary" id="review">重做錯題</button>
-        <button id="review-all">整份檢討（含答對）</button>
-        <button id="back">回首頁</button>
+        <div class="btns">
+          <button class="primary" id="review">重做錯題</button>
+          <button id="review-all">整份檢討（含答對）</button>
+          <button id="back">回首頁</button>
+        </div>
       </section>`;
     $('#back').onclick = home;
     $('#review').onclick = () => runPractice(pool.filter((q) => r.wrongIds.includes(q.id)));
@@ -671,13 +765,12 @@ function examReview(pool, answers) {
     const ok = picked === q.answer;
     const opts = q.options.map((o, k) => {
       const cls = k === q.answer ? ' correct' : (k === picked ? ' wrong' : '');
-      const mark = k === q.answer ? '✓ ' : (k === picked ? '✗ ' : '');
-      return `<div class="opt${cls}">${mark}${esc(o)}</div>`;
+      return `<div class="opt${cls}"><span class="ot">${tx(o)}</span></div>`;
     }).join('');
     const state = !done ? '未作答' : (ok ? '答對' : '答錯');
     return `<section class="card">
-      <p class="qmeta muted">第 ${idx + 1} 題・<span class="${ok ? 'ok' : 'bad'}">${state}</span>${srcTag(q)}</p>
-      <h3>${esc(q.question)}</h3>
+      <p class="qmeta muted">第 ${idx + 1} 題・<span class="${ok ? 'ok' : 'bad'}">${state}</span>${ok ? '' : `・正解：${ansLabel(q)}`}${srcTag(q)}</p>
+      <h3>${tx(q.question)}</h3>
       ${q.image ? `<img class="qfig" src="${esc(q.image)}" alt="題目附圖" loading="lazy">` : ''}
       <div class="study-opts">${opts}</div>
       ${q.explanation ? `<details class="study-exp" open><summary>解析</summary><div class="exp">${formatExp(q.explanation)}</div></details>` : ''}
@@ -686,10 +779,9 @@ function examReview(pool, answers) {
   }).join('');
   view.innerHTML = `
     <section class="card">
-      <h2>整份檢討</h2>
-      <p class="muted">${pool.length} 題全部列出，答對的也看得到解析。✓ 是正解，✗ 是你選的。</p>
-      <button id="back">回首頁</button>
-    </section>${cards}`;
+      <div class="ttl"><h2>整份檢討</h2><p class="muted">${pool.length} 題全部列出，答對的也看得到解析。綠色打勾是正解，紅色打叉是你選的。</p>
+        <div class="act"><button id="back">回首頁</button></div></div>
+    </section><div class="cards">${cards}</div>`;
   $('#back').onclick = home;
   window.scrollTo(0, 0);
 }
@@ -700,10 +792,10 @@ function wrongbook() {
   const list = ids.map((id) => DATA.questions.find((q) => q.id === id));
   view.innerHTML = `
     <section class="card">
-      <h2>錯題本</h2>
-      <p class="muted">答錯過、還沒掌握的題會留在這。同一題之後「連續答對 ${MASTER_BOX - 1} 次」就算掌握、自動移出。</p>
-      ${ids.length ? `<button class="primary" id="drill">只練這些錯題</button>` : '<p>目前沒有錯題，繼續加油。</p>'}
-      <ul class="wrong">${list.map((q) => `<li>${esc(q.question)} <span class="muted">（${esc(q.subject)}・再連對 ${Math.max(1, MASTER_BOX - (qp(q.id).box || 1))} 次就掌握）</span></li>`).join('')}</ul>
+      <div class="ttl"><h2>錯題本</h2><p class="muted">答錯過、還沒掌握的題會留在這。同一題之後「連續答對 ${MASTER_BOX - 1} 次」就算掌握、自動移出。</p>
+        ${ids.length ? `<div class="act"><button class="primary" id="drill">只練這些錯題（${ids.length} 題）</button></div>` : ''}</div>
+      ${ids.length ? '' : '<p>目前沒有錯題，繼續加油。</p>'}
+      <ul class="wrong">${list.map((q) => `<li>${esc(q.question)}<span class="muted">（${esc(q.subject)}・再連對 ${Math.max(1, MASTER_BOX - (qp(q.id).box || 1))} 次就掌握）</span></li>`).join('')}</ul>
     </section>`;
   if (ids.length) $('#drill').onclick = () => runPractice(shuffle(list));
 }
@@ -713,20 +805,18 @@ function notes() {
   const items = DATA.questions.filter((q) => { const p = store.q[q.id]; return p && (p.note || p.starred); });
   view.innerHTML = `
     <section class="card">
-      <h2>我的筆記</h2>
-      <p class="muted">有寫筆記、或加星 ⭐ 的題目都在這。筆記可直接在下面改，會自動存。</p>
-      ${items.length
-        ? '<button id="exp-notes">匯出筆記（Markdown）</button>'
-        : '<p>還沒有筆記或星標題。練習時在題目下方寫筆記、或點 ☆ 加星，就會出現在這。</p>'}
-      ${items.map((q) => {
+      <div class="ttl"><h2>我的筆記</h2><p class="muted">有寫筆記、或加上星標的題目都在這。筆記可直接在下面改，會自動存。</p>
+        ${items.length ? '<div class="act"><button id="exp-notes">匯出筆記（Markdown）</button></div>' : ''}</div>
+      ${items.length ? '' : '<p>還沒有筆記或星標題。練習時在題目下方寫筆記、或按「標記」加星標，就會出現在這。</p>'}
+      <div class="note-list">${items.map((q) => {
         const p = qp(q.id);
         return `<div class="note-item">
-          <div class="row"><span class="muted">${p.starred ? '⭐ ' : ''}${esc(q.subject)}</span>
+          <div class="row"><span class="muted">${p.starred ? ICO_STAR_ON.replace('class="ico"', 'class="ico" style="color:var(--y)"') + ' ' : ''}${esc(q.subject)}</span>
             <button class="goto" data-id="${esc(q.id)}">前往該題</button></div>
-          <p class="qn">${esc(q.question)}</p>
+          <p class="qn">${tx(q.question)}</p>
           <textarea class="note-edit" data-id="${esc(q.id)}" rows="2" placeholder="寫下你的理解或記憶點…">${esc(p.note || '')}</textarea>
         </div>`;
-      }).join('')}
+      }).join('')}</div>
     </section>`;
   view.querySelectorAll('.note-edit').forEach((t) => (t.oninput = (e) => { qp(e.target.dataset.id).note = e.target.value; save(); }));
   view.querySelectorAll('.goto').forEach((b) => (b.onclick = () => { const q = DATA.questions.find((x) => x.id === b.dataset.id); if (q) runPractice([q]); }));
@@ -749,7 +839,8 @@ function stats() {
     if (isMastered(p.box)) c.mastered++;
     byCh.set(k, c);
   }
-  const chRows = [...byCh.values()].map((x) =>
+  const chList = [...byCh.values()].sort((a, b) => (a.attempts ? a.correct / a.attempts : 2) - (b.attempts ? b.correct / b.attempts : 2) || a.key.localeCompare(b.key, 'zh-Hant')); // 弱的排前面，沒練過的排最後
+  const chRows = chList.map((x) =>
     `<tr><td>${esc(x.key)}</td><td>${x.attempts ? Math.round((x.correct / x.attempts) * 1000) / 10 + '％' : '—'}</td><td>${x.mastered}/${x.total}</td></tr>`).join('');
   // 成就徽章
   const strk = liveStreak();
@@ -763,7 +854,8 @@ function stats() {
     { on: recAcc != null && recAcc >= 80, t: '近期 80% 命中' },
     { on: [...byCh.values()].some((c) => c.total > 0 && c.mastered === c.total), t: '某範圍全掌握' },
   ];
-  const badgeHtml = badges.map((b) => `<span class="badge ${b.on ? '' : 'lock'}">${b.on ? '✓ ' : ''}${b.t}</span>`).join('');
+  const LOCK = '<svg class="lk" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10V7a5 5 0 0 1 10 0v3h2v12H5V10h2zm2 0h6V7a3 3 0 0 0-6 0v3zm2 4v4h2v-4h-2z"/></svg>';
+  const badgeHtml = badges.map((b) => `<span class="badge ${b.on ? 'on' : 'lock'}">${b.on ? '' : LOCK}${b.t}<span class="sr-only"> ${b.on ? '已解鎖' : '未解鎖'}</span></span>`).join('');
   // 最近 14 天題數趨勢
   const days14 = [];
   for (let i = 13; i >= 0; i--) { const d = new Date(today() + 'T00:00:00'); d.setDate(d.getDate() - i); days14.push(ymd(d)); }
@@ -771,30 +863,39 @@ function stats() {
   const maxA = Math.max(1, ...days14.map((d) => (hist[d] && hist[d].a) || 0));
   const bars = days14.map((d) => {
     const a = (hist[d] && hist[d].a) || 0;
-    const h = a ? Math.max(3, Math.round((a / maxA) * 56)) : 0;
-    return `<div class="tcol" title="${d}：${a} 題"><span class="tnum">${a || ''}</span><div class="bar" style="height:${h}px"></div></div>`;
+    const p = a ? Math.max(4, Math.round((a / maxA) * 100)) : 0;
+    return `<div class="tcol${a ? '' : ' zero'}" title="${d}：${a} 題" style="--p:${p}">${a ? `<span class="tnum">${a}</span>` : ''}<div class="bar"></div></div>`;
   }).join('');
+  const noTrend = days14.every((d) => !((hist[d] && hist[d].a) || 0));
   view.innerHTML = `
-    <section class="card">
+    <section class="card stats">
+      <div class="stats-grid"><div>
       <h2>學習統計</h2>
       <div class="grid">
-        <div><b>${cover}％</b><span>涵蓋率（練過 ${s.practiced}/${s.total}）</span></div>
-        <div><b>${recAcc == null ? '—' : recAcc + '％'}</b><span>近期正確率（最近 ${rec.length}）</span></div>
-        <div><b>${s.wrongNow}</b><span>目前錯題</span></div>
-        <div><b>${s.mastered}</b><span>已掌握</span></div>
+        <div><b>${cover}％</b><span>涵蓋率</span><small>練過 ${s.practiced} / ${s.total} 題</small></div>
+        <div><b>${recAcc == null ? '—' : recAcc + '％'}</b><span>近期正確率</span><small>最近 ${rec.length} 題</small></div>
+        <div><b>${s.wrongNow}</b><span>目前錯題</span><small>還沒掌握的錯題</small></div>
+        <div><b>${s.mastered}</b><span>已掌握</span><small>連續答對 2 次</small></div>
       </div>
-      <p class="muted" style="font-size:13px">「掌握」= 同一題連續答對 2 次。用「智慧複習」會優先讓你重做沒掌握與答錯的題，掌握數才會往上跑。</p>
+      <p class="muted stats-note">「掌握」= 同一題連續答對 2 次。用「智慧複習」會優先讓你重做沒掌握與答錯的題，掌握數才會往上跑。</p>
+      </div><div>
       <h3>成就</h3>
       <div class="badges">${badgeHtml}</div>
       <h3>最近 14 天題數</h3>
-      <div class="trend">${bars}</div>
-      <div class="trend-lab"><span>${days14[0].slice(5)}</span><span>今天</span></div>
+      <div class="trend-box"><div class="trend">${bars}</div>${noTrend ? '<p class="trend-empty">還沒有作答紀錄，答題後這裡會顯示每天的題數。</p>' : ''}
+        <div class="trend-lab"><span>${days14[0].slice(5)}</span><span>${days14[6].slice(5)}</span><span>今天</span></div></div>
+      </div><div>
       <h3>各範圍弱點</h3>
-      <table>
-        <tr><th>範圍</th><th>正確率</th><th>掌握</th></tr>
-        ${chRows}
-      </table>
+      <p class="tbl-cap">共 ${chList.length} 個範圍，正確率低的排前面，沒練過的在最後<span class="tbl-hint">（表格可往下捲）</span>。</p>
+      <div class="tbl-box"><div class="tbl-wrap"><table>
+        <thead><tr><th>範圍</th><th>正確率</th><th>掌握</th></tr></thead>
+        <tbody>${chRows}</tbody>
+      </table></div><div class="tbl-fade" aria-hidden="true"></div></div>
+      </div></div>
     </section>`;
+  const tw = $('.tbl-wrap'), tb = $('.tbl-box');
+  const upd = () => { if (tw && tb.isConnected) tb.classList.toggle('scrolls', tw.scrollHeight > tw.clientHeight + 2); if (tw && tb.isConnected) tb.classList.toggle('more', tw.scrollHeight > tw.clientHeight + 2 && tw.scrollTop + tw.clientHeight < tw.scrollHeight - 4); };
+  if (tw) { tw.addEventListener('scroll', upd, { passive: true }); window.addEventListener('resize', upd); requestAnimationFrame(upd); setTimeout(upd, 300); }
 }
 
 // 官方考試資訊小區塊:及格標準(穩定)+ 官方考試資訊連結。原「一鍵設倒數日期」已隨首頁倒數移除而拿掉。
@@ -812,7 +913,8 @@ function settings() {
   const remHour = (store.settings && store.settings.reminderHour) || 20;
   view.innerHTML = `
     <section class="card">
-      <h2>設定</h2>
+      <div class="ttl"><h2>設定</h2></div>
+      <div class="set-grid"><div class="set-sec">
       <h3>安裝成 App</h3>
       <p class="muted">裝起來有 App icon、可全螢幕、離線也能刷。</p>
       <button id="set-install">安裝</button>
@@ -832,7 +934,7 @@ function settings() {
       <button id="rem-toggle">載入中…</button>
       <button id="rem-test">傳測試通知</button>
       <span id="rem-msg" class="muted"></span>` : ''}
-
+      </div><div class="set-sec">
       <h3>同步碼</h3>
       <p class="muted">${SYNC_URL
         ? '平常背景自動同步（答完題、切走 App、打開本頁時都會上傳；停在畫面沒動則最多 30 秒補傳一次）。換新裝置時：先在舊裝置打開這頁（會上傳），再到新裝置輸入這組碼。'
@@ -844,7 +946,7 @@ function settings() {
       <button id="code-set">套用此碼</button>
       ${SYNC_URL ? '<button id="sync-now">立即同步</button>' : ''}
       <span id="sync-msg" class="muted"></span>
-
+      </div><div class="set-sec">
       <h3>備份 / 轉移</h3>
       <button id="exp">匯出進度（JSON）</button>
       <button id="imp-btn">匯入進度（JSON）</button>
@@ -852,20 +954,21 @@ function settings() {
       <button id="exp-md">匯出筆記（Markdown）</button>
 
       <h3>重設統計</h3>
-      <p class="muted" style="font-size:13px">把作答統計歸零、重新練到 100%，但<strong>保留你的筆記與星標</strong>。</p>
+      <p class="muted">把作答統計歸零、重新練到 100%，但<strong>保留你的筆記與星標</strong>。</p>
       <button id="reset-stats">重設統計（保留筆記與星標）</button>
 
       <h3 class="danger">重設</h3>
       <button class="danger" id="reset">清除本機所有進度</button>
+      </div></div>
     </section>`;
   const insBtn = $('#set-install'), insMsg = $('#set-install-msg');
   if (insBtn) {
-    if (isStandalone()) { insBtn.textContent = '已安裝 ✓'; insBtn.disabled = true; }
+    if (isStandalone()) { insBtn.textContent = '已安裝'; insBtn.disabled = true; }
     else if (deferredInstall) {
       insBtn.onclick = async () => {
         deferredInstall.prompt();
         const c = await deferredInstall.userChoice.catch(() => ({}));
-        if (c && c.outcome === 'accepted') { insBtn.textContent = '已安裝 ✓'; insBtn.disabled = true; dismissInstallBar(); }
+        if (c && c.outcome === 'accepted') { insBtn.textContent = '已安裝'; insBtn.disabled = true; dismissInstallBar(); }
         deferredInstall = null;
       };
     } else {
@@ -959,8 +1062,7 @@ function knowledge() {
   const subjects = ['全部', ...new Set(KNOW.map((n) => n.subject))];
   view.innerHTML = `
     <section class="card">
-      <h2>知識庫</h2>
-      <p class="muted">考題之外的觀念延伸，每則附可查證出處。練習與背題頁的題目下方也會掛上對應的這幾則。</p>
+      <div class="ttl"><h2>知識庫</h2><p class="muted">考題之外的觀念延伸，每則附可查證出處。練習與背題頁的題目下方也會掛上對應的這幾則。</p></div>
       ${KNOW.length ? `
       <div class="kfilter">
         <div class="chips" id="k-lv">${['全部', '初級', '中級'].map((x) =>
@@ -971,10 +1073,10 @@ function knowledge() {
         <label class="ksel">搜尋
           <input id="k-kw" type="search" placeholder="關鍵字，例如 RAG、過擬合">
         </label>
-      </div>
-      <p class="muted" id="k-count"></p>` : '<p class="bad">knowledge.json 尚未載入。</p>'}
+        <p class="muted" id="k-count"></p>
+      </div>` : '<p class="bad">knowledge.json 尚未載入。</p>'}
     </section>
-    <div id="k-list"></div>`;
+    <div id="k-list" class="cards"></div>`;
   if (!KNOW.length) return;
   const listEl = $('#k-list'), countEl = $('#k-count');
   const draw = () => {
@@ -988,7 +1090,7 @@ function knowledge() {
       <p class="qmeta muted">${esc((n.levels || []).join('／'))}・${esc(n.subject)}</p>
       <h3>${esc(n.title)}</h3>
       <div class="kbody">${noteBodyHtml(n)}</div>
-    </section>`).join('') || '<section class="card"><p class="muted">沒有符合的知識點。</p></section>';
+    </section>`).join('') || '<section class="card full"><p class="muted">沒有符合的知識點。</p></section>';
   };
   $('#k-lv').onclick = (e) => {
     const b = e.target.closest('[data-lv]'); if (!b) return;
@@ -1005,7 +1107,9 @@ const ROUTES = { home, study, knowledge, mock: mockSetup, wrong: wrongbook, note
 
 // ---- boot ----
 async function boot() {
-  document.querySelectorAll('nav button').forEach((b) => (b.onclick = () => ROUTES[b.dataset.v]()));
+  document.querySelectorAll('.tabs button').forEach((b) => (b.onclick = () => ROUTES[b.dataset.v]()));
+  watchChrome();
+  { const t = $('.tabs'); if (t) { t.addEventListener('scroll', tabsEdge, { passive: true }); window.addEventListener('resize', tabsEdge); tabsEdge(); } }
   if (isStandalone() || installBarOff()) { const b = document.getElementById('installbar'); if (b) b.hidden = true; }
   const ib = document.getElementById('install-btn');
   if (ib) ib.onclick = async () => {
@@ -1029,8 +1133,8 @@ async function boot() {
     for (const [nid, qids] of Object.entries(wp)) { const n = KM.get(nid); if (n) for (const qid of qids) { if (!KBYQ.has(qid)) KBYQ.set(qid, []); KBYQ.get(qid).push(n); } }
   } catch { KBYQ.clear(); }
   if (!EARTH) try { EXAMINFO = await (await fetch('exam-dates.json')).json(); } catch { EXAMINFO = null; }
-  if (DATA.meta?.title) $('#title').textContent = DATA.meta.title;
-  if (DATA.meta?.note) { const n = $('#banner'); n.textContent = DATA.meta.note; n.hidden = false; }
+  if (DATA.meta?.title) $('#title').innerHTML = `<span class="t-full">${esc(DATA.meta.title)}</span><span class="t-short">${EARTH ? '淨零碳演武島' : 'AI 演武島'}</span>`;
+  if (DATA.meta?.note) { const n = $('#banner'); n.textContent = zhPunct(DATA.meta.note); n.hidden = false; }
   localStorage.setItem(STORE_KEY, JSON.stringify(store)); // 落地可能新生成的 syncCode(不動 updatedAt)
   await ensureFreshCode(); // 全新自動碼先查重(要在 pull 之前,否則撞碼會拉到陌生人的進度)
   if (SYNC_URL) await pullSync(); // 開啟先拉雲端，單人多裝置就不會互蓋

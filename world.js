@@ -4,7 +4,7 @@
 // 進度只存在本機，不碰主站的練習進度與同步；兩國互不解鎖。
 
 import { mountFx } from './fx.js';
-import { mount, termsCard, trapsCard, KIND, GATED } from './lessonkit.js';
+import { mount, termsCard, trapsCard, KIND, GATED, tx } from './lessonkit.js';
 
 const CC = document.body.dataset.country === 'earth' ? 'earth' : 'ai';
 const CFG = {
@@ -211,9 +211,10 @@ async function run(a) {
 }
 
 // ---- 題目卡（小檢查與試煉共用）：答完一定顯示解析 ----
-function qHtml(q) {
-  return `<p class="q">${esc(q.question)}</p>${q.image ? `<img src="${esc(q.image)}" alt="題目附圖">` : ''}
-    <div class="opts">${q.options.map((o, k) => `<button class="opt" data-k="${k}">(${'ABCD'[k]}) ${esc(o)}</button>`).join('')}</div><div id="fbx"></div>`;
+function qHtml(q, ghost) { // ghost：把解析先隱形排進去撐版，作答前後版面一樣大（小檢查卡用，才能依空間放大字級）
+  const gh = ghost ? `<div class="fb ghost" aria-hidden="true"><div class="res">答錯了，正解是 (A)</div>${q.explanation ? formatExp(q.explanation) : ''}</div>` : '';
+  return `<div class="qwrap"><p class="q">${esc(q.question)}</p>${q.image ? `<img src="${esc(q.image)}" alt="題目附圖">` : ''}
+    <div class="opts">${q.options.map((o, k) => `<button class="opt" data-k="${k}">(${'ABCD'[k]}) ${esc(o)}</button>`).join('')}</div><div id="fbx"><div class="fb-ph">${gh}<span class="fb-ph-t">選好答案後，解析會顯示在這裡。</span></div></div></div>`;
 }
 function bindQ(q, onDone) {
   document.querySelectorAll('.opt').forEach((b) => b.onclick = () => {
@@ -229,6 +230,7 @@ function page({ title, dots = '', main, nav, side = '', onBack }) {
     <div class="lgrid"><div class="lmain"><div class="card win" id="card">${main}</div><div class="nav">${nav}</div></div></div>
     ${side ? `<aside class="lside win" id="lside" aria-label="這一則的大綱與進度" hidden>${side}</aside>` : ''}`;
   $('#back').onclick = onBack || showMap;
+  { const cd = $('#card'); $('.nav').insertAdjacentHTML('afterbegin', '<div class="scrollcue" aria-hidden="true">▼ 往下還有內容</div>'); cd.onscroll = cue; } // 提示放在卡片外（按鈕列上方的空條），不蓋內容
   const pb = $('#prog'), ls = $('#lside');
   if (pb) {
     const set = (on) => { ls.hidden = !on; pb.setAttribute('aria-expanded', on); };
@@ -262,6 +264,32 @@ document.addEventListener('focusout', (e) => { if (e.target.closest?.('.tm')) hi
 document.addEventListener('click', (e) => { const t = e.target.closest?.('.tm'); if (!t) return hideTip(); if (tipFor === t && !tip.hidden && Date.now() - tipAt > 400) hideTip(); else showTip(t); }); // 手機點一下會先觸發 mouseover，0.4 秒內的點擊不當成關閉
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hideTip(); });
 addEventListener('scroll', hideTip, true);
+// 關卡卡片內容依卡片可用高度放大（電腦版卡片固定一屏高；手機照常捲動不放大）。作答後會長內容的卡型留一點空間
+const GROW = new Set(['guess', 'sort', 'timeline', 'calc', 'toggles']);
+// 卡內放不下要能捲時，底部出現漸層與「往下還有」提示（使用者看得出能捲）
+function cue() { const c = $('#card'); if (!c) return; c.classList.toggle('more', matchMedia('(min-width:900px)').matches && c.scrollHeight > c.clientHeight + 4 && c.scrollTop + c.clientHeight < c.scrollHeight - 4); }
+// 流程步驟換行後，每列最後一步不畫往右的箭頭（箭頭會指到框外）
+function flowArrows() { document.querySelectorAll('.lk-flow').forEach((ol) => { const li = [...ol.children]; li.forEach((x, i) => x.classList.toggle('eol', i === li.length - 1 || li[i + 1].offsetTop !== x.offsetTop)); }); }
+function fitCard(shrinkOnly) { const cd = $('#card'); if (cd) cd.style.flex = ''; fitCard0(shrinkOnly); collapseCard(); flowArrows(); cue(); }
+// 內容（字級已到上限）比卡片矮很多時，面板依內容收高，按鈕列仍貼底，不留一大片空白
+function collapseCard() { const card = $('#card'), last = card?.lastElementChild; if (!last || !document.querySelector('#card .lk-fit') || !matchMedia('(min-width:900px)').matches) return;
+  const need = last.getBoundingClientRect().bottom - card.getBoundingClientRect().top + parseFloat(getComputedStyle(card).paddingBottom); if (need < card.clientHeight * 0.9) card.style.flex = 'none'; }
+function fitCard0(shrinkOnly) { // shrinkOnly：作答後內容變長時只往小調（到 18px 為止），不往大調，避免畫面跳動
+  const box = document.querySelector('#card .lk-fit'); if (!box) return;
+  if (!shrinkOnly) box.style.fontSize = '';
+  if (!matchMedia('(min-width:900px)').matches) return;
+  const card = $('#card'), cs = getComputedStyle(card), head = card.firstElementChild;
+  const avail = (card.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - head.offsetHeight - 16) * (box.dataset.grow && !shrinkOnly && !box.classList.contains('solved') ? (box.dataset.grow === 'calc' ? 0.96 : 0.82) : 0.97);
+  const ok = () => box.scrollHeight <= avail && box.scrollWidth <= box.clientWidth + 1;
+  let lo = 18, hi = Math.round(Math.min(64, 40 * Math.max(1, Math.min(innerWidth / 1500, innerHeight / 800)))); // 上限 40px，超大螢幕再放大到 64px，免得內容縮在中間留一大片空
+  if (shrinkOnly) { if (ok()) return; hi = parseFloat(box.style.fontSize) || 40; }
+  const search = () => { for (let k = 0; k < 8; k++) { const mid = (lo + hi) / 2; box.style.fontSize = mid + 'px'; if (ok()) lo = mid; else hi = mid; } box.style.fontSize = Math.floor(lo) + 'px'; };
+  search();
+  // ponytail: 「18px 仍裝不下就自動收緊流程卡」在進卡瞬間會誤判（驗收第 3 輪 1920 不過），v114 先拿掉；6 步流程在 1366×657 卡內捲，待重做（見 待辦.md〈下一輪〉）
+}
+let fitObs = null, fitRaf = 0;
+let fitT = 0; addEventListener('resize', () => { clearTimeout(fitT); fitT = setTimeout(fitCard, 150); });
+const refT = (t) => esc(t).replace(/[^\s、]*[（(][^）)]*[）)]/g, (m) => `<bdi class="nw">${m}</bdi>`); // 出處裡的（縮寫）跟前一個詞綁一起不斷行
 function lesson(r, i, id, plain = false) {
   const n = KN.get(id), qs = shuffle(POOL.get(id) || []).slice(0, 2), LK = plain ? null : LS.get(id);
   // 有互動關卡就用關卡（使用者 2026-11-14 選定）；隨時可切回原本的全文閱讀
@@ -278,7 +306,7 @@ function lesson(r, i, id, plain = false) {
   if ((n.pitfalls || []).length) blocks.push(`<h3 class="ph">容易搞混</h3><ul>${n.pitfalls.map((x) => `<li>${mark(x)}</li>`).join('')}</ul>`);
   const left = (n.terms || []).filter((x) => !seen.has(x.t)); // 沒在內文出現的名詞，最後列出
   if (left.length) blocks.push(`<h3 class="ph th">名詞解釋</h3><dl class="terms">${left.map((x) => `<dt>${esc(x.t)}</dt><dd>${esc(x.d)}</dd>`).join('')}</dl>`);
-  if ((n.refs || []).length) blocks.push(`<div class="refs">出處：${n.refs.map((x) => x.u ? `<a href="${esc(x.u)}" target="_blank" rel="noopener">${esc(x.t)}</a>` : esc(x.t)).join('、')}</div>`);
+  if ((n.refs || []).length) blocks.push(`<div class="refs">出處：${n.refs.map((x) => x.u ? `<a href="${esc(x.u)}" target="_blank" rel="noopener">${refT(x.t)}</a>` : refT(x.t)).join('、')}</div>`);
   let cards;
   if (LK) {
     // 對話（小劇場）前先認識名詞：這段對話第一次用到、但台詞裡沒解釋的名詞，先插一張名詞小卡（使用者 2026-11-15）
@@ -290,14 +318,14 @@ function lesson(r, i, id, plain = false) {
         const lines = b.lines.map((l) => l[1]);
         const need = (n.terms || []).filter((x) => !said.has(x.t) && keys(x.t).some((k) => txt.includes(k))
           && !keys(x.t).some((k) => lines.some((l) => { const p = l.indexOf(k); return p >= 0 && /^[」』）)]?\s*(就是|是指|是|指的是|指|意思是|叫做)/.test(l.slice(p + k.length, p + k.length + 6)); })));
-        if (need.length) cards.push({ kind: '先認識名詞', html: `<div class="lk-pre-terms"><p class="lk-small" style="margin-top:0">下面的對話會用到這幾個詞，先看一下：</p><dl>${need.map((x) => `<dt>${esc(x.t)}</dt><dd>${esc(x.d)}</dd>`).join('')}</dl></div>` });
+        if (need.length) cards.push({ kind: '先認識名詞', html: `<div class="lk-pre-terms"><p class="lk-small" style="margin-top:0">下面的對話會用到這幾個詞，先看一下：</p><dl>${need.map((x) => `<div><dt>${esc(x.t)}</dt><dd>${esc(x.d)}</dd></div>`).join('')}</dl></div>` });
       }
       (n.terms || []).forEach((x) => { if (keys(x.t).some((k) => txt.includes(k))) said.add(x.t); });
       cards.push({ kind: KIND[b.type], blk: b });
     }
     if ((n.terms || []).length) cards.push({ kind: '名詞卡', fn: (el) => termsCard(n.terms, el) });
     if ((n.pitfalls || []).length) cards.push({ kind: '陷阱卡', pit: true, fn: (el) => trapsCard(n.pitfalls, el) });
-    cards.push({ kind: '記憶點', html: `<div class="lk-memo">${esc(LK.memo)}</div>${(n.refs || []).length ? `<div class="refs">出處：${n.refs.map((x) => x.u ? `<a href="${esc(x.u)}" target="_blank" rel="noopener">${esc(x.t)}</a>` : esc(x.t)).join('、')}</div>` : ''}` });
+    cards.push({ kind: '記憶點', html: `<div class="lk-memo">${tx(LK.memo)}</div>${(n.refs || []).length ? `<div class="refs">出處：${n.refs.map((x) => x.u ? `<a href="${esc(x.u)}" target="_blank" rel="noopener">${refT(x.t)}</a>` : refT(x.t)).join('、')}</div>` : ''}` });
   } else {
   page({ title: n.title, main:'<span class="kind">閱讀</span><div id="meas"></div>', nav:'<button class="pbtn">下一張</button>' });
   const meas = $('#meas'), navH = $('.nav').offsetHeight, groups = [[]];
@@ -336,13 +364,17 @@ function lesson(r, i, id, plain = false) {
       const can = !x.chk || answered.has(j) || j <= at, cls = j === at ? 'cur' : j > at ? 'dim' : '';
       return `<li>${can && j !== at ? `<button data-j="${j}" class="${cls}">${esc(x.kind)}</button>` : `<span class="it ${cls}">${esc(x.kind)}</span>`}</li>`; }).join('')}</ul></section>`;
     page({ title: n.title, dots: cards.map((_, j) => `<i class="${j === at ? 'on' : j < at ? 'done' : ''}"></i>`).join(''),
-      main: `<div style="display:flex;align-items:flex-start;gap:10px"><span class="kind ${c.pit ? 'pit' : ''} ${c.chk ? 'chk' : ''}">${esc(c.kind)}</span>${at === 0 ? modeBtn : ''}</div>${c.q ? qHtml(c.q) : c.blk || c.fn ? '<div id="lkb"></div>' : c.html}${at === refAt ? refs : ''}`,
+      main: `<div style="display:flex;align-items:flex-start;gap:10px"><span class="kind ${c.pit ? 'pit' : ''} ${c.chk ? 'chk' : ''}">${esc(c.kind)}</span>${at === 0 ? modeBtn : ''}</div>${c.q ? `<div id="lkb" class="lk-fit">${qHtml(c.q, true)}</div>` : c.blk || c.fn ? `<div id="lkb" class="lk-fit"${c.blk && GROW.has(c.blk.type) || c.fn ? ` data-grow="${c.blk?.type === 'calc' ? 'calc' : 1}"` : ''}></div>` : LK ? `<div class="lk-fit">${c.html}</div>` : c.html}${at === refAt ? refs : ''}`,
       nav: `<button class="pbtn sec" id="prev" ${at === 0 ? 'disabled' : ''}>上一張</button>
         <button class="pbtn" id="next" ${(c.q && !answered.has(at)) || (c.blk && GATED.has(c.blk.type) && !cleared.has(at)) ? 'disabled' : ''}>${last ? '完成' : c.q ? '下一題' : '下一張'}</button>`,
       side: outline + layerSide(r, i, id) });
     if ($('#lkmode')) $('#lkmode').onclick = () => lesson(r, i, id, !plain);
     if (c.blk) { const here = at; mount(c.blk, $('#lkb'), { region: r.id, uid: `${id}-${at}` }, () => { cleared.add(here); if (at === here) $('#next').disabled = false; }); }
     if (c.fn) c.fn($('#lkb'));
+    fitCard();
+    fitObs?.disconnect(); fitObs = null; // 作答、展開、換提示後內容會變長：只往小調，保證不出現卡內捲動
+    if ($('#lkb')) { fitObs = new MutationObserver(() => { cancelAnimationFrame(fitRaf); fitRaf = requestAnimationFrame(() => { const k = $('#lkb'); if (k) fitCard(!k.classList.contains('solved')); }); }); // 換卡瞬間 #lkb 已不在就跳過（驗收第 3 輪前自查：曾偶發 classList of null）
+      fitObs.observe($('#lkb'), { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['class'] }); }
     $('#prev').onclick = () => { if (at > 0) { at--; draw(); } };
     $('#next').onclick = () => { if (last) finish(); else { at++; draw(); } };
     document.querySelectorAll('.lside button[data-j]').forEach((b) => (b.onclick = () => { at = +b.dataset.j; draw(); }));

@@ -624,13 +624,20 @@
       "label": "範圍剩下約",
       "f": "n / pow(2, r)",
       "unit": "筆",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "每輪砍一半，比 {r|0} 輪就是連乘 2 共 {r|0} 次，倍數 ＝ {pow(2, r)|0}",
+       "資料筆數 {n|0} ÷ 砍半倍數 {pow(2, r)|0}"
+      ]
      },
      {
       "label": "一筆筆比，最多可能要比",
       "f": "n",
       "unit": "次",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "最壞要從頭比到尾：資料筆數 {n|0}"
+      ]
      }
     ],
     "bars": [
@@ -699,13 +706,20 @@
       "label": "不縮放時的距離",
       "f": "pow(inc * inc + age * age, 0.5)",
       "unit": "",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "平方和 ＝ 年收入差 {inc|0} × {inc|0} ＋ 年齡差 {age|0} × {age|0} ＝ {inc * inc + age * age|0}",
+       "平方和 {inc * inc + age * age|0} 開根號"
+      ]
      },
      {
       "label": "只看年收入差",
       "f": "inc",
       "unit": "",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "只看年收入差 {inc|0}（年齡差幾乎沒影響）"
+      ]
      }
     ],
     "bars": [
@@ -744,7 +758,10 @@
       "label": "是否提醒（1＝提醒，0＝不提醒）",
       "f": "p > 0.5 ? 1 : 0",
       "unit": "",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "機率 {p|2} ＞ 門檻 0.5 時提醒（1），否則不提醒（0）"
+      ]
      }
     ],
     "notes": [
@@ -1854,13 +1871,19 @@
       "label": "驗證：預期被誤認放行",
       "f": "n * fmr",
       "unit": "次",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "冒用者嘗試次數 {n|0} × 每次誤認機率 {fmr|6}"
+      ]
      },
      {
       "label": "識別（示意）：每查一張臉，預期誤認幾人",
       "f": "db * fmr",
       "unit": "人",
-      "digits": 4
+      "digits": 4,
+      "steps": [
+       "資料庫人數 {db|0} × 每次誤認機率 {fmr|6}"
+      ]
      }
     ],
     "presets": [
@@ -2088,13 +2111,19 @@
       "label": "精確率",
       "f": "tp + fp > 0 ? tp / (tp + fp) * 100 : 0",
       "unit": "%",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "抓到的真瑕疵 {tp|0} ÷ (抓到的真瑕疵 {tp|0} ＋ 誤報 {fp|0}) × 100（分母為零時當零）"
+      ]
      },
      {
       "label": "召回率",
       "f": "tp + fn > 0 ? tp / (tp + fn) * 100 : 0",
       "unit": "%",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "抓到的真瑕疵 {tp|0} ÷ (抓到的真瑕疵 {tp|0} ＋ 漏掉的 {fn|0}) × 100（分母為零時當零）"
+      ]
      }
     ],
     "bars": [
@@ -2510,31 +2539,46 @@
       "label": "訓練集",
       "f": "round(n * tr)",
       "unit": "筆",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "資料總筆數 {n|0} × 訓練比例 {tr|2}，四捨五入"
+      ]
      },
      {
       "label": "驗證集",
       "f": "round(n * va)",
       "unit": "筆",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "資料總筆數 {n|0} × 驗證比例 {va|2}，四捨五入"
+      ]
      },
      {
       "label": "測試集（最後才用一次）",
       "f": "round(n * te)",
       "unit": "筆",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "資料總筆數 {n|0} × 測試比例 {te|2}，四捨五入"
+      ]
      },
      {
       "label": "改做 K 折：訓練＋驗證每折大小",
       "f": "round(n * (tr + va) / k)",
       "unit": "筆",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "資料總筆數 {n|0} × (訓練比例 {tr|2} ＋ 驗證比例 {va|2}) ÷ 折數 {k|0}，四捨五入"
+      ]
      },
      {
       "label": "K 折要訓練幾次",
       "f": "k",
       "unit": "次",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "折數 {k|0}，每折輪流當一次驗證，所以就訓練這麼多次"
+      ]
      }
     ],
     "bars": [
@@ -2632,13 +2676,19 @@
       "label": "每折筆數",
       "f": "round(n / k)",
       "unit": "筆",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "總筆數 {n|0} ÷ 折數 {k|0}，四捨五入"
+      ]
      },
      {
       "label": "分層 K 折：每折惡性樣本",
       "f": "round(n / k * (1 - 0.8))",
       "unit": "筆",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "每折筆數 {n / k|1} × (1 － 良性占比 0.8)，四捨五入"
+      ]
      }
     ],
     "bars": [
@@ -2868,13 +2918,19 @@
       "label": "L1 懲罰：絕對值加總",
       "f": "abs(a) + abs(b)",
       "unit": "",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "權重 A 的絕對值 {abs(a)|2} ＋ 權重 B 的絕對值 {abs(b)|2}"
+      ]
      },
      {
       "label": "L2 懲罰：平方加總",
       "f": "a * a + b * b",
       "unit": "",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "權重 A 的平方 {a * a|2} ＋ 權重 B 的平方 {b * b|2}"
+      ]
      }
     ],
     "bars": [
@@ -3033,13 +3089,19 @@
       "label": "標準化（減平均、除標準差）",
       "f": "(x - mu) / sd",
       "unit": "",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "(這位員工年齡 {x|0} － 訓練集平均 {mu|0}) ÷ 訓練集標準差 {sd|0}"
+      ]
      },
      {
       "label": "Min-Max（範圍 20～65 壓到 0～1）",
       "f": "(x - 20) / (65 - 20)",
       "unit": "",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "(年齡 {x|0} － 範圍最小 20) ÷ (範圍最大 65 － 範圍最小 20)"
+      ]
      }
     ],
     "notes": [
@@ -3315,13 +3377,19 @@
       "label": "利用：推目前最好的",
       "f": "n * (1 - eps)",
       "unit": "次",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "推薦次數 {n|0} × (1 － ε {eps|2})"
+      ]
      },
      {
       "label": "探索：隨機試別的",
       "f": "n * eps",
       "unit": "次",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "推薦次數 {n|0} × ε {eps|2}"
+      ]
      }
     ],
     "bars": [
@@ -3547,13 +3615,20 @@
       "label": "網格搜尋：全部排列組合",
       "f": "a * b * c",
       "unit": "組",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "超參數一候選值數 {a|0} × 超參數二候選值數 {b|0} × 超參數三候選值數 {c|0}"
+      ]
      },
      {
       "label": "隨機搜尋只試了",
       "f": "min(r, a * b * c) / (a * b * c) * 100",
       "unit": "%",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "抽 {r|0} 組，但最多只能試到全部組合數",
+       "實際試的組數 {min(r, a * b * c)|0} ÷ 全部組合 {a * b * c|0} × 100"
+      ]
      }
     ],
     "bars": [
@@ -3794,25 +3869,37 @@
       "label": "準確率 (TP+TN)／全部",
       "f": "tp + fp + fn + tn > 0 ? (tp + tn) / (tp + fp + fn + tn) : 0",
       "unit": "",
-      "digits": 3
+      "digits": 3,
+      "steps": [
+       "(TP {tp|0} ＋ TN {tn|0}) ÷ 全部筆數 {tp + fp + fn + tn|0}"
+      ]
      },
      {
       "label": "精確率 TP／(TP+FP)",
       "f": "tp + fp > 0 ? tp / (tp + fp) : 0",
       "unit": "",
-      "digits": 3
+      "digits": 3,
+      "steps": [
+       "TP {tp|0} ÷ (TP {tp|0} ＋ FP {fp|0})（分母為零時當零）"
+      ]
      },
      {
       "label": "召回率 TP／(TP+FN)",
       "f": "tp + fn > 0 ? tp / (tp + fn) : 0",
       "unit": "",
-      "digits": 3
+      "digits": 3,
+      "steps": [
+       "TP {tp|0} ÷ (TP {tp|0} ＋ FN {fn|0})（分母為零時當零）"
+      ]
      },
      {
       "label": "F1＝2·P·R／(P+R)",
       "f": "2 * tp + fp + fn > 0 ? 2 * tp / (2 * tp + fp + fn) : 0",
       "unit": "",
-      "digits": 3
+      "digits": 3,
+      "steps": [
+       "2 × TP {tp|0} ÷ (2 × TP {tp|0} ＋ FP {fp|0} ＋ FN {fn|0})"
+      ]
      }
     ],
     "bars": [
@@ -4106,19 +4193,28 @@
       "label": "MAE：誤差等值相加再平均",
       "f": "(abs(e1) + abs(e2) + abs(e3) + abs(e4)) / 4",
       "unit": "萬",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "(第一筆 {abs(e1)|0} ＋ 第二筆 {abs(e2)|0} ＋ 第三筆 {abs(e3)|0} ＋ 第四筆 {abs(e4)|0}) ÷ 4"
+      ]
      },
      {
       "label": "MSE：先平方再平均",
       "f": "(e1 * e1 + e2 * e2 + e3 * e3 + e4 * e4) / 4",
       "unit": "萬²",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "(第一筆平方 {e1 * e1|0} ＋ 第二筆平方 {e2 * e2|0} ＋ 第三筆平方 {e3 * e3|0} ＋ 第四筆平方 {e4 * e4|0}) ÷ 4"
+      ]
      },
      {
       "label": "RMSE：MSE 開根號，回到原本單位",
       "f": "pow((e1 * e1 + e2 * e2 + e3 * e3 + e4 * e4) / 4, 0.5)",
       "unit": "萬",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "MSE {(e1 * e1 + e2 * e2 + e3 * e3 + e4 * e4) / 4|0} 開根號"
+      ]
      }
     ],
     "bars": [
@@ -4517,7 +4613,10 @@
       "label": "標準化後",
       "f": "(x - mu) / sd",
       "unit": "個標準差",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "(原始值 {x|0} － 訓練集平均 {mu|0}) ÷ 訓練集標準差 {sd|0}"
+      ]
      }
     ],
     "presets": [
@@ -4935,13 +5034,19 @@
       "label": "準確率（正常全判對）",
       "f": "(maj + min(hit, mino)) / (maj + mino) * 100",
       "unit": "%",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "(正常交易 {maj|0} ＋ 抓到的詐欺 {min(hit, mino)|0}) ÷ 全部交易 {maj + mino|0} × 100"
+      ]
      },
      {
       "label": "詐欺的召回率",
       "f": "min(hit, mino) / mino * 100",
       "unit": "%",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "抓到的詐欺 {min(hit, mino)|0} ÷ 詐欺總數 {mino|0} × 100"
+      ]
      }
     ],
     "bars": [
@@ -5249,13 +5354,19 @@
       "label": "組合數",
       "f": "a * b * c * d",
       "unit": "組",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "超參數一候選數 {a|0} × 超參數二候選數 {b|0} × 超參數三候選數 {c|0} × 超參數四候選數 {d|0}"
+      ]
      },
      {
       "label": "總訓練次數",
       "f": "a * b * c * d * fold",
       "unit": "次",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "超參數一候選數 {a|0} × 超參數二候選數 {b|0} × 超參數三候選數 {c|0} × 超參數四候選數 {d|0} × 交叉驗證折數 {fold|0}"
+      ]
      }
     ],
     "presets": [
@@ -5515,13 +5626,19 @@
       "label": "這個 Epoch 的差距",
       "f": "tr - va",
       "unit": "",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "訓練值 {tr|2} － 驗證值 {va|2}"
+      ]
      },
      {
       "label": "差距變化",
       "f": "(tr - va) - prev",
       "unit": "",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "(訓練值 {tr|2} － 驗證值 {va|2}) － 上個 Epoch 的差距 {prev|2}"
+      ]
      }
     ],
     "bars": [
@@ -5721,19 +5838,28 @@
       "label": "MAE（絕對誤差平均）",
       "f": "(abs(e1) + abs(e2) + abs(e3)) / 3",
       "unit": "萬",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "(第一筆 {abs(e1)|0} ＋ 第二筆 {abs(e2)|0} ＋ 第三筆 {abs(e3)|0}) ÷ 3"
+      ]
      },
      {
       "label": "MSE（平方後平均）",
       "f": "(e1 * e1 + e2 * e2 + e3 * e3) / 3",
       "unit": "萬²",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "(第一筆平方 {e1 * e1|0} ＋ 第二筆平方 {e2 * e2|0} ＋ 第三筆平方 {e3 * e3|0}) ÷ 3"
+      ]
      },
      {
       "label": "RMSE（MSE 開根號）",
       "f": "pow((e1 * e1 + e2 * e2 + e3 * e3) / 3, 0.5)",
       "unit": "萬",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "MSE {(e1 * e1 + e2 * e2 + e3 * e3) / 3|1} 開根號"
+      ]
      }
     ],
     "bars": [
@@ -6003,7 +6129,10 @@
       "label": "是核心點嗎（1 是、0 否）",
       "f": "nb >= mp ? 1 : 0",
       "unit": "",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "鄰居數 {nb|0} 大於等於 minPts {mp|0} 時是核心點（1），否則不是（0）"
+      ]
      }
     ],
     "presets": [
@@ -6237,13 +6366,20 @@
       "label": "歐氏距離",
       "f": "pow(inc * inc + age * age, 0.5)",
       "unit": "",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "平方和 ＝ 年收入差距 {inc|0} × {inc|0} ＋ 年齡差距 {age|0} × {age|0} ＝ {inc * inc + age * age|0}",
+       "平方和 {inc * inc + age * age|0} 開根號"
+      ]
      },
      {
       "label": "年齡佔距離平方的比例",
       "f": "age * age / max(inc * inc + age * age, 1) * 100",
       "unit": "%",
-      "digits": 4
+      "digits": 4,
+      "steps": [
+       "年齡差距的平方 {age * age|0} ÷ 距離平方 {max(inc * inc + age * age, 1)|0} × 100"
+      ]
      }
     ],
     "notes": [
@@ -6443,19 +6579,28 @@
       "label": "第一主成分",
       "f": "l1 / max(l1 + l2 + l3, 0.01) * 100",
       "unit": "%",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "第一個特徵值 {l1|1} ÷ 特徵值合計 {max(l1 + l2 + l3, 0.01)|1} × 100"
+      ]
      },
      {
       "label": "前兩個累積",
       "f": "(l1 + l2) / max(l1 + l2 + l3, 0.01) * 100",
       "unit": "%",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "(第一個 {l1|1} ＋ 第二個 {l2|1}) ÷ 特徵值合計 {max(l1 + l2 + l3, 0.01)|1} × 100"
+      ]
      },
      {
       "label": "第三主成分",
       "f": "l3 / max(l1 + l2 + l3, 0.01) * 100",
       "unit": "%",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "第三個特徵值 {l3|1} ÷ 特徵值合計 {max(l1 + l2 + l3, 0.01)|1} × 100"
+      ]
      }
     ],
     "bars": [
@@ -6655,19 +6800,29 @@
       "label": "吉尼不純度",
       "f": "1 - (pow(na / max(na + nb + nc, 1), 2) + pow(nb / max(na + nb + nc, 1), 2) + pow(nc / max(na + nb + nc, 1), 2))",
       "unit": "",
-      "digits": 3
+      "digits": 3,
+      "steps": [
+       "各類占比：A 類 {(na / max(na + nb + nc, 1))|6}、B 類 {(nb / max(na + nb + nc, 1))|6}、C 類 {(nc / max(na + nb + nc, 1))|6}",
+       "1 － (A 占比 {(na / max(na + nb + nc, 1))|6} 的 2 次方 ＋ B 占比 {(nb / max(na + nb + nc, 1))|6} 的 2 次方 ＋ C 占比 {(nc / max(na + nb + nc, 1))|6} 的 2 次方)"
+      ]
      },
      {
       "label": "這個 K 的最大值 1−1/K",
       "f": "1 - 1 / kk",
       "unit": "",
-      "digits": 3
+      "digits": 3,
+      "steps": [
+       "1 － 1 ÷ 類別數 {kk|0}"
+      ]
      },
      {
       "label": "正規化吉尼",
       "f": "(1 - (pow(na / max(na + nb + nc, 1), 2) + pow(nb / max(na + nb + nc, 1), 2) + pow(nc / max(na + nb + nc, 1), 2))) / (1 - 1 / kk)",
       "unit": "",
-      "digits": 3
+      "digits": 3,
+      "steps": [
+       "吉尼不純度 {(1 - (pow(na / max(na + nb + nc, 1), 2) + pow(nb / max(na + nb + nc, 1), 2) + pow(nc / max(na + nb + nc, 1), 2)))|3} ÷ 這個 K 的最大值 {1 - 1 / kk|3}"
+      ]
      }
     ],
     "presets": [
@@ -7166,7 +7321,10 @@
       "label": "Z 分數",
       "f": "(x - mu) / sd",
       "unit": "個標準差",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "(今天溫度 {x|0} － 平常平均 {mu|0}) ÷ 標準差 {sd|0}"
+      ]
      }
     ],
     "presets": [
@@ -7385,13 +7543,19 @@
       "label": "精確率",
       "f": "tp / max(tp + fp, 1) * 100",
       "unit": "%",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "抓到的真異常 {tp|0} ÷ (抓到的真異常 {tp|0} ＋ 冤枉的正常 {fp|0}) × 100"
+      ]
      },
      {
       "label": "召回率",
       "f": "tp / max(tp + fn, 1) * 100",
       "unit": "%",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "抓到的真異常 {tp|0} ÷ (抓到的真異常 {tp|0} ＋ 漏掉的 {fn|0}) × 100"
+      ]
      }
     ],
     "bars": [
@@ -7577,19 +7741,31 @@
       "label": "貓",
       "f": "pow(2.71828, a / t) / (pow(2.71828, a / t) + pow(2.71828, b / t) + pow(2.71828, c / t))",
       "unit": "",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "先算 e 的 (分數 ÷ 溫度) 次方：貓 {(pow(2.71828, a / t))|3}、狗 {(pow(2.71828, b / t))|3}、鳥 {(pow(2.71828, c / t))|3}",
+       "貓 {(pow(2.71828, a / t))|3} ÷ (貓 {(pow(2.71828, a / t))|3} ＋ 狗 {(pow(2.71828, b / t))|3} ＋ 鳥 {(pow(2.71828, c / t))|3})"
+      ]
      },
      {
       "label": "狗",
       "f": "pow(2.71828, b / t) / (pow(2.71828, a / t) + pow(2.71828, b / t) + pow(2.71828, c / t))",
       "unit": "",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "先算 e 的 (分數 ÷ 溫度) 次方：貓 {(pow(2.71828, a / t))|3}、狗 {(pow(2.71828, b / t))|3}、鳥 {(pow(2.71828, c / t))|3}",
+       "狗 {(pow(2.71828, b / t))|3} ÷ (貓 {(pow(2.71828, a / t))|3} ＋ 狗 {(pow(2.71828, b / t))|3} ＋ 鳥 {(pow(2.71828, c / t))|3})"
+      ]
      },
      {
       "label": "鳥",
       "f": "pow(2.71828, c / t) / (pow(2.71828, a / t) + pow(2.71828, b / t) + pow(2.71828, c / t))",
       "unit": "",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "先算 e 的 (分數 ÷ 溫度) 次方：貓 {(pow(2.71828, a / t))|3}、狗 {(pow(2.71828, b / t))|3}、鳥 {(pow(2.71828, c / t))|3}",
+       "鳥 {(pow(2.71828, c / t))|3} ÷ (貓 {(pow(2.71828, a / t))|3} ＋ 狗 {(pow(2.71828, b / t))|3} ＋ 鳥 {(pow(2.71828, c / t))|3})"
+      ]
      }
     ],
     "bars": [
@@ -7745,7 +7921,10 @@
       "label": "VIF = 1 ÷（1 − 判定係數）",
       "f": "1 / (1 - r2)",
       "unit": "",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "1 ÷ (1 － 判定係數 {r2|2})"
+      ]
      }
     ],
     "presets": [
@@ -7952,13 +8131,19 @@
       "label": "F1 = 2PR/(P+R)",
       "f": "2 * p * r / (p + r)",
       "unit": "",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "2 × 精確率 {p|2} × 召回率 {r|2} ÷ (精確率 {p|2} ＋ 召回率 {r|2})"
+      ]
      },
      {
       "label": "一般平均（對照）",
       "f": "(p + r) / 2",
       "unit": "",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "(精確率 {p|2} ＋ 召回率 {r|2}) ÷ 2"
+      ]
      }
     ],
     "bars": [
@@ -8033,31 +8218,46 @@
       "label": "準確率",
       "f": "(tp + tn) / max(tp + fn + fp + tn, 1) * 100",
       "unit": "%",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "(抓對 {tp|0} ＋ 正確放行 {tn|0}) ÷ 全部 {tp + fn + fp + tn|0} × 100"
+      ]
      },
      {
       "label": "精確率",
       "f": "tp / max(tp + fp, 1) * 100",
       "unit": "%",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "抓對 {tp|0} ÷ (抓對 {tp|0} ＋ 誤報 {fp|0}) × 100"
+      ]
      },
      {
       "label": "召回率（真陽率）",
       "f": "tp / max(tp + fn, 1) * 100",
       "unit": "%",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "抓對 {tp|0} ÷ (抓對 {tp|0} ＋ 漏抓 {fn|0}) × 100"
+      ]
      },
      {
       "label": "偽陽率",
       "f": "fp / max(fp + tn, 1) * 100",
       "unit": "%",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "誤報 {fp|0} ÷ (誤報 {fp|0} ＋ 正確放行 {tn|0}) × 100"
+      ]
      },
      {
       "label": "F1",
       "f": "2 * tp / max(2 * tp + fp + fn, 1)",
       "unit": "",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "2 × 抓對 {tp|0} ÷ (2 × 抓對 {tp|0} ＋ 誤報 {fp|0} ＋ 漏抓 {fn|0})"
+      ]
      }
     ],
     "presets": [
@@ -8219,19 +8419,28 @@
       "label": "殘差（實際值減預測值）",
       "f": "y - p1",
       "unit": "萬",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "實際值 {y|0} － 第一棵樹預測 {p1|0}"
+      ]
      },
      {
       "label": "加上第二棵後的預測",
       "f": "p1 + lr * (y - p1)",
       "unit": "萬",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "第一棵樹預測 {p1|0} ＋ 學習率 {lr|1} × (實際值 {y|0} － 第一棵樹預測 {p1|0})"
+      ]
      },
      {
       "label": "新的殘差，交給第三棵",
       "f": "y - (p1 + lr * (y - p1))",
       "unit": "萬",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "實際值 {y|0} － (第一棵樹預測 {p1|0} ＋ 學習率 {lr|1} × (實際值 {y|0} － 第一棵樹預測 {p1|0}))"
+      ]
      }
     ],
     "presets": [
@@ -8416,7 +8625,10 @@
       "label": "後驗：是垃圾信",
       "f": "pri * ps / max(pri * ps + (100 - pri) * ph, 0.000001) * 100",
       "unit": "%",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "垃圾信占比 {pri|0} × 出現率 {ps|0} ÷ (垃圾信占比 {pri|0} × 出現率 {ps|0} ＋ 正常信占比 (100 － {pri|0}) × 出現率 {ph|0}) × 100"
+      ]
      }
     ],
     "bars": [
@@ -8679,13 +8891,19 @@
       "label": "第一主成分",
       "f": "l1 / max(l1 + l2 + l3, 0.01) * 100",
       "unit": "%",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "第一個特徵值 {l1|1} ÷ 特徵值合計 {max(l1 + l2 + l3, 0.01)|1} × 100"
+      ]
      },
      {
       "label": "前兩個累積",
       "f": "(l1 + l2) / max(l1 + l2 + l3, 0.01) * 100",
       "unit": "%",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "(第一個 {l1|1} ＋ 第二個 {l2|1}) ÷ 特徵值合計 {max(l1 + l2 + l3, 0.01)|1} × 100"
+      ]
      }
     ],
     "bars": [
@@ -8868,13 +9086,19 @@
       "label": "第一主成分",
       "f": "l1 / max(l1 + l2 + l3, 0.01) * 100",
       "unit": "%",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "第一個特徵值 {l1|1} ÷ 特徵值合計 {max(l1 + l2 + l3, 0.01)|1} × 100"
+      ]
      },
      {
       "label": "前兩個合計",
       "f": "(l1 + l2) / max(l1 + l2 + l3, 0.01) * 100",
       "unit": "%",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "(第一個 {l1|1} ＋ 第二個 {l2|1}) ÷ 特徵值合計 {max(l1 + l2 + l3, 0.01)|1} × 100"
+      ]
      }
     ],
     "bars": [
@@ -9100,19 +9324,28 @@
       "label": "MSE（平方後平均）",
       "f": "(e1 * e1 + e2 * e2) / 2",
       "unit": "萬²",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "(第一筆平方 {e1 * e1|0} ＋ 第二筆平方 {e2 * e2|0}) ÷ 2"
+      ]
      },
      {
       "label": "RMSE（MSE 開根號）",
       "f": "pow((e1 * e1 + e2 * e2) / 2, 0.5)",
       "unit": "萬",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "MSE {(e1 * e1 + e2 * e2) / 2|1} 開根號"
+      ]
      },
      {
       "label": "MAE（絕對值平均）",
       "f": "(abs(e1) + abs(e2)) / 2",
       "unit": "萬",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "(第一筆 {abs(e1)|0} ＋ 第二筆 {abs(e2)|0}) ÷ 2"
+      ]
      }
     ],
     "presets": [
@@ -9159,13 +9392,19 @@
       "label": "F1",
       "f": "2 * p * r / (p + r)",
       "unit": "",
-      "digits": 3
+      "digits": 3,
+      "steps": [
+       "2 × 精確率 {p|2} × 召回率 {r|2} ÷ (精確率 {p|2} ＋ 召回率 {r|2})"
+      ]
      },
      {
       "label": "一般平均（對照）",
       "f": "(p + r) / 2",
       "unit": "",
-      "digits": 3
+      "digits": 3,
+      "steps": [
+       "(精確率 {p|2} ＋ 召回率 {r|2}) ÷ 2"
+      ]
      }
     ],
     "bars": [
@@ -9444,13 +9683,19 @@
       "label": "K 折交叉驗證要訓練",
       "f": "min(k, n)",
       "unit": "次",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "切成 {k|0} 份，但不可能比樣本數 {n|0} 多：取兩者較小的"
+      ]
      },
      {
       "label": "留一法（LOOCV）要訓練",
       "f": "n",
       "unit": "次",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "樣本數 {n|0}"
+      ]
      }
     ],
     "bars": [
@@ -9621,13 +9866,19 @@
       "label": "參數組合數",
       "f": "a * b * c * d * e",
       "unit": "組",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "參數一選項數 {a|0} × 參數二選項數 {b|0} × 參數三選項數 {c|0} × 參數四選項數 {d|0} × 參數五選項數 {e|0}"
+      ]
      },
      {
       "label": "總訓練次數",
       "f": "a * b * c * d * e * cv",
       "unit": "次",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "參數一選項數 {a|0} × 參數二選項數 {b|0} × 參數三選項數 {c|0} × 參數四選項數 {d|0} × 參數五選項數 {e|0} × 交叉驗證折數 {cv|0}"
+      ]
      }
     ],
     "presets": [
@@ -10190,7 +10441,10 @@
       "label": "Z 分數",
       "f": "(x - m) / s",
       "unit": "",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "(這個值 {x|0} － 平均 {m|0}) ÷ 標準差 {s|0}"
+      ]
      }
     ],
     "presets": [
@@ -10538,13 +10792,19 @@
       "label": "實際上 100 是 98 的",
       "f": "100 / 98",
       "unit": "倍",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "100 ÷ 98"
+      ]
      },
      {
       "label": "畫出來看起來是",
       "f": "(100 - a) / (98 - a)",
       "unit": "倍",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "(100 － Y 軸起點 {a|0}) ÷ (98 － Y 軸起點 {a|0})"
+      ]
      }
     ],
     "bars": [
@@ -10762,19 +11022,28 @@
       "label": "IQR（Q3−Q1）",
       "f": "q3 - q1",
       "unit": "萬元",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "上四分位數 {q3|1} － 下四分位數 {q1|1}"
+      ]
      },
      {
       "label": "下界 Q1−1.5·IQR",
       "f": "q1 - 1.5 * (q3 - q1)",
       "unit": "萬元",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "下四分位數 {q1|1} － 1.5 × (上四分位數 {q3|1} － 下四分位數 {q1|1})"
+      ]
      },
      {
       "label": "上界 Q3+1.5·IQR",
       "f": "q3 + 1.5 * (q3 - q1)",
       "unit": "萬元",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "上四分位數 {q3|1} ＋ 1.5 × (上四分位數 {q3|1} － 下四分位數 {q1|1})"
+      ]
      }
     ],
     "presets": [
@@ -10946,13 +11215,19 @@
       "label": "等寬：每箱寬度",
       "f": "(hi - lo) / k",
       "unit": "萬",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "(最大值 {hi|0} － 最小值 {lo|0}) ÷ 箱數 {k|0}"
+      ]
      },
      {
       "label": "等頻：每箱筆數（理想上）",
       "f": "n / k",
       "unit": "筆",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "資料筆數 {n|0} ÷ 箱數 {k|0}"
+      ]
      }
     ],
     "presets": [
@@ -11262,13 +11537,19 @@
       "label": "全猜正常的準確率",
       "f": "100 - p",
       "unit": "%",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "100 － 詐欺交易占比 {p|1}"
+      ]
      },
      {
       "label": "詐欺的召回率",
       "f": "0",
       "unit": "%",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "全猜正常就一個詐欺都沒抓到，召回率直接是 0"
+      ]
      }
     ],
     "bars": [
@@ -11501,13 +11782,19 @@
       "label": "one-hot 開幾欄",
       "f": "c",
       "unit": "欄",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "類別數 {c|0}"
+      ]
      },
      {
       "label": "放進含截距的線性迴歸，留幾欄",
       "f": "c - 1",
       "unit": "欄",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "類別數 {c|0} － 1"
+      ]
      }
     ],
     "presets": [
@@ -11687,13 +11974,19 @@
       "label": "標準化（減平均除標準差）",
       "f": "(x - m) / s",
       "unit": "",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "(原始值 {x|0} － 訓練集平均 {m|0}) ÷ 訓練集標準差 {s|0}"
+      ]
      },
      {
       "label": "最小最大正規化",
       "f": "(x - lo) / (hi - lo)",
       "unit": "",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "(原始值 {x|0} － 訓練集最小值 {lo|0}) ÷ (訓練集最大值 {hi|0} － 訓練集最小值 {lo|0})"
+      ]
      }
     ],
     "notes": [
@@ -11890,13 +12183,19 @@
       "label": "四分位距（盒子長度）",
       "f": "q3 - q1",
       "unit": "分",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "第三四分位數 {q3|0} － 第一四分位數 {q1|0}"
+      ]
      },
      {
       "label": "上鬚最遠可到",
       "f": "q3 + 1.5 * (q3 - q1)",
       "unit": "分",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "第三四分位數 {q3|0} ＋ 1.5 × (第三四分位數 {q3|0} － 第一四分位數 {q1|0})"
+      ]
      }
     ],
     "presets": [
@@ -12006,13 +12305,19 @@
       "label": "實際上 4.0% 是 3.2% 的",
       "f": "4.0 / 3.2",
       "unit": "倍",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "4.0 ÷ 3.2"
+      ]
      },
      {
       "label": "畫出來看起來是",
       "f": "(4.0 - a) / (3.2 - a)",
       "unit": "倍",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "(4.0 － Y 軸起點 {a|1}) ÷ (3.2 － Y 軸起點 {a|1})"
+      ]
      }
     ],
     "bars": [
@@ -12384,7 +12689,10 @@
       "label": "Z 分數",
       "f": "(x - m) / s",
       "unit": "個標準差",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "(讀數 {x|0} － 平均 {m|0}) ÷ 標準差 {s|0}"
+      ]
      }
     ],
     "presets": [
@@ -12615,7 +12923,10 @@
       "label": "要分幾批讀",
       "f": "ceil(n / c)",
       "unit": "批",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "檔案總筆數 {n|0} ÷ 每批筆數 {c|0}，有餘數就多一批（無條件進位）"
+      ]
      }
     ],
     "notes": [
@@ -12797,7 +13108,10 @@
       "label": "mean − 中位數",
       "f": "mean - med",
       "unit": "",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "平均數 {mean|0} － 中位數 {med|0}"
+      ]
      }
     ],
     "notes": [
@@ -12995,7 +13309,10 @@
       "label": "mean 比中位數多",
       "f": "mean - med",
       "unit": "",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "平均數 {mean|0} － 中位數 {med|0}"
+      ]
      }
     ],
     "bars": [
@@ -13164,7 +13481,10 @@
       "label": "要讀幾塊",
       "f": "ceil(n / c)",
       "unit": "次",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "檔案列數 {n|0} ÷ 每塊列數 {c|0}，有餘數就多一塊（無條件進位）"
+      ]
      }
     ],
     "presets": [
@@ -13409,25 +13729,37 @@
       "label": "支持度 P(X∩Y)",
       "f": "b / n * 100",
       "unit": "%",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "一起買 {b|0} ÷ 全部交易 {n|0} × 100"
+      ]
      },
      {
       "label": "信賴度 P(Y|X)",
       "f": "b / x * 100",
       "unit": "%",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "一起買 {b|0} ÷ 買麵包 {x|0} × 100"
+      ]
      },
      {
       "label": "Y 自己的支持度",
       "f": "y / n * 100",
       "unit": "%",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "買牛奶 {y|0} ÷ 全部交易 {n|0} × 100"
+      ]
      },
      {
       "label": "提升度",
       "f": "(b / x) / (y / n)",
       "unit": "",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "信賴度 {b / x|3} ÷ 牛奶自己的支持度 {y / n|3}"
+      ]
      }
     ],
     "presets": [
@@ -13728,13 +14060,19 @@
       "label": "p − α",
       "f": "p - a",
       "unit": "",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "p 值 {p|2} － 顯著水準 {a|2}"
+      ]
      },
      {
       "label": "信賴區間寬度",
       "f": "hi - lo",
       "unit": "萬",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "信賴區間上限 {hi|0} － 信賴區間下限 {lo|0}"
+      ]
      }
     ],
     "presets": [
@@ -13935,19 +14273,30 @@
       "label": "這段時間用的 λ",
       "f": "(lam*t)",
       "unit": "次",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "每小時平均次數 {lam|1} × 時間長度 {t|2} 小時"
+      ]
      },
      {
       "label": "剛好 k 次（pmf）",
       "f": "pow(2.718281828,-(lam*t))*pow((lam*t),k)/(k<2?1:k<3?2:k<4?6:k<5?24:k<6?120:k<7?720:k<8?5040:40320)",
       "unit": "",
-      "digits": 3
+      "digits": 3,
+      "steps": [
+       "λ ＝ {lam * t|2}，k ＝ {k|0}，k 的階乘 ＝ {((k < 2 ? 1 : k < 3 ? 2 : k < 4 ? 6 : k < 5 ? 24 : k < 6 ? 120 : k < 7 ? 720 : k < 8 ? 5040 : 40320))|0}",
+       "e 的負 λ 次方 {(pow(2.718281828, -(lam * t)))|9} × λ 的 k 次方項 {pow(lam * t, k)|4} ÷ k 的階乘 {((k < 2 ? 1 : k < 3 ? 2 : k < 4 ? 6 : k < 5 ? 24 : k < 6 ? 120 : k < 7 ? 720 : k < 8 ? 5040 : 40320))|0}"
+      ]
      },
      {
       "label": "至少 k 次（1 − cdf(k−1)）",
       "f": "1 - pow(2.718281828,-(lam*t))*((k>0)*pow((lam*t),0)/1 + (k>1)*pow((lam*t),1)/1 + (k>2)*pow((lam*t),2)/2 + (k>3)*pow((lam*t),3)/6 + (k>4)*pow((lam*t),4)/24 + (k>5)*pow((lam*t),5)/120 + (k>6)*pow((lam*t),6)/720 + (k>7)*pow((lam*t),7)/5040)",
       "unit": "",
-      "digits": 3
+      "digits": 3,
+      "steps": [
+       "把 0 到 k－1 次的機率逐項累加，得累加項 {(((k > 0) * pow((lam * t), 0) / 1 + (k > 1) * pow((lam * t), 1) / 1 + (k > 2) * pow((lam * t), 2) / 2 + (k > 3) * pow((lam * t), 3) / 6 + (k > 4) * pow((lam * t), 4) / 24 + (k > 5) * pow((lam * t), 5) / 120 + (k > 6) * pow((lam * t), 6) / 720 + (k > 7) * pow((lam * t), 7) / 5040))|4}",
+       "1 － e 的負 λ 次方 {(pow(2.718281828, -(lam * t)))|9} × 累加項 {(((k > 0) * pow((lam * t), 0) / 1 + (k > 1) * pow((lam * t), 1) / 1 + (k > 2) * pow((lam * t), 2) / 2 + (k > 3) * pow((lam * t), 3) / 6 + (k > 4) * pow((lam * t), 4) / 24 + (k > 5) * pow((lam * t), 5) / 120 + (k > 6) * pow((lam * t), 6) / 720 + (k > 7) * pow((lam * t), 7) / 5040))|4}"
+      ]
      }
     ],
     "bars": [
@@ -14132,7 +14481,10 @@
       "label": "Z 分數",
       "f": "(x - mu) / sd",
       "unit": "個標準差",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "(這筆交易金額 {x|0} － 平均 {mu|0}) ÷ 標準差 {sd|0}"
+      ]
      }
     ],
     "presets": [
@@ -14237,7 +14589,10 @@
       "label": "驗出陽性的人真正得病（後驗）",
       "f": "p * se / (p * se + (100 - p) * fp) * 100",
       "unit": "%",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "盛行率 {p|1} × 陽性率 {se|0} ÷ (盛行率 {p|1} × 陽性率 {se|0} ＋ 健康占比 (100 － {p|1}) × 誤判率 {fp|0}) × 100"
+      ]
      }
     ],
     "bars": [
@@ -14932,19 +15287,28 @@
       "label": "標準誤（σ÷√n）",
       "f": "sigma / pow(n, 0.5)",
       "unit": "分鐘",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "母體標準差 {sigma|0} ÷ 樣本數的平方根 {pow(n, 0.5)|2}"
+      ]
      },
      {
       "label": "Z 值",
       "f": "(xbar - mu0) / (sigma / pow(n, 0.5))",
       "unit": "",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "(樣本平均 {xbar|0} － 宣稱平均 {mu0|0}) ÷ 標準誤 {sigma / pow(n, 0.5)|2}"
+      ]
      },
      {
       "label": "臨界值",
       "f": "1.645",
       "unit": "",
-      "digits": 3
+      "digits": 3,
+      "steps": [
+       "右尾 α ＝ 0.05 的標準常態臨界值，查表固定是 1.645"
+      ]
      }
     ],
     "presets": [
@@ -15208,13 +15572,19 @@
       "label": "需要的模擬次數",
       "f": "n0 * g * g",
       "unit": "次",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "目前模擬次數 {n0|0} × 精度提高倍數 {g|0} × 精度提高倍數 {g|0}"
+      ]
      },
      {
       "label": "次數放大",
       "f": "g * g",
       "unit": "倍",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "精度提高倍數 {g|0} × 精度提高倍數 {g|0}"
+      ]
      }
     ],
     "bars": [
@@ -15352,13 +15722,19 @@
       "label": "結果的列數",
       "f": "n1 == n2 ? m : 0",
       "unit": "",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "要先 A 的行數 {n1|0} ＝ B 的列數 {n2|0} 才能相乘；能乘時結果列數 ＝ A 的列數 {m|0}，不能乘為 0"
+      ]
      },
      {
       "label": "結果的行數",
       "f": "n1 == n2 ? p : 0",
       "unit": "",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "要先 A 的行數 {n1|0} ＝ B 的列數 {n2|0} 才能相乘；能乘時結果行數 ＝ B 的行數 {p|0}，不能乘為 0"
+      ]
      }
     ],
     "presets": [
@@ -15526,13 +15902,19 @@
       "label": "A_and_B.sum() / B.sum() → P(A|B)",
       "f": "min(ab, b, n) / min(b, n)",
       "unit": "",
-      "digits": 3
+      "digits": 3,
+      "steps": [
+       "同時符合 A 和 B 的次數 {min(ab, b, n)|0} ÷ 符合 B 的次數 {min(b, n)|0}"
+      ]
      },
      {
       "label": "錯用總次數當分母 → 其實是 P(A∩B)",
       "f": "min(ab, b, n) / n",
       "unit": "",
-      "digits": 3
+      "digits": 3,
+      "steps": [
+       "同時符合 A 和 B 的次數 {min(ab, b, n)|0} ÷ 總模擬次數 {n|0}"
+      ]
      }
     ],
     "presets": [
@@ -15675,19 +16057,29 @@
       "label": "吉尼不純度 1 − Σpᵢ²",
       "f": "(a + b > 0) * (1 - pow(a / max(a + b, 1), 2) - pow(b / max(a + b, 1), 2))",
       "unit": "",
-      "digits": 3
+      "digits": 3,
+      "steps": [
+       "A 類占比 {(a / max(a + b, 1))|6}、B 類占比 {(b / max(a + b, 1))|6}（沒有資料時整個結果為零）",
+       "1 － A 占比 {(a / max(a + b, 1))|6} 的 2 次方 － B 占比 {(b / max(a + b, 1))|6} 的 2 次方"
+      ]
      },
      {
       "label": "正規化（除以 1 − 1/K，K＝2）",
       "f": "(a + b > 0) * (1 - pow(a / max(a + b, 1), 2) - pow(b / max(a + b, 1), 2)) / (1 - 1 / 2)",
       "unit": "",
-      "digits": 3
+      "digits": 3,
+      "steps": [
+       "吉尼不純度 {((a + b > 0) * (1 - pow(a / max(a + b, 1), 2) - pow(b / max(a + b, 1), 2)))|3} ÷ (1 － 1 ÷ 類別數 2)"
+      ]
      },
      {
       "label": "錯誤示範：把樣本數直接代入",
       "f": "1 - a * a - b * b",
       "unit": "",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "1 － A 類樣本數 {a|0} × A 類樣本數 {a|0} － B 類樣本數 {b|0} × B 類樣本數 {b|0}"
+      ]
      }
     ],
     "bars": [
@@ -15941,13 +16333,19 @@
       "label": "Min-Max 後",
       "f": "(x - mn) / (mx - mn)",
       "unit": "",
-      "digits": 3
+      "digits": 3,
+      "steps": [
+       "(某筆正常值 {x|0} － 資料最小值 {mn|0}) ÷ (資料最大值 {mx|0} － 資料最小值 {mn|0})"
+      ]
      },
      {
       "label": "穩健縮放後（減中位數 ÷ 四分位距）",
       "f": "(x - med) / iqr",
       "unit": "",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "(某筆正常值 {x|0} － 中位數 {med|0}) ÷ 四分位距 {iqr|0}"
+      ]
      }
     ],
     "presets": [
@@ -16129,7 +16527,10 @@
       "label": "C 區被加的量 ÷ A 區",
       "f": "(w * 3) / (w * 1)",
       "unit": "倍",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "C 區被加的量 {w * 3|0} ÷ A 區被加的量 {w * 1|0}"
+      ]
      }
     ],
     "notes": [
@@ -16279,7 +16680,11 @@
       "label": "小於 0.05 的列數",
       "f": "(p1 < 0.05) + (p2 < 0.05) + (p3 < 0.05)",
       "unit": "／3 列",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "每列 P 值小於 0.05 記 1 分，否則 0 分，三列加起來",
+       "常數項 {p1 < 0.05 ? 1 : 0|0} ＋ 第一個變數 {p2 < 0.05 ? 1 : 0|0} ＋ 第二個變數 {p3 < 0.05 ? 1 : 0|0}"
+      ]
      }
     ],
     "notes": [
@@ -16441,13 +16846,19 @@
       "label": "兩兩比較次數",
       "f": "n * (n - 1) / 2 / 100000000",
       "unit": "億次",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "客戶數 {n|0} × (客戶數 {n|0} － 1) ÷ 2 ÷ 100,000,000"
+      ]
      },
      {
       "label": "相對 10 萬人時的運算量",
       "f": "(n * (n - 1)) / (100000 * 99999)",
       "unit": "倍",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "(客戶數 {n|0} × (客戶數 {n|0} － 1)) ÷ (100,000 × 99,999)"
+      ]
      }
     ],
     "presets": [
@@ -16649,13 +17060,19 @@
       "label": "每個週期的參數更新次數",
       "f": "50000000 / b",
       "unit": "次",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "50,000,000 ÷ 批次大小 {b|0}"
+      ]
      },
      {
       "label": "比起批次 32，學習率要按比例放大",
       "f": "b / 32",
       "unit": "倍",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "批次大小 {b|0} ÷ 32"
+      ]
      }
     ],
     "bars": [
@@ -17048,25 +17465,37 @@
       "label": "大店誤差",
       "f": "abs(ab - pb)",
       "unit": "",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "大店實際與預測相差 {abs(ab - pb)|0}"
+      ]
      },
      {
       "label": "小店誤差",
       "f": "abs(as1 - ps)",
       "unit": "",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "小店實際與預測相差 {abs(as1 - ps)|0}"
+      ]
      },
      {
       "label": "均方根誤差 RMSE",
       "f": "pow((pow(ab - pb, 2) + pow(as1 - ps, 2)) / 2, 0.5)",
       "unit": "",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "(大店誤差平方 {pow(ab - pb, 2)|0} ＋ 小店誤差平方 {pow(as1 - ps, 2)|0}) ÷ 2 後開根號"
+      ]
      },
      {
       "label": "平均絕對百分比誤差 MAPE",
       "f": "(abs(ab - pb) / ab + abs(as1 - ps) / as1) / 2 * 100",
       "unit": "%",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "(大店誤差 {abs(ab - pb)|0} ÷ 實際 {ab|0} ＋ 小店誤差 {abs(as1 - ps)|0} ÷ 實際 {as1|0}) ÷ 2 × 100"
+      ]
      }
     ],
     "bars": [
@@ -17176,19 +17605,28 @@
       "label": "精確率（警報裡真的有事）",
       "f": "min(tp, ev) / max(min(tp, ev) + fa, 1) * 100",
       "unit": "%",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "有效警報 {min(tp, ev)|0} ÷ (有效警報 {min(tp, ev)|0} ＋ 虛驚警報 {fa|0}) × 100"
+      ]
      },
      {
       "label": "召回率（真的有事被抓到）",
       "f": "min(tp, ev) / ev * 100",
       "unit": "%",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "有效警報 {min(tp, ev)|0} ÷ 真正發生的事件 {ev|0} × 100"
+      ]
      },
      {
       "label": "總警報次數",
       "f": "min(tp, ev) + fa",
       "unit": "次",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "有效警報 {min(tp, ev)|0} ＋ 虛驚警報 {fa|0}"
+      ]
      }
     ],
     "presets": [
@@ -17979,25 +18417,37 @@
       "label": "甲群通過率（統計均等看這個）",
       "f": "(qa * tpr + (100 - qa) * fpr) / 100",
       "unit": "%",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "(甲群合格 {qa|0} × 合格者通過率 {tpr|0} ＋ 不合格 (100 － {qa|0}) × 不合格者通過率 {fpr|0}) ÷ 100"
+      ]
      },
      {
       "label": "乙群通過率",
       "f": "(qb * tpr + (100 - qb) * fpr) / 100",
       "unit": "%",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "(乙群合格 {qb|0} × 合格者通過率 {tpr|0} ＋ 不合格 (100 － {qb|0}) × 不合格者通過率 {fpr|0}) ÷ 100"
+      ]
      },
      {
       "label": "甲群被通過者真的合格（預測值均等看這個）",
       "f": "qa * tpr / max(qa * tpr + (100 - qa) * fpr, 1) * 100",
       "unit": "%",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "合格又通過 {qa * tpr|0} ÷ 通過合計 {max(qa * tpr + (100 - qa) * fpr, 1)|0} × 100"
+      ]
      },
      {
       "label": "乙群被通過者真的合格",
       "f": "qb * tpr / max(qb * tpr + (100 - qb) * fpr, 1) * 100",
       "unit": "%",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "合格又通過 {qb * tpr|0} ÷ 通過合計 {max(qb * tpr + (100 - qb) * fpr, 1)|0} × 100"
+      ]
      }
     ],
     "presets": [
@@ -18158,7 +18608,10 @@
       "label": "累計的隱私損失",
       "f": "e * q",
       "unit": "",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "每次查詢 ε {e|1} × 查詢次數 {q|0}"
+      ]
      }
     ],
     "bars": [
@@ -18400,7 +18853,10 @@
       "label": "這位申請人的預測",
       "f": "base + inc + debt",
       "unit": "%",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "基準值 {base|0} ＋ 收入的貢獻 {inc|0} ＋ 負債的貢獻 {debt|0}"
+      ]
      }
     ],
     "bars": [
@@ -18669,13 +19125,20 @@
       "label": "按百分之七計算",
       "f": "rev * 10000 * pct / 100",
       "unit": "萬歐元",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "全球年營業額 {rev|0} 億歐元 × 10,000 × 罰款比例 {pct|0} ÷ 100"
+      ]
      },
      {
       "label": "罰款上限（兩者取較高）",
       "f": "max(cap, rev * 10000 * pct / 100)",
       "unit": "萬歐元",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "固定上限 {cap|0} 萬歐元；營業額百分之七 ＝ {rev * 10000 * pct / 100|0} 萬歐元",
+       "兩者取較高的："
+      ]
      }
     ],
     "bars": [
@@ -19022,7 +19485,11 @@
       "label": "是門檻的幾倍",
       "f": "m * pow(10, e) / pow(10, th)",
       "unit": "倍",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "算力 ＝ {m|1} × 10 的 {e|0} 次方；門檻 ＝ 10 的 {th|0} 次方，相除就是 10 的 ({e|0} － {th|0}) 次方",
+       "算力係數 {m|1} × 指數差倍數 {pow(10, e - th)|3}"
+      ]
      }
     ],
     "bars": [
@@ -19465,7 +19932,10 @@
       "label": "這位客戶的違約分數比基準值（全體平均預測）高",
       "f": "inc + debt + yrs",
       "unit": "",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "年收入的貢獻 {inc|2} ＋ 負債比的貢獻 {debt|2} ＋ 年資的貢獻 {yrs|2}"
+      ]
      }
     ],
     "bars": [
@@ -19754,7 +20224,10 @@
       "label": "核准率差距",
       "f": "abs(a - b)",
       "unit": "個百分點",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "男性核准率 {a|0} － 女性核准率 {b|0}（差多少就是多少，不分正負）"
+      ]
      }
     ],
     "bars": [
@@ -20260,7 +20733,10 @@
       "label": "這筆的模型輸出",
       "f": "base + inc + oth",
       "unit": "模型輸出單位",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "基準值 {base|1} ＋ 月收入的 SHAP 值 {inc|1} ＋ 其他特徵的 SHAP 值 {oth|1}"
+      ]
      }
     ],
     "bars": [
@@ -20408,7 +20884,10 @@
       "label": "LIME／KernelExplainer 大約要",
       "f": "n * t",
       "unit": "毫秒",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "取樣呼叫次數 {n|0} × 模型跑一次的時間 {t|0}"
+      ]
      }
     ],
     "bars": [
@@ -20657,13 +21136,19 @@
       "label": "這個分數點的差距",
       "f": "abs(bad - good)",
       "unit": "個百分點",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "壞客戶累積比例 {bad|0} － 好客戶累積比例 {good|0}（差多少就是多少，不分正負）"
+      ]
      },
      {
       "label": "若這裡就是差距最大處，KS 為",
       "f": "abs(bad - good) / 100",
       "unit": "",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "分數點差距 {abs(bad - good)|0} ÷ 100"
+      ]
      }
     ],
     "bars": [
@@ -21149,7 +21634,10 @@
       "label": "看過 vs. 沒看過的信心落差",
       "f": "seen - unseen",
       "unit": "個百分點",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "看過的資料信心 {seen|0} － 沒看過的資料信心 {unseen|0}"
+      ]
      }
     ],
     "bars": [
@@ -21903,13 +22391,21 @@
       "label": "更新後的權重",
       "f": "w0 * pow(1 - 2 * lr, n)",
       "unit": "",
-      "digits": 3
+      "digits": 3,
+      "steps": [
+       "每步剩下的比例 ＝ 1 － 2 × 學習率 {lr|3} ＝ {1 - 2 * lr|3}",
+       "起點權重 {w0|1} × 每步比例 {1 - 2 * lr|3} 的 {n|0} 次方"
+      ]
      },
      {
       "label": "更新後的損失",
       "f": "pow(w0 * pow(1 - 2 * lr, n), 2)",
       "unit": "",
-      "digits": 3
+      "digits": 3,
+      "steps": [
+       "更新後的權重 {(w0 * pow(1 - 2 * lr, n))|4}，損失 ＝ 權重的平方",
+       "更新後的權重 {(w0 * pow(1 - 2 * lr, n))|4} × 更新後的權重 {(w0 * pow(1 - 2 * lr, n))|4}"
+      ]
      }
     ],
     "bars": [
@@ -22032,25 +22528,37 @@
       "label": "MAE（兩筆平均絕對誤差）",
       "f": "(a + b) / 2",
       "unit": "萬元",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "(一般物件 {a|0} ＋ 豪宅 {b|0}) ÷ 2"
+      ]
      },
      {
       "label": "MSE（兩筆均方誤差）",
       "f": "(a * a + b * b) / 2",
       "unit": "萬元²",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "(一般物件平方 {a * a|0} ＋ 豪宅平方 {b * b|0}) ÷ 2"
+      ]
      },
      {
       "label": "MAE 裡豪宅占的比例",
       "f": "a + b > 0 ? b / (a + b) * 100 : 0",
       "unit": "%",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "豪宅 {b|0} ÷ (一般物件 {a|0} ＋ 豪宅 {b|0}) × 100"
+      ]
      },
      {
       "label": "MSE 裡豪宅占的比例",
       "f": "a + b > 0 ? b * b / (a * a + b * b) * 100 : 0",
       "unit": "%",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "豪宅平方 {b * b|0} ÷ (一般物件平方 {a * a|0} ＋ 豪宅平方 {b * b|0}) × 100"
+      ]
      }
     ],
     "bars": [
@@ -22150,13 +22658,21 @@
       "label": "Sigmoid：最好情況下傳回第一層的梯度倍數",
       "f": "pow(sg, L)",
       "unit": "",
-      "digits": 8
+      "digits": 8,
+      "steps": [
+       "Sigmoid 微分最大約 0.25，每往前一層就乘一次",
+       "每層倍數 {sg|2} 的 {L|0} 次方"
+      ]
      },
      {
       "label": "ReLU（輸入為正）：傳回第一層的梯度倍數",
       "f": "pow(rl, L)",
       "unit": "",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "ReLU 輸入為正時，每層梯度原封不動傳回",
+       "每層倍數 {rl|2} 的 {L|0} 次方"
+      ]
      }
     ],
     "presets": [
@@ -22401,13 +22917,19 @@
       "label": "拉回標準範圍後",
       "f": "(x - mu) / sd",
       "unit": "",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "(隱藏層輸出值 {x|1} － 小批平均 {mu|1}) ÷ 小批標準差 {sd|1}"
+      ]
      },
      {
       "label": "縮放、平移後的輸出",
       "f": "g * (x - mu) / sd + bt",
       "unit": "",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "縮放 {g|1} × (隱藏層輸出值 {x|1} － 小批平均 {mu|1}) ÷ 小批標準差 {sd|1} ＋ 平移 {bt|1}"
+      ]
      }
     ],
     "presets": [
@@ -22542,19 +23064,28 @@
       "label": "全連接：每個像素連到每個神經元",
       "f": "w * hh * n",
       "unit": "個權重",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "影像寬 {w|0} × 影像高 {hh|0} × 神經元數 {n|0}"
+      ]
      },
      {
       "label": "卷積：每個卷積核只有 3×3，整張圖共用",
       "f": "k * k * n",
       "unit": "個權重",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "卷積核邊長 {k|0} × 卷積核邊長 {k|0} × 神經元數 {n|0}"
+      ]
      },
      {
       "label": "全連接是卷積的幾倍",
       "f": "w * hh / (k * k)",
       "unit": "倍",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "影像寬 {w|0} × 影像高 {hh|0} ÷ (卷積核邊長 {k|0} × 卷積核邊長 {k|0})"
+      ]
      }
     ],
     "bars": [
@@ -22681,13 +23212,19 @@
       "label": "長度變成幾倍",
       "f": "b / a",
       "unit": "倍",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "新序列長度 {b|0} ÷ 原本序列長度 {a|0}"
+      ]
      },
      {
       "label": "注意力矩陣（計算與記憶體）約變成幾倍",
       "f": "(b * b) / (a * a)",
       "unit": "倍",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "(新序列長度 {b|0} × 新序列長度 {b|0}) ÷ (原本序列長度 {a|0} × 原本序列長度 {a|0})"
+      ]
      }
     ],
     "bars": [
@@ -22850,7 +23387,10 @@
       "label": "傳到最前面剩下的梯度比例",
       "f": "pow(f, n)",
       "unit": "",
-      "digits": 8
+      "digits": 8,
+      "steps": [
+       "每步梯度倍數 {f|2} 的 {n|0} 次方"
+      ]
      }
     ],
     "presets": [
@@ -23065,19 +23605,28 @@
       "label": "有數字的格子",
       "f": "n",
       "unit": "格",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "這句話用到的不同詞 {n|0}"
+      ]
      },
      {
       "label": "是 0 的格子",
       "f": "v - n",
       "unit": "格",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "詞彙表大小 {v|0} － 這句話用到的不同詞 {n|0}"
+      ]
      },
      {
       "label": "有數字的比例",
       "f": "n / v * 100",
       "unit": "%",
-      "digits": 3
+      "digits": 3,
+      "steps": [
+       "這句話用到的不同詞 {n|0} ÷ 詞彙表大小 {v|0} × 100"
+      ]
      }
     ],
     "presets": [
@@ -23597,13 +24146,19 @@
       "label": "傳到最前面剩下的比例",
       "f": "pow(r, n)",
       "unit": "",
-      "digits": 8
+      "digits": 8,
+      "steps": [
+       "每層剩下比例 {r|2} 的 {n|0} 次方"
+      ]
      },
      {
       "label": "約只剩幾分之一",
       "f": "1 / pow(r, n)",
       "unit": "分之一",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "1 ÷ (每層剩下比例 {r|2} 的 {n|0} 次方)"
+      ]
      }
     ],
     "presets": [
@@ -23814,13 +24369,19 @@
       "label": "長度變成",
       "f": "b / a",
       "unit": "倍",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "加長後序列長度 {b|0} ÷ 原本序列長度 {a|0}"
+      ]
      },
      {
       "label": "自注意力計算量變成",
       "f": "pow(b / a, 2)",
       "unit": "倍",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "長度倍數 {b / a|2} 的 2 次方"
+      ]
      }
     ],
     "bars": [
@@ -23982,13 +24543,21 @@
       "label": "短回饋的 TF-IDF",
       "f": "z ? ca / na * idf : ca * idf",
       "unit": "",
-      "digits": 3
+      "digits": 3,
+      "steps": [
+       "有做長度正規化（旗標 {z|0} 為 1）就除以總詞數，沒做就不除",
+       "出現次數 {ca|0} ÷ 實際除數 {z ? na : 1|0} × IDF {idf|1}"
+      ]
      },
      {
       "label": "長回饋的 TF-IDF",
       "f": "z ? cb / nb * idf : cb * idf",
       "unit": "",
-      "digits": 3
+      "digits": 3,
+      "steps": [
+       "有做長度正規化（旗標 {z|0} 為 1）就除以總詞數，沒做就不除",
+       "出現次數 {cb|0} ÷ 實際除數 {z ? nb : 1|0} × IDF {idf|1}"
+      ]
      }
     ],
     "bars": [
@@ -24202,13 +24771,19 @@
       "label": "CBOW：它當被猜的中間詞",
       "f": "c",
       "unit": "筆",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "罕見詞出現次數 {c|0}"
+      ]
      },
      {
       "label": "Skip-gram：它當中心詞去猜周圍",
       "f": "c * m",
       "unit": "筆",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "罕見詞出現次數 {c|0} × 每次預測的詞數 {m|0}"
+      ]
      }
     ],
     "bars": [
@@ -24374,19 +24949,28 @@
       "label": "One-Hot 每個詞的欄位數",
       "f": "v",
       "unit": "格（只有 1 格是 1）",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "詞彙表大小 {v|0}"
+      ]
      },
      {
       "label": "密集向量每個詞",
       "f": "d",
       "unit": "個數字",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "密集向量長度 {d|0}"
+      ]
      },
      {
       "label": "One-Hot 長了",
       "f": "v / d",
       "unit": "倍",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "詞彙表大小 {v|0} ÷ 密集向量長度 {d|0}"
+      ]
      }
     ],
     "bars": [
@@ -24488,13 +25072,19 @@
       "label": "約被遮住",
       "f": "round(n * 0.15)",
       "unit": "個 token",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "token 數 {n|0} × 遮住比例 0.15，四捨五入"
+      ]
      },
      {
       "label": "留著當線索",
       "f": "n - round(n * 0.15)",
       "unit": "個 token",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "token 數 {n|0} － 被遮住的 {round(n * 0.15)|0}"
+      ]
      }
     ],
     "bars": [
@@ -24622,7 +25212,10 @@
       "label": "要做的比對次數",
       "f": "n * n",
       "unit": "次",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "序列長度 {n|0} × 序列長度 {n|0}"
+      ]
      }
     ],
     "presets": [
@@ -24695,13 +25288,19 @@
       "label": "Flatten 攤平後",
       "f": "h * w * c",
       "unit": "個數字",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "特徵圖高 {h|0} × 特徵圖寬 {w|0} × 通道數 {c|0}"
+      ]
      },
      {
       "label": "全域平均池化後",
       "f": "c",
       "unit": "個數字",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "通道數 {c|0}"
+      ]
      }
     ],
     "bars": [
@@ -24988,19 +25587,28 @@
       "label": "每邊切成",
       "f": "floor(s / p)",
       "unit": "塊",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "圖片邊長 {s|0} ÷ 每塊邊長 {p|0}，捨去小數"
+      ]
      },
      {
       "label": "總共的詞元數",
       "f": "floor(s / p) * floor(s / p)",
       "unit": "個",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "每邊 {floor(s / p)|0} 塊 × 每邊 {floor(s / p)|0} 塊"
+      ]
      },
      {
       "label": "每塊的像素數",
       "f": "p * p",
       "unit": "像素",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "每塊邊長 {p|0} × 每塊邊長 {p|0}"
+      ]
      }
     ],
     "presets": [
@@ -25161,13 +25769,19 @@
       "label": "每一步跨出",
       "f": "lr",
       "unit": "",
-      "digits": 4
+      "digits": 4,
+      "steps": [
+       "學習率 {lr|4}"
+      ]
      },
      {
       "label": "假設每步方向相同，累計移動",
       "f": "lr * n",
       "unit": "",
-      "digits": 4
+      "digits": 4,
+      "steps": [
+       "學習率 {lr|4} × 調整步數 {n|0}"
+      ]
      }
     ],
     "notes": [
@@ -25249,19 +25863,28 @@
       "label": "每個任務要訓練的參數",
       "f": "t * r / 100",
       "unit": "億個",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "基礎模型參數量 {t|0} × 訓練比例 {r|1} ÷ 100"
+      ]
      },
      {
       "label": "全面微調：每個任務各存一整份",
       "f": "t * k",
       "unit": "億個參數",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "基礎模型參數量 {t|0} × 任務數 {k|0}"
+      ]
      },
      {
       "label": "LoRA：一份基礎模型＋每任務一小份",
       "f": "t + t * r / 100 * k",
       "unit": "億個參數",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "基礎模型參數量 {t|0} ＋ 基礎模型參數量 {t|0} × 訓練比例 {r|1} ÷ 100 × 任務數 {k|0}"
+      ]
      }
     ],
     "bars": [
@@ -25577,25 +26200,38 @@
       "label": "卷積後邊長",
       "f": "same ? h : h - (kk - 1)",
       "unit": "像素",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "same padding 邊長不縮小，valid 才縮小：縮小的量 ＝ {same ? 0 : kk - 1|0}",
+       "輸入邊長 {h|0} － 縮小的量 {same ? 0 : kk - 1|0}"
+      ]
      },
      {
       "label": "卷積後通道數（＝濾波器數）",
       "f": "f",
       "unit": "個",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "濾波器數量 {f|0}，每個濾波器產生一張特徵圖"
+      ]
      },
      {
       "label": "池化後邊長",
       "f": "floor((same ? h : h - (kk - 1)) / pow(2, p))",
       "unit": "像素",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "卷積後邊長 {((same ? h : h - (kk - 1)))|0} ÷ 池化縮小倍數 {pow(2, p)|0}，捨去小數"
+      ]
      },
      {
       "label": "Flatten 後的維度",
       "f": "floor((same ? h : h - (kk - 1)) / pow(2, p)) * floor((same ? h : h - (kk - 1)) / pow(2, p)) * f",
       "unit": "個數字",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "池化後邊長 {(floor((same ? h : h - (kk - 1)) / pow(2, p)))|0} × 池化後邊長 {(floor((same ? h : h - (kk - 1)) / pow(2, p)))|0} × 濾波器數量 {f|0}"
+      ]
      }
     ],
     "presets": [
@@ -25674,7 +26310,10 @@
       "label": "進網路的數值",
       "f": "px / 255",
       "unit": "",
-      "digits": 3
+      "digits": 3,
+      "steps": [
+       "原始像素值 {px|0} ÷ 255"
+      ]
      }
     ],
     "presets": [
@@ -25922,25 +26561,37 @@
       "label": "第一層：a×b＋b",
       "f": "a * b + b",
       "unit": "個",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "輸入特徵數 {a|0} × 第一層神經元 {b|0} ＋ 第一層神經元 {b|0}"
+      ]
      },
      {
       "label": "第二層：b×c＋c",
       "f": "b * c + c",
       "unit": "個",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "第一層神經元 {b|0} × 第二層神經元 {c|0} ＋ 第二層神經元 {c|0}"
+      ]
      },
      {
       "label": "輸出層：c×d＋d",
       "f": "c * d + d",
       "unit": "個",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "第二層神經元 {c|0} × 輸出層神經元 {d|0} ＋ 輸出層神經元 {d|0}"
+      ]
      },
      {
       "label": "合計",
       "f": "a * b + b + b * c + c + c * d + d",
       "unit": "個參數",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "輸入特徵數 {a|0} × 第一層神經元 {b|0} ＋ 第一層神經元 {b|0} ＋ 第一層神經元 {b|0} × 第二層神經元 {c|0} ＋ 第二層神經元 {c|0} ＋ 第二層神經元 {c|0} × 輸出層神經元 {d|0} ＋ 輸出層神經元 {d|0}"
+      ]
      }
     ],
     "bars": [
@@ -26082,7 +26733,10 @@
       "label": "跑完一輪資料要更新",
       "f": "ceil(n / b)",
       "unit": "次",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "資料筆數 {n|0} ÷ 批次大小 {b|0}，有餘數就多一次（無條件進位）"
+      ]
      }
     ],
     "presets": [
@@ -26151,13 +26805,19 @@
       "label": "裁剪後的梯度大小",
       "f": "min(g, cap)",
       "unit": "",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "梯度大小 {g|1} 與裁剪上限 {cap|1} 取較小的"
+      ]
      },
      {
       "label": "整體縮小",
       "f": "max(g / cap, 1)",
       "unit": "倍",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "梯度大小 {g|1} ÷ 裁剪上限 {cap|1}（不到一時不縮小，當一）"
+      ]
      }
     ],
     "bars": [
@@ -26274,13 +26934,19 @@
       "label": "3 層傳回淺層剩下",
       "f": "pow(r, 3)",
       "unit": "",
-      "digits": 6
+      "digits": 6,
+      "steps": [
+       "每層乘上的數 {r|2} 的 3 次方"
+      ]
      },
      {
       "label": "16 層傳回淺層剩下",
       "f": "pow(r, 16)",
       "unit": "",
-      "digits": 6
+      "digits": 6,
+      "steps": [
+       "每層乘上的數 {r|2} 的 16 次方"
+      ]
      }
     ],
     "bars": [
@@ -26598,13 +27264,19 @@
       "label": "批次變成",
       "f": "b1 / b0",
       "unit": "倍",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "放大後批次 {b1|0} ÷ 原本批次 {b0|0}"
+      ]
      },
      {
       "label": "學習率跟著變成",
       "f": "lr0 * b1 / b0",
       "unit": "",
-      "digits": 3
+      "digits": 3,
+      "steps": [
+       "原本學習率 {lr0|3} × 放大後批次 {b1|0} ÷ 原本批次 {b0|0}"
+      ]
      }
     ],
     "notes": [
@@ -26683,7 +27355,10 @@
       "label": "早期停止比降學習率多等",
       "f": "pe - pl",
       "unit": "個世代",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "早期停止耐心值 {pe|0} － 降學習率耐心值 {pl|0}"
+      ]
      }
     ],
     "notes": [
@@ -26793,13 +27468,19 @@
       "label": "量化後大小",
       "f": "s * b / 32",
       "unit": "GB",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "原本模型大小 {s|0} GB × 量化後位元數 {b|0} ÷ 32"
+      ]
      },
      {
       "label": "剩原本的",
       "f": "b / 32",
       "unit": "",
-      "digits": 3
+      "digits": 3,
+      "steps": [
+       "量化後位元數 {b|0} ÷ 32"
+      ]
      }
     ],
     "bars": [
@@ -26981,7 +27662,10 @@
       "label": "殘差",
       "f": "y - yh",
       "unit": "杯",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "實際值 {y|0} － 模型預測值 {yh|0}"
+      ]
      }
     ],
     "presets": [
@@ -27267,13 +27951,19 @@
       "label": "每張可容忍的時間",
       "f": "1 / fps",
       "unit": "秒",
-      "digits": 3
+      "digits": 3,
+      "steps": [
+       "1 ÷ 每秒要處理張數 {fps|0}"
+      ]
      },
      {
       "label": "模型每秒實際處理得了",
       "f": "1 / t",
       "unit": "張",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "1 ÷ 處理一張的時間 {t|3}"
+      ]
      }
     ],
     "bars": [
@@ -27453,13 +28143,19 @@
       "label": "小一個數量級",
       "f": "lr / 10",
       "unit": "",
-      "digits": 5
+      "digits": 5,
+      "steps": [
+       "從頭訓練的學習率 {lr|4} ÷ 10"
+      ]
      },
      {
       "label": "小兩個數量級",
       "f": "lr / 100",
       "unit": "",
-      "digits": 5
+      "digits": 5,
+      "steps": [
+       "從頭訓練的學習率 {lr|4} ÷ 100"
+      ]
      }
     ],
     "bars": [
@@ -27542,19 +28238,28 @@
       "label": "原本 d×d 要存",
       "f": "d * d",
       "unit": "個數",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "原矩陣邊長 {d|0} × 原矩陣邊長 {d|0}"
+      ]
      },
      {
       "label": "LoRA：d×r 加 r×d",
       "f": "d * r + r * d",
       "unit": "個數",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "原矩陣邊長 {d|0} × 秩 {r|0} ＋ 秩 {r|0} × 原矩陣邊長 {d|0}"
+      ]
      },
      {
       "label": "只佔原本的",
       "f": "(d * r + r * d) / (d * d) * 100",
       "unit": "%",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "(原矩陣邊長 {d|0} × 秩 {r|0} ＋ 秩 {r|0} × 原矩陣邊長 {d|0}) ÷ (原矩陣邊長 {d|0} × 原矩陣邊長 {d|0}) × 100"
+      ]
      }
     ],
     "presets": [
@@ -27803,19 +28508,28 @@
       "label": "總損失（各任務加權相加）",
       "f": "wc * lc + wn * ln",
       "unit": "",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "分類權重 {wc|1} × 分類損失 {lc|1} ＋ 實體辨識權重 {wn|1} × 實體辨識損失 {ln|1}"
+      ]
      },
      {
       "label": "分類佔總損失的比例",
       "f": "wc * lc / (wc * lc + wn * ln)",
       "unit": "",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "分類權重 {wc|1} × 分類損失 {lc|1} ÷ (分類權重 {wc|1} × 分類損失 {lc|1} ＋ 實體辨識權重 {wn|1} × 實體辨識損失 {ln|1})"
+      ]
      },
      {
       "label": "實體辨識佔總損失的比例",
       "f": "wn * ln / (wc * lc + wn * ln)",
       "unit": "",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "實體辨識權重 {wn|1} × 實體辨識損失 {ln|1} ÷ (分類權重 {wc|1} × 分類損失 {lc|1} ＋ 實體辨識權重 {wn|1} × 實體辨識損失 {ln|1})"
+      ]
      }
     ],
     "bars": [
@@ -28062,7 +28776,10 @@
       "label": "合併後的機率",
       "f": "(wi * pi + wt * pt) / (wi + wt)",
       "unit": "%",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "(影像權重 {wi|1} × 影像機率 {pi|0} ＋ 文字權重 {wt|1} × 文字機率 {pt|0}) ÷ (影像權重 {wi|1} ＋ 文字權重 {wt|1})"
+      ]
      }
     ],
     "bars": [
@@ -28268,12 +28985,18 @@
      {
       "label": "輸入＋輸出合計",
       "f": "inp + outp",
-      "unit": "token"
+      "unit": "token",
+      "steps": [
+       "輸入 {inp|0} ＋ 預計輸出 {outp|0}"
+      ]
      },
      {
       "label": "超出上限",
       "f": "max(inp + outp - win, 0)",
-      "unit": "token"
+      "unit": "token",
+      "steps": [
+       "輸入 {inp|0} ＋ 預計輸出 {outp|0} － 視窗上限 {win|0}（沒超過時為零）"
+      ]
      }
     ],
     "bars": [
@@ -28363,19 +29086,31 @@
       "label": "調整後：第一名被選中的機率",
       "f": "pow(a, 1 / t) / (pow(a, 1 / t) + pow(b, 1 / t) + pow(c, 1 / t))",
       "unit": "",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "先把每個機率做 (1 ÷ 溫度) 次方：第一名 {(pow(a, 1 / t))|6}、第二名 {(pow(b, 1 / t))|6}、第三名 {(pow(c, 1 / t))|6}",
+       "第一名 {(pow(a, 1 / t))|6} ÷ (第一名 {(pow(a, 1 / t))|6} ＋ 第二名 {(pow(b, 1 / t))|6} ＋ 第三名 {(pow(c, 1 / t))|6})"
+      ]
      },
      {
       "label": "調整後：第三名被選中的機率",
       "f": "pow(c, 1 / t) / (pow(a, 1 / t) + pow(b, 1 / t) + pow(c, 1 / t))",
       "unit": "",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "先把每個機率做 (1 ÷ 溫度) 次方：第一名 {(pow(a, 1 / t))|6}、第二名 {(pow(b, 1 / t))|6}、第三名 {(pow(c, 1 / t))|6}",
+       "第三名 {(pow(c, 1 / t))|6} ÷ (第一名 {(pow(a, 1 / t))|6} ＋ 第二名 {(pow(b, 1 / t))|6} ＋ 第三名 {(pow(c, 1 / t))|6})"
+      ]
      },
      {
       "label": "top-p＝0.9 時保留的候選字數",
       "f": "pow(a, 1 / t) / (pow(a, 1 / t) + pow(b, 1 / t) + pow(c, 1 / t)) >= 0.9 ? 1 : ((pow(a, 1 / t) + pow(b, 1 / t)) / (pow(a, 1 / t) + pow(b, 1 / t) + pow(c, 1 / t)) >= 0.9 ? 2 : 3)",
       "unit": "個",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "調整後累積機率：第一名 {(pow(a, 1 / t)) / ((pow(a, 1 / t) + pow(b, 1 / t) + pow(c, 1 / t)))|2}、前兩名 {((pow(a, 1 / t)) + (pow(b, 1 / t))) / ((pow(a, 1 / t) + pow(b, 1 / t) + pow(c, 1 / t)))|2}、三個全部 1",
+       "累積機率第一次達到 0.9 的名次（第一名夠＝1、前兩名夠＝2、否則＝3）"
+      ]
      }
     ],
     "bars": [
@@ -29119,19 +29854,28 @@
       "label": "舊提示正確率",
       "f": "min(a, n) / n * 100",
       "unit": "%",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "舊提示答對 {min(a, n)|0} ÷ 測試案例 {n|0} × 100"
+      ]
      },
      {
       "label": "新提示正確率",
       "f": "min(b, n) / n * 100",
       "unit": "%",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "新提示答對 {min(b, n)|0} ÷ 測試案例 {n|0} × 100"
+      ]
      },
      {
       "label": "差距",
       "f": "(min(b, n) - min(a, n)) / n * 100",
       "unit": "個百分點",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "(新提示答對 {min(b, n)|0} － 舊提示答對 {min(a, n)|0}) ÷ 測試案例 {n|0} × 100"
+      ]
      }
     ],
     "bars": [
@@ -29352,19 +30096,31 @@
       "label": "第一名被選中的機率",
       "f": "pow(a, 1 / t) / (pow(a, 1 / t) + pow(b, 1 / t) + pow(c, 1 / t))",
       "unit": "",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "先把每個機率做 (1 ÷ 溫度) 次方：第一名 {(pow(a, 1 / t))|6}、第二名 {(pow(b, 1 / t))|6}、第三名 {(pow(c, 1 / t))|6}",
+       "第一名 {(pow(a, 1 / t))|6} ÷ (第一名 {(pow(a, 1 / t))|6} ＋ 第二名 {(pow(b, 1 / t))|6} ＋ 第三名 {(pow(c, 1 / t))|6})"
+      ]
      },
      {
       "label": "第二名被選中的機率",
       "f": "pow(b, 1 / t) / (pow(a, 1 / t) + pow(b, 1 / t) + pow(c, 1 / t))",
       "unit": "",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "先把每個機率做 (1 ÷ 溫度) 次方：第一名 {(pow(a, 1 / t))|6}、第二名 {(pow(b, 1 / t))|6}、第三名 {(pow(c, 1 / t))|6}",
+       "第二名 {(pow(b, 1 / t))|6} ÷ (第一名 {(pow(a, 1 / t))|6} ＋ 第二名 {(pow(b, 1 / t))|6} ＋ 第三名 {(pow(c, 1 / t))|6})"
+      ]
      },
      {
       "label": "第三名被選中的機率",
       "f": "pow(c, 1 / t) / (pow(a, 1 / t) + pow(b, 1 / t) + pow(c, 1 / t))",
       "unit": "",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "先把每個機率做 (1 ÷ 溫度) 次方：第一名 {(pow(a, 1 / t))|6}、第二名 {(pow(b, 1 / t))|6}、第三名 {(pow(c, 1 / t))|6}",
+       "第三名 {(pow(c, 1 / t))|6} ÷ (第一名 {(pow(a, 1 / t))|6} ＋ 第二名 {(pow(b, 1 / t))|6} ＋ 第三名 {(pow(c, 1 / t))|6})"
+      ]
      }
     ],
     "bars": [
@@ -30625,18 +31381,27 @@
      {
       "label": "整庫重建要重新處理",
       "f": "n",
-      "unit": "份"
+      "unit": "份",
+      "steps": [
+       "知識庫文件總數 {n|0}"
+      ]
      },
      {
       "label": "增量更新只要處理",
       "f": "min(c, n)",
-      "unit": "份"
+      "unit": "份",
+      "steps": [
+       "變動 {c|0} 份與知識庫總數 {n|0} 份取較小的"
+      ]
      },
      {
       "label": "增量更新省下的處理量",
       "f": "(n - min(c, n)) / n * 100",
       "unit": "%",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "(整庫 {n|0} － 增量處理 {min(c, n)|0}) ÷ 整庫 {n|0} × 100"
+      ]
      }
     ],
     "bars": [
@@ -30795,13 +31560,19 @@
       "label": "片段甲合併分數（名次倒數相加）",
       "f": "1 / a1 + 1 / a2",
       "unit": "",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "1 ÷ 甲的關鍵字名次 {a1|0} ＋ 1 ÷ 甲的語意名次 {a2|0}"
+      ]
      },
      {
       "label": "片段乙合併分數（名次倒數相加）",
       "f": "1 / b1 + 1 / b2",
       "unit": "",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "1 ÷ 乙的關鍵字名次 {b1|0} ＋ 1 ÷ 乙的語意名次 {b2|0}"
+      ]
      }
     ],
     "bars": [
@@ -31079,12 +31850,18 @@
      {
       "label": "沒設上限的花費",
       "f": "p * s",
-      "unit": "元"
+      "unit": "元",
+      "steps": [
+       "每次呼叫費用 {p|1} × 實際跑的步數 {s|0}"
+      ]
      },
      {
       "label": "有設上限的花費",
       "f": "p * min(s, cap)",
-      "unit": "元"
+      "unit": "元",
+      "steps": [
+       "每次呼叫費用 {p|1} × 實際會跑的步數 {min(s, cap)|0}（步數與上限取較小者）"
+      ]
      }
     ],
     "bars": [
@@ -31327,17 +32104,26 @@
      {
       "label": "長提示一天的推論成本",
       "f": "c1 * q",
-      "unit": "元"
+      "unit": "元",
+      "steps": [
+       "長提示每次費用 {c1|1} × 每天被問次數 {q|0}"
+      ]
      },
      {
       "label": "縮短提示後一天的推論成本",
       "f": "c2 * q",
-      "unit": "元"
+      "unit": "元",
+      "steps": [
+       "短提示每次費用 {c2|1} × 每天被問次數 {q|0}"
+      ]
      },
      {
       "label": "一天省下",
       "f": "(c1 - c2) * q",
-      "unit": "元"
+      "unit": "元",
+      "steps": [
+       "(長提示每次費用 {c1|1} － 短提示每次費用 {c2|1}) × 每天被問次數 {q|0}"
+      ]
      }
     ],
     "bars": [
@@ -31520,12 +32306,18 @@
      {
       "label": "實際送進去的內容",
       "f": "max(doc - cut, 0)",
-      "unit": "token"
+      "unit": "token",
+      "steps": [
+       "塞進去的文件 {doc|0} － 剔除的內容 {cut|0}（不會小於零）"
+      ]
      },
      {
       "label": "留給回答的空間",
       "f": "win - max(doc - cut, 0)",
-      "unit": "token"
+      "unit": "token",
+      "steps": [
+       "視窗上限 {win|0} － 實際送進去的內容 {max(doc - cut, 0)|0}"
+      ]
      }
     ],
     "bars": [
@@ -31741,12 +32533,19 @@
      {
       "label": "全部歷史原封不動塞回去",
       "f": "per * r",
-      "unit": "token"
+      "unit": "token",
+      "steps": [
+       "每輪大約 {per|0} × 已聊輪數 {r|0}"
+      ]
      },
      {
       "label": "最近幾輪＋摘要",
       "f": "per * min(keep, r) + (r > keep ? sum : 0)",
-      "unit": "token"
+      "unit": "token",
+      "steps": [
+       "保留原文的輪數 ＝ 保留 {keep|0} 與已聊 {r|0} 取較小者 ＝ {min(keep, r)|0}",
+       "每輪大約 {per|0} × 保留輪數 {min(keep, r)|0} ＋ 摘要 {r > keep ? sum : 0|0}（沒超過保留輪數就不需要摘要）"
+      ]
      }
     ],
     "bars": [
@@ -32151,12 +32950,18 @@
      {
       "label": "每個應用各寫專用串接程式",
       "f": "a * t",
-      "unit": "套"
+      "unit": "套",
+      "steps": [
+       "AI 應用數 {a|0} × 工具與資料來源數 {t|0}"
+      ]
      },
      {
       "label": "改用 MCP：每個工具做一次 Server",
       "f": "t",
-      "unit": "個 Server"
+      "unit": "個 Server",
+      "steps": [
+       "工具與資料來源數 {t|0}"
+      ]
      }
     ],
     "bars": [
@@ -32398,19 +33203,29 @@
       "label": "大約切成",
       "f": "ceil(max(doc - s, 0) / (s * (1 - ov))) + 1",
       "unit": "塊",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "每塊新內容 ＝ 每塊長度 {s|0} × (1 － 重疊比例 {ov|1}) ＝ {s * (1 - ov)|0}",
+       "(文件總長度 {doc|0} － 每塊長度 {s|0}) ÷ 每塊新內容 {s * (1 - ov)|0}，無條件進位後再加最後一塊 ＋ 1"
+      ]
      },
      {
       "label": "相鄰兩塊重疊",
       "f": "s * ov",
       "unit": "字",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "每塊長度 {s|0} × 重疊比例 {ov|1}"
+      ]
      },
      {
       "label": "每塊新內容",
       "f": "s * (1 - ov)",
       "unit": "字",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "每塊長度 {s|0} × (1 － 重疊比例 {ov|1})"
+      ]
      }
     ],
     "bars": [
@@ -33223,19 +34038,28 @@
       "label": "大表格（n×n）",
       "f": "n * n",
       "unit": "個數字",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "大表格邊長 {n|0} × 大表格邊長 {n|0}"
+      ]
      },
      {
       "label": "兩張小表格（n×r＋r×n）",
       "f": "2 * n * r",
       "unit": "個數字",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "2 × 大表格邊長 {n|0} × 秩 {r|0}"
+      ]
      },
      {
       "label": "只剩原本的",
       "f": "2 * r / n * 100",
       "unit": "%",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "2 × 秩 {r|0} ÷ 大表格邊長 {n|0} × 100"
+      ]
      }
     ],
     "bars": [
@@ -34130,19 +34954,28 @@
       "label": "這組的基準線（平均）",
       "f": "(a + b + c + d) / 4",
       "unit": "分",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "(回答 A 分數 {a|0} ＋ 回答 B 分數 {b|0} ＋ 回答 C 分數 {c|0} ＋ 回答 D 分數 {d|0}) ÷ 4"
+      ]
      },
      {
       "label": "回答 A 高出基準線",
       "f": "a - (a + b + c + d) / 4",
       "unit": "分",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "回答 A 分數 {a|0} － (回答 A 分數 {a|0} ＋ 回答 B 分數 {b|0} ＋ 回答 C 分數 {c|0} ＋ 回答 D 分數 {d|0}) ÷ 4"
+      ]
      },
      {
       "label": "回答 B 高出基準線",
       "f": "b - (a + b + c + d) / 4",
       "unit": "分",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "回答 B 分數 {b|0} － (回答 A 分數 {a|0} ＋ 回答 B 分數 {b|0} ＋ 回答 C 分數 {c|0} ＋ 回答 D 分數 {d|0}) ÷ 4"
+      ]
      }
     ],
     "bars": [
@@ -34268,7 +35101,10 @@
       "label": "權重約佔",
       "f": "p * bits / 80",
       "unit": "GB",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "參數量 {p|0} 億 × 每個權重位元數 {bits|0} ÷ 80（換算成 GB 的係數）"
+      ]
      }
     ],
     "presets": [
@@ -34657,7 +35493,10 @@
       "label": "可訓練參數總量（相對值：秩×層數）",
       "f": "r * L",
       "unit": "",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "秩 {r|0} × 套用層數 {L|0}"
+      ]
      }
     ],
     "bars": [
@@ -34790,13 +35629,19 @@
       "label": "輸入合計",
       "f": "n * per + sys + hist",
       "unit": "token",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "檢索片段數 {n|0} × 每段長度 {per|0} ＋ 系統提示 {sys|0} ＋ 對話歷史 {hist|0}"
+      ]
      },
      {
       "label": "輸入占全部 token 的比例",
       "f": "(n * per + sys + hist) / (n * per + sys + hist + out) * 100",
       "unit": "%",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "輸入合計 {n * per + sys + hist|0} ÷ (輸入合計 {n * per + sys + hist|0} ＋ 輸出 {out|0}) × 100"
+      ]
      }
     ],
     "bars": [
@@ -35011,19 +35856,28 @@
       "label": "召回率（該找到的找到幾成）",
       "f": "min(hit, min(need, ret)) / need * 100",
       "unit": "%",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "撈回且相關 {min(hit, min(need, ret))|0} ÷ 該找到的段落 {need|0} × 100"
+      ]
      },
      {
       "label": "精確率（撈回的有幾成相關）",
       "f": "min(hit, min(need, ret)) / ret * 100",
       "unit": "%",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "撈回且相關 {min(hit, min(need, ret))|0} ÷ 撈回的段落 {ret|0} × 100"
+      ]
      },
      {
       "label": "忠實度（生成這段）",
       "f": "min(ok, claims) / claims",
       "unit": "",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "有根據的說法 {min(ok, claims)|0} ÷ 回答裡的說法 {claims|0}"
+      ]
      }
     ],
     "bars": [
@@ -35114,7 +35968,10 @@
       "label": "MRR",
       "f": "(1 / a + 1 / b + 1 / c) / 3",
       "unit": "",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "(1 ÷ 第一題名次 {a|0} ＋ 1 ÷ 第二題名次 {b|0} ＋ 1 ÷ 第三題名次 {c|0}) ÷ 3"
+      ]
      }
     ],
     "bars": [
@@ -35349,13 +36206,19 @@
       "label": "最多嘗試",
       "f": "1 + r",
       "unit": "次",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "正式呼叫 1 次 ＋ 重試上限 {r|0}"
+      ]
      },
      {
       "label": "最久卡住（假設每次都等到逾時）",
       "f": "(1 + r) * t",
       "unit": "秒",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "(1 ＋ 重試上限 {r|0}) × 每次逾時 {t|0} 秒"
+      ]
      }
     ],
     "bars": [
@@ -35648,7 +36511,11 @@
       "label": "要通知主管嗎（1＝通知，0＝不通知）",
       "f": "refund == 1 && amt > 10000 ? 1 : 0",
       "unit": "",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "兩個條件要同時成立才通知：判定為退費意圖（旗標 {refund|0}，1＝是），而且金額 {amt|0} 超過 10,000",
+       "同時成立為 1，否則為 0；結果是"
+      ]
      }
     ],
     "presets": [
@@ -35796,19 +36663,28 @@
       "label": "原矩陣參數（d×d）",
       "f": "d * d",
       "unit": "個",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "原權重矩陣邊長 {d|0} × 原權重矩陣邊長 {d|0}"
+      ]
      },
      {
       "label": "LoRA 兩個小矩陣（d×r＋r×d）",
       "f": "2 * d * r",
       "unit": "個",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "2 × 原權重矩陣邊長 {d|0} × 秩 {r|0}"
+      ]
      },
      {
       "label": "LoRA 占原矩陣的比例",
       "f": "2 * r / d * 100",
       "unit": "%",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "2 × 秩 {r|0} ÷ 原權重矩陣邊長 {d|0} × 100"
+      ]
      }
     ],
     "bars": [
@@ -35920,7 +36796,10 @@
       "label": "光存權重約需",
       "f": "p * bits / 80",
       "unit": "GB",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "模型參數量 {p|0} 億 × 每個權重位元數 {bits|0} ÷ 80（換算成 GB 的係數）"
+      ]
      }
     ],
     "presets": [
@@ -36132,13 +37011,19 @@
       "label": "自架總持有成本",
       "f": "hw + run * 12 * yrs",
       "unit": "萬元",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "伺服器購置 {hw|0} ＋ 每月電費與維運 {run|0} × 12 個月 × 使用年數 {yrs|0}"
+      ]
      },
      {
       "label": "雲端 API 總費用",
       "f": "cloud * 12 * yrs",
       "unit": "萬元",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "雲端每月費用 {cloud|0} × 12 個月 × 使用年數 {yrs|0}"
+      ]
      }
     ],
     "bars": [
@@ -36398,13 +37283,20 @@
       "label": "處理時間下降",
       "f": "(t0 - t1) / t0 * 100",
       "unit": "%",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "(導入前單件時間 {t0|1} － 導入後單件時間 {t1|1}) ÷ 導入前單件時間 {t0|1} × 100"
+      ]
      },
      {
       "label": "達標嗎（1＝達標，0＝未達標）",
       "f": "(t0 - t1) / t0 * 100 >= 20 && c1 <= c0 ? 1 : 0",
       "unit": "",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "時間下降 {(t0 - t1) / t0 * 100|1}% 要在 20% 以上，且導入後客訴率 {c1|1} 不能高於導入前 {c0|1}",
+       "兩個條件都成立為 1，否則為 0；結果是"
+      ]
      }
     ],
     "bars": [
@@ -36637,13 +37529,20 @@
       "label": "改版前正確率",
       "f": "before / 300 * 100",
       "unit": "%",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "改版前答對 {before|0} ÷ 測試總數 300 × 100"
+      ]
      },
      {
       "label": "改版後正確率",
       "f": "min(300, max(0, before - lost + gain)) / 300 * 100",
       "unit": "%",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "改版後答對 ＝ 改版前 {before|0} － 原本對現在錯 {lost|0} ＋ 原本錯現在對 {gain|0} ＝ {min(300, max(0, before - lost + gain))|0}",
+       "改版後答對 {min(300, max(0, before - lost + gain))|0} ÷ 測試總數 300 × 100"
+      ]
      }
     ],
     "bars": [
@@ -37509,12 +38408,18 @@
      {
       "label": "只看首年採購",
       "f": "lic",
-      "unit": "萬元"
+      "unit": "萬元",
+      "steps": [
+       "每年授權費 {lic|0}"
+      ]
      },
      {
       "label": "總體擁有成本",
       "f": "lic * yrs + lab + mod + ret * yrs + chg",
-      "unit": "萬元"
+      "unit": "萬元",
+      "steps": [
+       "每年授權費 {lic|0} × 使用年數 {yrs|0} ＋ 資料標註人力 {lab|0} ＋ 系統改造 {mod|0} ＋ 每年重訓監控 {ret|0} × 使用年數 {yrs|0} ＋ 變革管理 {chg|0}"
+      ]
      }
     ],
     "bars": [
@@ -38242,12 +39147,18 @@
       "label": "平均延遲",
       "f": "((100 - slow) * fast + slow * sl) / 100",
       "unit": "秒",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "((100 － 慢請求比例 {slow|0}) × 一般回應時間 {fast|2} ＋ 慢請求比例 {slow|0} × 慢請求回應時間 {sl|1}) ÷ 100"
+      ]
      },
      {
       "label": "每 100 人裡要等很久的人",
       "f": "slow",
-      "unit": "人"
+      "unit": "人",
+      "steps": [
+       "慢請求比例 {slow|0}"
+      ]
      }
     ],
     "bars": [
@@ -39067,12 +39978,18 @@
      {
       "label": "每月用量計費",
       "f": "users * price",
-      "unit": "元"
+      "unit": "元",
+      "steps": [
+       "使用者人數 {users|0} × 每人每月費用 {price|0}"
+      ]
      },
      {
       "label": "總體擁有成本",
       "f": "users * price * mon + imp + itg + cus + trn + ops * mon",
-      "unit": "元"
+      "unit": "元",
+      "steps": [
+       "使用者人數 {users|0} × 每人每月費用 {price|0} × 使用月數 {mon|0} ＋ 實作導入 {imp|0} ＋ 系統介接 {itg|0} ＋ 客製開發 {cus|0} ＋ 使用者訓練 {trn|0} ＋ 每月維運 {ops|0} × 使用月數 {mon|0}"
+      ]
      }
     ],
     "bars": [
@@ -39917,12 +40834,18 @@
      {
       "label": "交給新模型",
       "f": "total * pct / 100",
-      "unit": "筆"
+      "unit": "筆",
+      "steps": [
+       "每天請求數 {total|0} × 新模型比例 {pct|0} ÷ 100"
+      ]
      },
      {
       "label": "留在舊模型",
       "f": "total - total * pct / 100",
-      "unit": "筆"
+      "unit": "筆",
+      "steps": [
+       "每天請求數 {total|0} － 每天請求數 {total|0} × 新模型比例 {pct|0} ÷ 100"
+      ]
      }
     ],
     "bars": [
@@ -40169,12 +41092,18 @@
      {
       "label": "淨效益（效益－成本）",
       "f": "ben - cost",
-      "unit": "萬元"
+      "unit": "萬元",
+      "steps": [
+       "效益 {ben|0} － 成本 {cost|0}"
+      ]
      },
      {
       "label": "投資報酬率",
       "f": "(ben - cost) / cost * 100",
-      "unit": "%"
+      "unit": "%",
+      "steps": [
+       "(效益 {ben|0} － 成本 {cost|0}) ÷ 成本 {cost|0} × 100"
+      ]
      }
     ],
     "bars": [
@@ -40290,23 +41219,35 @@
      {
       "label": "人工每月成本",
       "f": "n * p",
-      "unit": "元"
+      "unit": "元",
+      "steps": [
+       "每月翻譯則數 {n|0} × 人工每則成本 {p|0}"
+      ]
      },
      {
       "label": "API 每月成本",
       "f": "n * t / 1000 * r",
-      "unit": "元"
+      "unit": "元",
+      "steps": [
+       "每月翻譯則數 {n|0} × 每則 token {t|0} ÷ 1,000 × 每千 token 單價 {r|1}"
+      ]
      },
      {
       "label": "每月淨節省",
       "f": "n * p - n * t / 1000 * r",
-      "unit": "元"
+      "unit": "元",
+      "steps": [
+       "每月翻譯則數 {n|0} × 人工每則成本 {p|0} － 每月翻譯則數 {n|0} × 每則 token {t|0} ÷ 1,000 × 每千 token 單價 {r|1}"
+      ]
      },
      {
       "label": "回收期",
       "f": "n * p - n * t / 1000 * r > 0 ? k / (n * p - n * t / 1000 * r) : 0",
       "unit": "個月",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "一次性整合費 {k|0} ÷ 每月淨節省 {n * p - n * t / 1000 * r|0}（沒有節省時為零）"
+      ]
      }
     ],
     "bars": [
@@ -40405,17 +41346,26 @@
      {
       "label": "輸入費用",
       "f": "tin / 1000 * pin * calls",
-      "unit": "元"
+      "unit": "元",
+      "steps": [
+       "每次輸入 token {tin|0} ÷ 1,000 × 輸入單價 {pin|1} × 呼叫次數 {calls|0}"
+      ]
      },
      {
       "label": "輸出費用",
       "f": "(tout + cot) / 1000 * pout * calls",
-      "unit": "元"
+      "unit": "元",
+      "steps": [
+       "(每次輸出 token {tout|0} ＋ 思維鏈 token {cot|0}) ÷ 1,000 × 輸出單價 {pout|1} × 呼叫次數 {calls|0}"
+      ]
      },
      {
       "label": "合計",
       "f": "(tin / 1000 * pin + (tout + cot) / 1000 * pout) * calls",
-      "unit": "元"
+      "unit": "元",
+      "steps": [
+       "(每次輸入 token {tin|0} ÷ 1,000 × 輸入單價 {pin|1} ＋ (每次輸出 token {tout|0} ＋ 思維鏈 token {cot|0}) ÷ 1,000 × 輸出單價 {pout|1}) × 呼叫次數 {calls|0}"
+      ]
      }
     ],
     "bars": [
@@ -40580,17 +41530,26 @@
      {
       "label": "淨效益",
       "f": "ben - cost",
-      "unit": "萬元"
+      "unit": "萬元",
+      "steps": [
+       "效益 {ben|0} － 成本 {cost|0}"
+      ]
      },
      {
       "label": "投資報酬率",
       "f": "(ben - cost) / cost * 100",
-      "unit": "%"
+      "unit": "%",
+      "steps": [
+       "(效益 {ben|0} － 成本 {cost|0}) ÷ 成本 {cost|0} × 100"
+      ]
      },
      {
       "label": "效益成本比（不是報酬率）",
       "f": "ben / cost * 100",
-      "unit": "%"
+      "unit": "%",
+      "steps": [
+       "效益 {ben|0} ÷ 成本 {cost|0} × 100"
+      ]
      }
     ],
     "bars": [
@@ -40678,18 +41637,27 @@
       "label": "API 每則成本",
       "f": "t / 1000 * r",
       "unit": "元",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "每則 token {t|0} ÷ 1,000 × 每千 token 單價 {r|1}"
+      ]
      },
      {
       "label": "每月省下",
       "f": "n * p - n * t / 1000 * r",
-      "unit": "元"
+      "unit": "元",
+      "steps": [
+       "每月翻譯則數 {n|0} × 人工每則成本 {p|0} － 每月翻譯則數 {n|0} × 每則 token {t|0} ÷ 1,000 × 每千 token 單價 {r|1}"
+      ]
      },
      {
       "label": "回收期",
       "f": "n * p - n * t / 1000 * r > 0 ? k / (n * p - n * t / 1000 * r) : 0",
       "unit": "個月",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "整合費用 {k|0} ÷ 每月省下 {n * p - n * t / 1000 * r|0}（沒有省下時為零）"
+      ]
      }
     ],
     "bars": [
@@ -40934,7 +41902,10 @@
       "label": "平均回應時間",
       "f": "(fast * (100 - pct) + slow * pct) / 100",
       "unit": "秒",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "(一般回應時間 {fast|1} × (100 － 最慢比例 {pct|0}) ＋ 最慢回應時間 {slow|1} × 最慢比例 {pct|0}) ÷ 100"
+      ]
      }
     ],
     "bars": [
@@ -41496,7 +42467,10 @@
       "label": "湊滿一批大約要等（示意：批次大小÷每秒請求數）",
       "f": "b / rate",
       "unit": "秒",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "一批請求數 {b|0} ÷ 每秒請求數 {rate|0}"
+      ]
      }
     ],
     "presets": [
@@ -41689,7 +42663,10 @@
       "label": "超過目標時間的比例",
       "f": "m / n * 100",
       "unit": "%",
-      "digits": 2
+      "digits": 2,
+      "steps": [
+       "超過目標的請求 {m|0} ÷ 總請求數 {n|0} × 100"
+      ]
      }
     ],
     "bars": [
@@ -41936,12 +42913,18 @@
      {
       "label": "同時在處理中的請求",
       "f": "lat * rps",
-      "unit": "個"
+      "unit": "個",
+      "steps": [
+       "單次延遲 {lat|1} × 每秒請求數 {rps|0}"
+      ]
      },
      {
       "label": "每個副本要扛",
       "f": "lat * rps / rep",
-      "unit": "個"
+      "unit": "個",
+      "steps": [
+       "單次延遲 {lat|1} × 每秒請求數 {rps|0} ÷ 副本數 {rep|0}"
+      ]
      }
     ],
     "presets": [
@@ -42038,7 +43021,10 @@
      {
       "label": "等效批次",
       "f": "mb * acc",
-      "unit": "筆"
+      "unit": "筆",
+      "steps": [
+       "一次放得下筆數 {mb|0} × 累積次數 {acc|0}"
+      ]
      }
     ],
     "presets": [
@@ -42251,13 +43237,19 @@
       "label": "實際用新版的人",
       "f": "round(users * p / 100)",
       "unit": "人",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "每天使用者 {users|0} × 新版比例 {p|0} ÷ 100，四捨五入"
+      ]
      },
      {
       "label": "仍用舊版的人",
       "f": "users - round(users * p / 100)",
       "unit": "人",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "每天使用者 {users|0} － 實際用新版的人 {round(users * p / 100)|0}"
+      ]
      }
     ],
     "bars": [
@@ -42426,7 +43418,10 @@
       "label": "整體誤差（加權平均示意）",
       "f": "(a * (100 - s) + b * s) / 100",
       "unit": "",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "(一般案件誤差 {a|0} × (100 － 高額案件占比 {s|0}) ＋ 高額案件誤差 {b|0} × 高額案件占比 {s|0}) ÷ 100"
+      ]
      }
     ],
     "bars": [
@@ -42863,19 +43858,28 @@
       "label": "真正由模型帶來的成長",
       "f": "gu - gc",
       "unit": "%",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "使用組成長 {gu|1} － 對照組成長 {gc|1}"
+      ]
      },
      {
       "label": "模型帶來的每月營收增加",
       "f": "base * (gu - gc) / 100",
       "unit": "萬元",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "原本每月營收 {base|0} × (使用組成長 {gu|1} － 對照組成長 {gc|1}) ÷ 100"
+      ]
      },
      {
       "label": "扣掉成本後的每月淨效益",
       "f": "base * (gu - gc) / 100 - cost",
       "unit": "萬元",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "原本每月營收 {base|0} × (使用組成長 {gu|1} － 對照組成長 {gc|1}) ÷ 100 － 每月成本 {cost|0}"
+      ]
      }
     ],
     "bars": [
@@ -43073,19 +44077,29 @@
       "label": "誤報（正常被當成詐欺）",
       "f": "neg * fpr / 100",
       "unit": "筆",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "正常交易 {neg|0} × 偽陽率 {fpr|1} ÷ 100"
+      ]
      },
      {
       "label": "正確抓到",
       "f": "pos * tpr / 100",
       "unit": "筆",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "真的詐欺 {pos|0} × 真陽率 {tpr|0} ÷ 100"
+      ]
      },
      {
       "label": "被擋下的裡面，真的是詐欺",
       "f": "pos * tpr / max(pos * tpr + neg * fpr, 1) * 100",
       "unit": "%",
-      "digits": 1
+      "digits": 1,
+      "steps": [
+       "真詐欺被抓 {pos * tpr|0}（真詐欺 {pos|0} × 真陽率 {tpr|0}）；誤報 {neg * fpr|0}（正常 {neg|0} × 偽陽率 {fpr|0}）",
+       "被抓的真詐欺 {pos * tpr|0} ÷ (被抓的真詐欺 {pos * tpr|0} ＋ 誤報 {neg * fpr|0}) × 100"
+      ]
      }
     ],
     "bars": [
@@ -43495,13 +44509,19 @@
       "label": "記憶體比門檻多",
       "f": "ram - ram0",
       "unit": "GB",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "電腦記憶體 {ram|0} － 記憶體門檻 {ram0|0}"
+      ]
      },
      {
       "label": "Node.js 比門檻多",
       "f": "node - node0",
       "unit": "版",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "Node 主版本 {node|0} － Node 門檻版本 {node0|0}"
+      ]
      }
     ],
     "presets": [
@@ -44071,13 +45091,19 @@
       "label": "離 256KB 還有",
       "f": "kbmax - kb",
       "unit": "KB",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "大小上限 {kbmax|0} － 文字檔大小 {kb|0}"
+      ]
      },
      {
       "label": "離讀取上限還有",
       "f": "tokmax - tok",
       "unit": "token",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "token 上限 {tokmax|0} － 檔案 token 數 {tok|0}"
+      ]
      }
     ],
     "notes": [
@@ -44515,13 +45541,19 @@
       "label": "離 200 行還有",
       "f": "maxl - lines",
       "unit": "行",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "行數上限 {maxl|0} － 檔案行數 {lines|0}"
+      ]
      },
      {
       "label": "還能往下匯入",
       "f": "maxd - depth",
       "unit": "層",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "層數上限 {maxd|0} － 已匯入層數 {depth|0}"
+      ]
      }
     ],
     "notes": [
@@ -45406,7 +46438,10 @@
       "label": "離上限還有",
       "f": "lim - out",
       "unit": "token",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "輸出上限 {lim|0} － 工具回傳內容 {out|0}"
+      ]
      }
     ],
     "presets": [
@@ -45633,7 +46668,10 @@
       "label": "離 500 行還有",
       "f": "maxl - lines",
       "unit": "行",
-      "digits": 0
+      "digits": 0,
+      "steps": [
+       "行數建議上限 {maxl|0} － 技能檔行數 {lines|0}"
+      ]
      }
     ],
     "notes": [
