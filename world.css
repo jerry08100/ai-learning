@@ -65,6 +65,7 @@ canvas { display:block; image-rendering:pixelated; image-rendering:crisp-edges; 
 .seg i { width:7px; height:5px; background:var(--sl); }
 .seg i.on { background:var(--g); } .seg i.bad { background:var(--r); }
 .side-col { padding:6px var(--gut) 10px; display:flex; flex-direction:column; gap:10px; }
+.side-col > * { flex-shrink:0; } /* 清單有高度上限時不准把「繼續冒險」等區塊壓扁（字會溢出壓到下一列），放不下就整欄捲 */
 .fold-btn { display:none; }
 @media (min-width:900px) { .fold-btn { display:block; min-height:44px; font-family:var(--f-pixel); font-size:15px; background:none; border:1px solid var(--dgr); color:var(--muted); cursor:pointer; padding:4px 12px; } .fold-btn:hover { color:var(--y); border-color:var(--gold); } }
 .rlist { list-style:none; margin:0; padding:0; display:grid; gap:6px; }

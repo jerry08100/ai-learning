@@ -271,6 +271,13 @@ function cue() { const c = $('#card'); if (!c) return; c.classList.toggle('more'
 // 流程步驟換行後，每列最後一步不畫往右的箭頭（箭頭會指到框外）
 function flowArrows() { document.querySelectorAll('.lk-flow').forEach((ol) => { const li = [...ol.children]; li.forEach((x, i) => x.classList.toggle('eol', i === li.length - 1 || li[i + 1].offsetTop !== x.offsetTop)); }); }
 function fitCard(shrinkOnly) { const cd = $('#card'); if (cd) cd.style.flex = ''; fitCard0(shrinkOnly); collapseCard(); flowArrows(); cue(); }
+// 進卡先粗算一次，等字型、卡內圖片載完、再過兩個 frame（版面穩定）後完整重算；換卡太快時舊卡的延後重算用代號擋掉
+let fitGen = 0;
+function fitCardSettled() {
+  const g = ++fitGen, cd = $('#card'); fitCard();
+  const imgs = [...(cd?.querySelectorAll('img') || [])].filter((x) => !x.complete).map((x) => new Promise((ok) => { x.addEventListener('load', ok, { once: true }); x.addEventListener('error', ok, { once: true }); }));
+  Promise.all([document.fonts?.ready, ...imgs]).then(() => requestAnimationFrame(() => requestAnimationFrame(() => { if (g === fitGen && cd?.isConnected) fitCard(); })));
+}
 // 內容（字級已到上限）比卡片矮很多時，面板依內容收高，按鈕列仍貼底，不留一大片空白
 function collapseCard() { const card = $('#card'), last = card?.lastElementChild; if (!last || !document.querySelector('#card .lk-fit') || !matchMedia('(min-width:900px)').matches) return;
   const need = last.getBoundingClientRect().bottom - card.getBoundingClientRect().top + parseFloat(getComputedStyle(card).paddingBottom); if (need < card.clientHeight * 0.9) card.style.flex = 'none'; }
