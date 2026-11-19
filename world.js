@@ -205,8 +205,8 @@ function certHtml(r) {
 async function run(a) {
   ST.cur = a.r.id; save();
   clearInterval(timer); FX?.stop(); $('#sheet').classList.remove('on'); $('#sheet').hidden = true; $('#app').classList.remove('map-mode'); scrollTo(0, 0);
-  if (!POOL) { $('#view').innerHTML = '<p class="loading">題目載入中…</p>';
-    try { await poolReady; } catch { $('#view').innerHTML = '<p class="loading">題目載入失敗，請重新整理。</p>'; return; } }
+  if (!POOL || !lsDone) { $('#view').innerHTML = '<p class="loading">題目載入中…</p>';
+    try { await Promise.all([poolReady, lsReady]); } catch { $('#view').innerHTML = '<p class="loading">題目載入失敗，請重新整理。</p>'; return; } }
   a.kind === 'lesson' ? lesson(a.r, a.i, a.id) : trial(a.r, a.i);
 }
 
@@ -270,7 +270,10 @@ const GROW = new Set(['guess', 'sort', 'timeline', 'calc', 'toggles']);
 function cue() { const c = $('#card'); if (!c) return; c.classList.toggle('more', matchMedia('(min-width:900px)').matches && c.scrollHeight > c.clientHeight + 4 && c.scrollTop + c.clientHeight < c.scrollHeight - 4); }
 // 流程步驟換行後，每列最後一步不畫往右的箭頭（箭頭會指到框外）
 function flowArrows() { document.querySelectorAll('.lk-flow').forEach((ol) => { const li = [...ol.children]; li.forEach((x, i) => x.classList.toggle('eol', i === li.length - 1 || li[i + 1].offsetTop !== x.offsetTop)); }); }
-function fitCard(shrinkOnly) { const cd = $('#card'); if (cd) cd.style.flex = ''; fitCard0(shrinkOnly); collapseCard(); flowArrows(); cue(); }
+function fitCard(shrinkOnly) { const cd = $('#card'); if (cd) { cd.style.flex = ''; cd.classList.remove('fill'); } fitCard0(shrinkOnly);
+  // 記憶點、開關卡內容少：字級到頂後讓內容撐滿卡片（CSS .fill），其他卡內容矮就收高面板
+  if (cd && matchMedia('(min-width:900px)').matches && cd.querySelector('.lk-fit > .lk-memo, #lkb > .lk-tog')) cd.classList.add('fill'); else collapseCard();
+  flowArrows(); cue(); }
 // 進卡先粗算一次，等字型、卡內圖片載完、再過兩個 frame（版面穩定）後完整重算；換卡太快時舊卡的延後重算用代號擋掉
 let fitGen = 0;
 function fitCardSettled() {
@@ -288,14 +291,23 @@ function fitCard0(shrinkOnly) { // shrinkOnly：作答後內容變長時只往�
   const card = $('#card'), cs = getComputedStyle(card), head = card.firstElementChild;
   const avail = (card.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - head.offsetHeight - 16) * (box.dataset.grow && !shrinkOnly && !box.classList.contains('solved') ? (box.dataset.grow === 'calc' ? 0.96 : 0.82) : 0.97);
   const ok = () => box.scrollHeight <= avail && box.scrollWidth <= box.clientWidth + 1;
-  let lo = 18, hi = Math.round(Math.min(64, 40 * Math.max(1, Math.min(innerWidth / 1500, innerHeight / 800)))); // 上限 40px，超大螢幕再放大到 64px，免得內容縮在中間留一大片空
-  if (shrinkOnly) { if (ok()) return; hi = parseFloat(box.style.fontSize) || 40; }
+  const top = Math.round(Math.min(64, 40 * Math.max(1, Math.min(innerWidth / 1500, innerHeight / 800)))); // 上限 40px，超大螢幕再放大到 64px，免得內容縮在中間留一大片空
+  let lo = 18, hi = top;
+  if (shrinkOnly) { if (ok()) return; hi = parseFloat(box.style.fontSize) || top; }
   const search = () => { for (let k = 0; k < 8; k++) { const mid = (lo + hi) / 2; box.style.fontSize = mid + 'px'; if (ok()) lo = mid; else hi = mid; } box.style.fontSize = Math.floor(lo) + 'px'; };
-  search();
-  // ponytail: 「18px 仍裝不下就自動收緊流程卡」在進卡瞬間會誤判（驗收第 3 輪 1920 不過），v114 先拿掉；6 步流程在 1366×657 卡內捲，待重做（見 待辦.md〈下一輪〉）
+  // 流程卡收緊（.tight）不沿用上一次的結論：每次先不收緊找字級，18px 仍放不下才收緊再找一次（驗收第 3 輪：進卡瞬間誤收緊後不再重判）
+  const hi0 = hi, ghost = box.querySelector('.fb-ph .ghost'); box.classList.remove('tight'); if (ghost && !shrinkOnly) ghost.hidden = false; search();
+  // 收緊與否看卡片實際會不會捲（ok() 為作答後變長的卡多留了餘量，流程卡不會變長，用它判會在放得下時誤收緊）
+  const fitsCard = () => card.scrollHeight <= card.clientHeight + 1 && box.scrollWidth <= box.clientWidth + 1;
+  if (!ok() && !fitsCard() && box.querySelector('.lk-flow')) { box.classList.add('tight'); lo = 18; hi = hi0; search(); }
+  // 小檢查：右欄先用隱形解析撐高（作答前後不跳版），題目長到 18px 也放不下時拿掉它，進卡不用捲（驗收第 3 輪 e-cl-ghg-co2e）
+  if (!ok() && !fitsCard() && ghost && !ghost.hidden) { ghost.hidden = true; lo = 18; hi = hi0; search(); }
 }
 let fitObs = null, fitRaf = 0;
-let fitT = 0; addEventListener('resize', () => { clearTimeout(fitT); fitT = setTimeout(fitCard, 150); });
+let fitT = 0; addEventListener('resize', () => { clearTimeout(fitT); fitT = setTimeout(fitCardSettled, 150); });
+// 大螢幕的放大比例（跟 fitCard 字級上限同一個式子）給 CSS 用：系統介面跟著內容一起放大
+const setScale = () => document.documentElement.style.setProperty('--s', Math.max(1, Math.min(innerWidth / 1500, innerHeight / 800)).toFixed(3));
+setScale(); addEventListener('resize', setScale);
 const refT = (t) => esc(t).replace(/[^\s、]*[（(][^）)]*[）)]/g, (m) => `<bdi class="nw">${m}</bdi>`); // 出處裡的（縮寫）跟前一個詞綁一起不斷行
 function lesson(r, i, id, plain = false) {
   const n = KN.get(id), qs = shuffle(POOL.get(id) || []).slice(0, 2), LK = plain ? null : LS.get(id);
@@ -325,7 +337,7 @@ function lesson(r, i, id, plain = false) {
         const lines = b.lines.map((l) => l[1]);
         const need = (n.terms || []).filter((x) => !said.has(x.t) && keys(x.t).some((k) => txt.includes(k))
           && !keys(x.t).some((k) => lines.some((l) => { const p = l.indexOf(k); return p >= 0 && /^[」』）)]?\s*(就是|是指|是|指的是|指|意思是|叫做)/.test(l.slice(p + k.length, p + k.length + 6)); })));
-        if (need.length) cards.push({ kind: '先認識名詞', html: `<div class="lk-pre-terms"><p class="lk-small" style="margin-top:0">下面的對話會用到這幾個詞，先看一下：</p><dl>${need.map((x) => `<div><dt>${esc(x.t)}</dt><dd>${esc(x.d)}</dd></div>`).join('')}</dl></div>` });
+        if (need.length) cards.push({ kind: '先認識名詞', html: `<div class="lk-pre-terms"><p class="lk-small lk-pre-hd">下面的對話會用到這幾個詞，先看一下：</p><dl>${need.map((x) => `<div><dt>${tx(x.t)}</dt><dd>${tx(x.d)}</dd></div>`).join('')}</dl></div>` });
       }
       (n.terms || []).forEach((x) => { if (keys(x.t).some((k) => txt.includes(k))) said.add(x.t); });
       cards.push({ kind: KIND[b.type], blk: b });
@@ -378,7 +390,7 @@ function lesson(r, i, id, plain = false) {
     if ($('#lkmode')) $('#lkmode').onclick = () => lesson(r, i, id, !plain);
     if (c.blk) { const here = at; mount(c.blk, $('#lkb'), { region: r.id, uid: `${id}-${at}` }, () => { cleared.add(here); if (at === here) $('#next').disabled = false; }); }
     if (c.fn) c.fn($('#lkb'));
-    fitCard();
+    fitCardSettled();
     fitObs?.disconnect(); fitObs = null; // 作答、展開、換提示後內容會變長：只往小調，保證不出現卡內捲動
     if ($('#lkb')) { fitObs = new MutationObserver(() => { cancelAnimationFrame(fitRaf); fitRaf = requestAnimationFrame(() => { const k = $('#lkb'); if (k) fitCard(!k.classList.contains('solved')); }); }); // 換卡瞬間 #lkb 已不在就跳過（驗收第 3 輪前自查：曾偶發 classList of null）
       fitObs.observe($('#lkb'), { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['class'] }); }
@@ -441,21 +453,26 @@ function trial(r, i) {
 
 // ---- 啟動 ----
 // 地圖只需要 world.json 與知識點；3.5MB 的題庫在背景下載，進入小檢查或試煉時才等它
-const getJSON = (u) => fetch(u).then((x) => { if (!x.ok) throw new Error(u); return x.json(); });
-let poolReady = null;
+// 每個資料檔失敗重試兩次（網路不穩、伺服器一次收太多請求時偶發 Failed to fetch）
+const wait = (ms) => new Promise((ok) => setTimeout(ok, ms));
+const get1 = (u) => fetch(u).then((x) => { if (!x.ok) throw new Error(u); return x.json(); });
+const getJSON = (u) => get1(u).catch(() => wait(800).then(() => get1(u))).catch(() => wait(2000).then(() => get1(u)));
+// 互動關卡資料（1MB 上下）背景載入；點進知識點時先等它，免得還沒到就被當成「沒有關卡」退回閱讀模式（驗收第 3 輪疑義）
+let poolReady = null, lsReady = null, lsDone = false;
+const loadLS = (u) => (lsReady = getJSON(u).then((o) => { LS = new Map(Object.entries(o)); }, () => toast('互動關卡載入失敗，先用全文閱讀')).then(() => { lsDone = true; }));
 (async () => {
   try {
     ({ makeMap, TW, TH, LAYOUT } = await import(CFG.map));
     if (CC === 'earth') { // 永續國：知識點與題目都是獨立檔；題目的 note 可以是一個 id 或多個 id 的陣列
       const [w, notes] = await Promise.all([getJSON('earth-world.json'), getJSON('earth-notes.json')]);
       W = w; KN = new Map(notes.map((n) => [n.id, n]));
-      LS = new Map(Object.entries(await getJSON('earth-lessons.json').catch(() => ({}))));
+      await loadLS('earth-lessons.json'); // 關卡資料到了才顯示地圖，點進去一定是互動版
       poolReady = getJSON('earth-quiz.json').then((q) => { POOL = new Map(notes.map((n) => [n.id, []])); q.forEach((x) => [].concat(x.note).forEach((id) => POOL.get(id)?.push(x))); });
       return showMap();
     }
     const [w, k, cn] = await Promise.all([getJSON('world.json'), getJSON('knowledge.json'), getJSON('claude-notes.json').catch(() => null)]);
     W = w; KN = new Map(k.notes.map((n) => [n.id, n]));
-    LS = new Map(Object.entries(await getJSON('ai-lessons.json').catch(() => ({}))));
+    await loadLS('ai-lessons.json');
     // Claude 工坊島：知識點與題目放獨立檔，不混進 iPAS 題庫；題目直接用 note 欄位對到知識點
     if (cn) cn.forEach((n) => KN.set(n.id, n)); else W.regions = W.regions.filter((x) => x.id !== 'claude');
     // 小檢查與試煉題優先用 world-pool.json（逐題人工判斷過「考的就是這則」的對應表），沒有才退回關鍵字自動配對

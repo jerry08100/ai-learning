@@ -21,8 +21,22 @@ let EXAMINFO = null;
 // 永續國題庫：earth-quiz.json＋earth-notes.json 轉成跟 questions.json 一樣的形狀（level／round／subject／source），
 // 知識延伸直接用題目的 note 欄位對到知識點（KBYQ），不走關鍵字配對。
 const EARTH_SUBJ = { L11: '科目1：淨零碳規劃管理基礎概論', L12: '科目2：淨零碳盤查規範與程序概要', L21: '科目1：節能減碳技術實務', L22: '科目2：碳管理制度實務' };
+// 讀 JSON：8 秒等不到回應就中止（卡住的請求），回應開始後內容給 45 秒（2.6MB 題庫在慢網路要時間）；主資料最多重試一次；失敗丟錯，由 boot 顯示失敗訊息與「重新載入」
+// 用 AbortController＋setTimeout，不用 AbortSignal.timeout（iOS 16 以前沒有，會變成永遠載入失敗）
+async function fj(u, tries = 1, ms = 8000) {
+  for (let n = 1; ; n++) {
+    const ac = new AbortController(); let t = setTimeout(() => ac.abort(), ms);
+    try {
+      const r = await fetch(u, { signal: ac.signal });
+      if (!r.ok) throw new Error(`${u} ${r.status}`);
+      clearTimeout(t); t = setTimeout(() => ac.abort(), 45000);
+      return await r.json();
+    } catch (e) { if (n >= tries) throw e; }
+    finally { clearTimeout(t); }
+  }
+}
 async function loadEarth() {
-  const [qs, notes] = await Promise.all(['earth-quiz.json', 'earth-notes.json'].map(async (u) => (await fetch(u)).json()));
+  const [qs, notes] = await Promise.all(['earth-quiz.json', 'earth-notes.json'].map((u) => fj(u, 2)));
   const NM = new Map(notes.map((n) => [n.id, n])), code = (n) => String(n?.codes?.[0] || '').slice(0, 3);
   KNOW = notes.map((n) => ({ ...n, subject: EARTH_SUBJ[code(n)] || '其他' }));
   const KM = new Map(KNOW.map((n) => [n.id, n]));
@@ -218,13 +232,17 @@ const nb = (h) => h.replace(/(?<![\w-])[A-Za-z][A-Za-z0-9]*(?:-[A-Za-z0-9]+)+(?!
 // 中文詞不斷行：用 Intl.Segmenter 把 2～6 字的中文詞、數字+單位包成 nowrap span（只動文字節點，不碰標籤）
 const SEG = typeof Intl !== 'undefined' && Intl.Segmenter ? new Intl.Segmenter('zh-Hant', { granularity: 'word' }) : null;
 const zhCache = new Map();
+// 中文：在詞邊界插 <wbr>，配合 CSS word-break:keep-all，詞不會被拆成兩行；overflow-wrap:anywhere 保底不溢出
 function zhSeg(t) {
   if (!/[㐀-鿿]/.test(t)) return t.replace(/\d[\d.,]*\s?(?:%|[A-Za-z]+)/g, (m) => `<span class="nw">${m}</span>`);
   let c = zhCache.get(t); if (c !== undefined) return c;
   c = '';
-  for (const { segment, isWordLike } of SEG.segment(t)) {
-    c += isWordLike && /^[㐀-鿿]{2,6}$/.test(segment) ? `<span class="nw">${segment}</span>` : segment;
-  }
+  const parts = [...SEG.segment(t)]; let run = 0;
+  parts.forEach(({ segment, isWordLike }, k) => { // 詞與詞之間插 <wbr>；兩個單字詞（字典切太碎，如「進/階」）黏在一起，但黏到 3 字就放行，免得整串切不開、手機行尾參差；標點前不插（句號、逗號不落到行首），標點後插（開括號除外）
+    const nx = parts[k + 1]; run += segment.length;
+    const brk = nx && (isWordLike ? nx.isWordLike && (segment.length > 1 || nx.segment.length > 1 || run >= 3 || !/[㐀-鿿]/.test(segment)) : nx.isWordLike && !/[（(「『【〈《]$/.test(segment));
+    c += segment + (brk ? '<wbr>' : ''); if (brk) run = 0;
+  });
   if (zhCache.size > 4000) zhCache.clear();
   zhCache.set(t, c);
   return c;
@@ -232,7 +250,7 @@ function zhSeg(t) {
 const zhWords = (h) => SEG ? h.split(/(<[^>]*>)/).map((p, i) => (i % 2 || !p ? p : zhSeg(p))).join('') : h;
 const tx = (s) => zhWords(nb(esc(s)));
 // 「(B) 選項內容摘要」；有些題的選項本身就是一串數字（排序題），只顯示選項文字會被誤讀成亂碼，所以一律帶字母
-const ansLabel = (q) => { const o = String(q.options[q.answer]); return `(${String.fromCharCode(65 + q.answer)}) ${tx(o.length > 28 ? o.slice(0, 28) + '…' : o)}`; };
+const ansLabel = (q) => `(${String.fromCharCode(65 + q.answer)}) ${tx(String(q.options[q.answer]))}`; // 正解全文，不截斷（標題可換行）
 // 內嵌 SVG 圖示（RemixIcon，currentColor）
 const SVG = (d) => `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="${d}"/></svg>`;
 const ICO_STAR = SVG('M12.0006 18.26L4.94715 22.2082L6.52248 14.2799L0.587891 8.7918L8.61493 7.84006L12.0006 0.5L15.3862 7.84006L23.4132 8.7918L17.4787 14.2799L19.054 22.2082L12.0006 18.26ZM12.0006 15.968L16.2473 18.3451L15.2988 13.5717L18.8719 10.2674L14.039 9.69434L12.0006 5.27502L9.96214 9.69434L5.12921 10.2674L8.70231 13.5717L7.75383 18.3451L12.0006 15.968Z');
@@ -302,15 +320,15 @@ function notesFor(q) {
 }
 // 一則知識的內容(延伸頁與題卡共用)
 function noteBodyHtml(n) {
-  const paras = String(n.body || '').split('\n').filter(Boolean).map((t) => `<p>${esc(t)}</p>`).join('');
+  const paras = String(n.body || '').split('\n').filter(Boolean).map((t) => `<p>${tx(t)}</p>`).join('');
   const pit = (n.pitfalls || []).length
-    ? `<ul class="kpit">${n.pitfalls.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : '';
+    ? `<ul class="kpit">${n.pitfalls.map((x) => `<li>${tx(x)}</li>`).join('')}</ul>` : '';
   const refs = (n.refs || []).length
     ? `<p class="krefs">出處：${n.refs.map((r) => r.u
         ? `<a href="${esc(r.u)}" target="_blank" rel="noopener">${esc(r.t)} ↗</a>` : esc(r.t)).join('、')}</p>` : '';
   const terms = (n.terms || []).length
-    ? `<dl class="kterms">${n.terms.map((x) => `<dt>${esc(x.t)}</dt><dd>${esc(x.d)}</dd>`).join('')}</dl>` : '';
-  return `<p class="ksum">${esc(n.summary || '')}</p>${paras}${terms}${pit}${refs}`;
+    ? `<dl class="kterms">${n.terms.map((x) => `<dt>${esc(x.t)}</dt><dd>${tx(x.d)}</dd>`).join('')}</dl>` : '';
+  return `<p class="ksum">${tx(n.summary || '')}</p>${paras}${terms}${pit}${refs}`;
 }
 // 題卡下方的摺疊區塊(預設收合,不干擾作答節奏)
 function knowHtml(q) {
@@ -376,6 +394,8 @@ function download(name, text, type = 'text/plain') {
 function watchChrome() {
   const els = ['.top', '#installbar', '.site-footer'].map((s) => $(s)).filter(Boolean);
   const set = () => {
+    // 大螢幕依比例放大（和關卡頁同一比例）：min(寬/1500, 高/800)，下限 1
+    document.documentElement.style.setProperty('--s', Math.max(1, Math.min(innerWidth / 1500, innerHeight / 800)).toFixed(3));
     const cs = getComputedStyle(view);
     const h = els.reduce((a, e) => a + (e.hidden ? 0 : e.offsetHeight), 0) + parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
     document.documentElement.style.setProperty('--chrome', `${Math.ceil(h) + 1}px`);
@@ -383,6 +403,12 @@ function watchChrome() {
   if ('ResizeObserver' in window) { const ro = new ResizeObserver(set); els.forEach((e) => ro.observe(e)); }
   window.addEventListener('resize', set);
   set();
+  // 欄內可捲且還沒捲到底時，給 .qa-col 加 .more（CSS 畫底部漸層＋「往下還有內容」）
+  const more = () => view.querySelectorAll('.qa-col').forEach((e) => e.classList.toggle('more', e.scrollHeight > e.clientHeight + 2 && e.scrollTop + e.clientHeight < e.scrollHeight - 4));
+  view.addEventListener('scroll', more, true); view.addEventListener('toggle', more, true);
+  new MutationObserver(more).observe(view, { childList: true, subtree: true });
+  window.addEventListener('resize', more);
+  if ('ResizeObserver' in window) new ResizeObserver(more).observe(view);
 }
 // 手機分頁列單列橫向捲動：右側淡出提示還有內容，捲到底就拿掉
 function tabsEdge() { const t = $('.tabs'); if (t) { t.classList.toggle('end', t.scrollLeft + t.clientWidth >= t.scrollWidth - 4); t.classList.toggle('sl', t.scrollLeft > 4); } }
@@ -795,7 +821,7 @@ function wrongbook() {
       <div class="ttl"><h2>錯題本</h2><p class="muted">答錯過、還沒掌握的題會留在這。同一題之後「連續答對 ${MASTER_BOX - 1} 次」就算掌握、自動移出。</p>
         ${ids.length ? `<div class="act"><button class="primary" id="drill">只練這些錯題（${ids.length} 題）</button></div>` : ''}</div>
       ${ids.length ? '' : '<p>目前沒有錯題，繼續加油。</p>'}
-      <ul class="wrong">${list.map((q) => `<li>${esc(q.question)}<span class="muted">（${esc(q.subject)}・再連對 ${Math.max(1, MASTER_BOX - (qp(q.id).box || 1))} 次就掌握）</span></li>`).join('')}</ul>
+      <ul class="wrong">${list.map((q) => `<li>${tx(q.question)}<span class="muted">（${esc(q.subject)}・再連對 ${Math.max(1, MASTER_BOX - (qp(q.id).box || 1))} 次就掌握）</span></li>`).join('')}</ul>
     </section>`;
   if (ids.length) $('#drill').onclick = () => runPractice(shuffle(list));
 }
@@ -854,7 +880,7 @@ function stats() {
     { on: recAcc != null && recAcc >= 80, t: '近期 80% 命中' },
     { on: [...byCh.values()].some((c) => c.total > 0 && c.mastered === c.total), t: '某範圍全掌握' },
   ];
-  const LOCK = '<svg class="lk" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10V7a5 5 0 0 1 10 0v3h2v12H5V10h2zm2 0h6V7a3 3 0 0 0-6 0v3zm2 4v4h2v-4h-2z"/></svg>';
+  const LOCK = '<svg class="lk" viewBox="0 0 10 10" aria-hidden="true"><path d="M3 0h4v1h1v3h1v6H1V4h1V1h1zm1 1v3h2V1zM4 6h2v2H4z" fill-rule="evenodd"/></svg>'; // 像素鎖頭（10×10 格）
   const badgeHtml = badges.map((b) => `<span class="badge ${b.on ? 'on' : 'lock'}">${b.on ? '' : LOCK}${b.t}<span class="sr-only"> ${b.on ? '已解鎖' : '未解鎖'}</span></span>`).join('');
   // 最近 14 天題數趨勢
   const days14 = [];
@@ -877,7 +903,7 @@ function stats() {
         <div><b>${s.wrongNow}</b><span>目前錯題</span><small>還沒掌握的錯題</small></div>
         <div><b>${s.mastered}</b><span>已掌握</span><small>連續答對 2 次</small></div>
       </div>
-      <p class="muted stats-note">「掌握」= 同一題連續答對 2 次。用「智慧複習」會優先讓你重做沒掌握與答錯的題，掌握數才會往上跑。</p>
+      <p class="muted stats-note">${tx('「掌握」= 同一題連續答對 2 次。用「智慧複習」會優先讓你重做沒掌握與答錯的題，掌握數才會往上跑。')}</p>
       </div><div>
       <h3>成就</h3>
       <div class="badges">${badgeHtml}</div>
@@ -1120,20 +1146,25 @@ async function boot() {
   };
   const ix = document.getElementById('install-x');
   if (ix) ix.onclick = dismissInstallBar;
-  try {
-    DATA = EARTH ? await loadEarth() : await (await fetch('questions.json')).json();
-  } catch {
-    view.innerHTML = `<section class="card"><p class="bad">載入 questions.json 失敗。請用本機伺服器開啟（例如 <code>python3 -m http.server</code>）。</p></section>`;
-    return;
+  $('#title').innerHTML = `<span class="t-main">${EARTH ? '淨零碳演武島' : 'AI 演武島'}</span><span class="t-sub">${EARTH ? 'iPAS 淨零碳規劃管理師模擬考' : 'iPAS AI 應用規劃師模擬考'}</span>`;
+  // 資料載入：先顯示「讀取中」；每個請求 8 秒逾時、自動重試一次；仍失敗顯示訊息與「重新載入」
+  for (;;) {
+    view.innerHTML = '<section class="card" role="status"><p class="sys">讀取題庫中…</p></section>';
+    try { DATA = EARTH ? await loadEarth() : await fj('questions.json', 2); break; }
+    catch {
+      await new Promise((ok) => {
+        view.innerHTML = '<section class="card" role="alert"><p class="bad">題庫載入失敗（網路太慢或連不上）。</p><button class="primary" id="reload">重新載入</button></section>';
+        $('#reload').onclick = ok;
+      });
+    }
   }
-  if (!EARTH) try { CONCEPTS = ((await (await fetch('concepts.json')).json()).cards) || []; } catch { CONCEPTS = []; }
-  if (!EARTH) try { KNOW = ((await (await fetch('knowledge.json')).json()).notes) || []; } catch { KNOW = []; }
+  if (!EARTH) try { CONCEPTS = ((await fj('concepts.json')).cards) || []; } catch { CONCEPTS = []; }
+  if (!EARTH) try { KNOW = ((await fj('knowledge.json')).notes) || []; } catch { KNOW = []; }
   buildKnowIndex();
-  if (!EARTH) try { const wp = await (await fetch('world-pool.json')).json(), KM = new Map(KNOW.map((n) => [n.id, n]));
+  if (!EARTH) try { const wp = await fj('world-pool.json'), KM = new Map(KNOW.map((n) => [n.id, n]));
     for (const [nid, qids] of Object.entries(wp)) { const n = KM.get(nid); if (n) for (const qid of qids) { if (!KBYQ.has(qid)) KBYQ.set(qid, []); KBYQ.get(qid).push(n); } }
   } catch { KBYQ.clear(); }
-  if (!EARTH) try { EXAMINFO = await (await fetch('exam-dates.json')).json(); } catch { EXAMINFO = null; }
-  if (DATA.meta?.title) $('#title').innerHTML = `<span class="t-full">${esc(DATA.meta.title)}</span><span class="t-short">${EARTH ? '淨零碳演武島' : 'AI 演武島'}</span>`;
+  if (!EARTH) try { EXAMINFO = await fj('exam-dates.json'); } catch { EXAMINFO = null; }
   if (DATA.meta?.note) { const n = $('#banner'); n.textContent = zhPunct(DATA.meta.note); n.hidden = false; }
   localStorage.setItem(STORE_KEY, JSON.stringify(store)); // 落地可能新生成的 syncCode(不動 updatedAt)
   await ensureFreshCode(); // 全新自動碼先查重(要在 pull 之前,否則撞碼會拉到陌生人的進度)

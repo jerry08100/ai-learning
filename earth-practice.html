@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>iPAS 淨零碳規劃管理師 模擬考練習 | 地球永續國演武島</title>
+<title>淨零碳演武島｜iPAS 淨零碳規劃管理師模擬考</title>
 <meta name="description" content="iPAS 淨零碳規劃管理師（初級・中級）線上模擬考：115 年官方公告試題（答案皆官方），練習、背題、計時模擬考、錯題本、弱點統計。">
 <link rel="canonical" href="https://jerry08100.github.io/ai-learning/earth-practice.html">
 <meta name="theme-color" content="#0e1022">
@@ -57,10 +57,7 @@
     --maxw:2560px;
     --chrome:180px; /* 頁首＋頁尾＋內容上下距，app.js 依實際高度回寫 */
   }
-  @media (min-width:1700px) { :root { --s:1.06; } }
-  @media (min-width:1900px) { :root { --s:1.12; } }
-  @media (min-width:2200px) { :root { --s:1.28; } }
-  @media (min-width:2500px) { :root { --s:1.4; } }
+  /* --s 由 app.js 依 min(innerWidth/1500, innerHeight/800)（下限 1）回寫，和關卡頁同一比例 */
   * { box-sizing:border-box; }
   [hidden] { display:none !important; }
   html { background:var(--k); overflow-x:clip; scrollbar-color:var(--gold) var(--k); }
@@ -75,8 +72,10 @@
   h1, h2, .sys, .back, .tabs button, button.primary, .card button:not(.opt, .chip, .goto), .star, .qmeta b, .timer, .src-tag, .badge, .pick-lb, .grid b, .score, .tnum, .trend-lab, th, .opt::before, .opt::after, .qj, .site-footer a, #installbar, .ck, .code { font-family:var(--f-pixel); }
 
   /* 短文字元素：中文詞不在字中間斷行（長段落另由 app.js 的 Segmenter 處理）；缺字時用一般字體 */
-  .chip, button, select, label > span, .pick-lb, .grid span, .grid small, .badge, .tbl-cap, th, td, .hint-line, .range-sum, .fb-res, .qmeta, .facts, .stats-note, .src-tag, .tabs button, .ttl p, .quick .muted, .quick .big, .set-sec h3, .stats-grid h3 { word-break:keep-all; overflow-wrap:anywhere; }
-  html[data-quiz="earth"] .top h1, .card button#sync-now { font-family:var(--f-body); font-weight:700; } /* DotGothic16 沒有「碳」「步」等字，混字體筆畫粗細不一，整句改一般字體 */
+  .chip, button, select, label > span, .pick-lb, .grid span, .grid small, .badge, .tbl-cap, th, td, .range-sum, .fb-res, .qmeta, .facts, .src-tag, .tabs button, .ttl p, .quick .muted, .quick .big, .set-sec h3, .stats-grid h3 { word-break:keep-all; overflow-wrap:anywhere; }
+  .card button#sync-now { font-family:var(--f-body); font-weight:700; }
+  /* 長文：中文詞邊界由 app.js 插 <wbr>，keep-all 讓詞不被拆開；overflow-wrap:anywhere 保底不溢出 */
+  .opt .ot, .exp, .qtext, ul.wrong li, .note-item .qn, .kbody, .study-exp, .fb-res, .stats-note, h3 { word-break:keep-all; overflow-wrap:anywhere; }
 
   /* ---- 頁首：一條面板 ---- */
   .top { position:sticky; top:0; z-index:5; padding:8px var(--gut) 6px; background:linear-gradient(180deg, #0a0d1e 78%, rgba(10,13,30,0)); }
@@ -84,7 +83,7 @@
   .back { display:inline-flex; align-items:center; gap:4px; min-height:44px; padding:0 14px 0 0; font-size:calc(16px * var(--s)); color:var(--muted); text-decoration:none; white-space:nowrap; border-right:1px solid var(--gold-d); }
   .back:hover { color:var(--y); }
   .back svg { flex:none; }
-  .t-short { display:none; }
+  .top h1 .t-sub { font-family:var(--f-body); font-size:calc(15px * var(--s)); letter-spacing:0; margin-left:14px; color:var(--muted); text-shadow:none; white-space:nowrap; }
   .top h1 { font-size:calc(clamp(19px, 1.5vw, 25px) * var(--s)); font-weight:400; line-height:1.3; margin:0; min-width:0; flex:1 1 auto; color:var(--y); letter-spacing:2px; text-shadow:0 0 14px rgba(232,200,119,.3), 0 2px 0 #3a2a10; }
   .tabs { display:flex; gap:4px; margin-left:auto; flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; }
   .tabs::-webkit-scrollbar { display:none; }
@@ -111,6 +110,7 @@
   .sys, .set-sec h3, .stats-grid h3 { font-size:calc(19px * var(--s)); font-weight:400; color:var(--y); letter-spacing:1px; }
   .muted { color:var(--muted); }
   p { margin:8px 0; }
+  p, li, dd, .exp, .qtext, .opt .ot, .guide, .stats-note, .hint-line { text-wrap:pretty; }
   .ttl { display:flex; align-items:baseline; gap:6px 16px; flex-wrap:wrap; margin-bottom:12px; }
   .ttl h2 { margin:0; }
   .ttl p { margin:0; font-size:calc(17px * var(--s)); }
@@ -212,10 +212,11 @@
   .qj.done { color:var(--w); border-color:var(--gold); background:#303659; }
   .qj.now { color:var(--k); background:var(--y); border-color:var(--y); }
   @media (min-width:1000px) {
-    .qa { min-height:min(calc(100dvh - var(--chrome)), calc(560px * var(--s))); }
-    .qa > #fb { align-self:start; }
+    .qa { min-height:calc(100dvh - var(--chrome)); }
     .qa > .qa-col { max-height:calc(100dvh - var(--chrome)); overflow:auto; overscroll-behavior:contain; scrollbar-width:thin; scrollbar-color:var(--gold) transparent; }
   }
+  /* 欄內捲動時，底部漸層＋字樣提示「往下還有」（app.js 切換 .more） */
+  .qa-col.more::after { content:"往下還有內容 ↓"; position:sticky; bottom:0; flex:none; align-self:stretch; height:calc(48px * var(--s)); margin-top:calc(-48px * var(--s)); display:flex; align-items:flex-end; justify-content:center; padding-bottom:2px; pointer-events:none; font-size:calc(15px * var(--s)); color:var(--y); background:linear-gradient(transparent, rgba(12,14,32,.97) 70%); }
   @media (max-width:999px) {
     .qa { grid-template-columns:minmax(0,1fr); margin:0; }
     #fb.pre, .qnav { display:none; }
@@ -235,7 +236,7 @@
   .quick .muted { margin-bottom:12px; }
   .form-row { display:grid; grid-template-columns:minmax(0,1.4fr) minmax(0,1.3fr) minmax(0,.8fr); gap:12px; }
   .form-row label > span, .mk-row label > span { display:block; font-size:calc(16px * var(--s)); color:var(--muted); margin-bottom:4px; }
-  @media (min-width:1100px) { .home-grid { min-height:min(calc(100dvh - var(--chrome)), calc(420px * var(--s))); } }
+  @media (min-width:1100px) { .home-grid { min-height:calc(100dvh - var(--chrome)); } }
   @media (max-width:1100px) { .home-grid { grid-template-columns:minmax(0,1fr); margin:0; } .home-grid > .col > .card:last-child { flex:none; } }
   @media (max-width:640px) { .form-row { grid-template-columns:minmax(0,1fr); } }
 
@@ -338,8 +339,8 @@
   .grid div { background:var(--nv); border:2px solid var(--sl); padding:10px 6px; display:flex; flex-direction:column; justify-content:center; }
   .grid b { display:block; font-size:calc(clamp(26px, 2vw, 34px) * var(--s)); font-weight:400; line-height:1.2; color:var(--y); }
   .grid span { font-size:calc(16px * var(--s)); color:var(--w); line-height:1.4; display:block; white-space:nowrap; }
-  .grid small { display:block; font-size:calc(15px * var(--s)); color:var(--muted); line-height:1.4; white-space:nowrap; }
-  .stats-note { font-size:calc(17px * var(--s)); }
+  .grid small { display:block; font-size:calc(15px * var(--s)); color:#d6cfba; line-height:1.4; white-space:nowrap; }
+  .stats-note { font-size:calc(17px * var(--s)); color:#d6cfba; }
   .tbl-box { position:relative; flex:none; display:flex; flex-direction:column; }
   .tbl-wrap { flex:none; max-height:max(220px, calc(100dvh - var(--chrome) - 160px)); overflow:auto; border:2px solid var(--sl); scrollbar-width:thin; scrollbar-color:var(--gold) var(--k); }
   .tbl-fade { position:absolute; left:2px; right:14px; bottom:2px; height:44px; background:linear-gradient(transparent, rgba(12,14,32,.96)); pointer-events:none; display:none; align-items:flex-end; justify-content:center; padding-bottom:4px; }
@@ -357,7 +358,7 @@
   .badge { display:inline-flex; align-items:center; }
   .badge.on { background:#2a2414; color:var(--y); border-color:var(--y); box-shadow:0 0 10px rgba(232,200,119,.25), inset 0 0 0 1px rgba(232,200,119,.25); }
   .badge.lock { background:#0c0f20; color:#c3c7dc; border:1px dashed #8a90b4; }
-  .badge .lk { width:13px; height:13px; margin:0 6px 2px 0; flex:none; fill:currentColor; }
+  .badge .lk { width:14px; height:14px; margin:0 6px 2px 0; flex:none; fill:currentColor; shape-rendering:crispEdges; }
   /* 最近 14 天：有底線與格線，沒資料時顯示說明，不會像沒載入 */
   .trend-box { position:relative; flex:1; min-height:130px; display:flex; flex-direction:column; margin:6px 0 4px; }
   .trend { flex:1; min-height:100px; display:grid; grid-template-columns:repeat(14,minmax(0,1fr)); gap:4px; padding:20px 4px 0; border-bottom:2px solid var(--gold); border-left:2px solid var(--gold-d);
@@ -370,7 +371,7 @@
   .trend-lab { display:flex; justify-content:space-between; font-size:calc(14px * var(--s)); color:var(--muted); margin-top:4px; }
   @media (max-width:1300px) { .stats-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .stats-grid > :last-child { grid-column:1 / -1; } .tbl-box { flex:none; } .tbl-wrap { max-height:420px; flex:none; } }
   @media (max-width:760px) { .stats-grid { grid-template-columns:minmax(0,1fr); } .grid { flex:none; } .trend-box { flex:none; height:170px; } }
-  @media (min-width:1301px) { .card.stats { min-height:min(calc(100dvh - var(--chrome)), calc(820px * var(--s))); } }
+  @media (min-width:1301px) { .card.stats { min-height:calc(100dvh - var(--chrome)); } }
 
   /* ---- 設定：三欄 ---- */
   .set-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:var(--gap) calc(var(--gap) * 1.5); align-items:start; }
@@ -403,13 +404,15 @@
     .qtext { margin:8px 0 4px; }
   }
   @media (max-width:640px) {
-    .top { position:static; padding:6px var(--gut) 4px; }
-    .top-in { gap:0 10px; padding:2px 8px; }
+    .top { position:static; padding:4px var(--gut) 2px; }
+    .top-in { gap:0 8px; padding:0 6px; }
+    .top h1 .t-sub { display:none; }
     .top h1 { order:2; flex:1 1 0; font-size:15px; letter-spacing:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .t-full { display:none; } .t-short { display:inline; }
     .back { border-right:0; order:1; padding-right:0; }
-    .tabs { order:3; flex-basis:100%; margin:0; padding:0; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:2px; overflow:visible; }
-    .tabs button { padding:0 4px; font-size:16px; }
+    .tabs { order:3; flex-basis:100%; margin:0; padding:0; gap:2px; overflow-x:auto; }
+    .tabs:not(.end) { -webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent); mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent); }
+    .tabs button { flex:none; padding:0 14px; font-size:16px; }
+    .guide a { display:inline-flex; align-items:center; min-height:44px; }
     .pk, .pk.wide { flex-direction:column; align-items:stretch; gap:6px; }
     .pk.wide .pick-lb { padding-top:0; }
     .pk select { width:100%; max-width:none; }
@@ -425,7 +428,7 @@
 <body>
   <header class="top"><div class="top-in">
     <a class="back" href="earth.html"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M10.8284 12.0007L15.7782 16.9504L14.364 18.3646L8 12.0007L14.364 5.63672L15.7782 7.05093L10.8284 12.0007Z"/></svg>回地球永續國</a>
-    <h1 id="title">iPAS 淨零碳規劃管理師 模擬考練習</h1>
+    <h1 id="title"><span class="t-main">淨零碳演武島</span><span class="t-sub">iPAS 淨零碳規劃管理師模擬考</span></h1>
     <nav class="tabs" aria-label="分頁">
       <button data-v="home" class="on">練習</button>
       <button data-v="study">背題</button>
@@ -447,7 +450,7 @@
     <p id="banner">題目為 iPAS 淨零碳規劃管理師官方公告試題（答案皆官方）與少量本站自製題；解析為本站自寫，僅供參考。</p>
     <p>本站修改自 yazelin/ipas-ai-quiz（MIT）</p>
   </footer>
-  <script type="module" src="app.js?v=115"></script>
+  <script type="module" src="app.js?v=116"></script>
   <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});</script>
 </body>
 </html>

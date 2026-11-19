@@ -7,20 +7,31 @@ import { makeStage } from './stage.js';
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 // 顯示用文字處理（只動顯示，不改 json）：數字＋單位、數值範圍、（英文縮寫）、英文縮寫＋接著的中文詞 包 nowrap，數字與 % 之間不留空格
 const UNIT = '億美元|億度|億元|億噸|億|萬噸|萬|千公噸|公噸|公斤|噸|元|年|月|日|度|倍|成|公里|公頃|千瓦|兆瓦|美元|個|項|國|次|期|名|%|％';
-const NB_RE = new RegExp(`[一-鿿]?[（(][A-Za-z][A-Za-z0-9 .\\-/]*[）)]|\\d[\\d,.]*(?:\\s*[～~]\\s*\\d[\\d,.]*)?\\s*(?:${UNIT})|[A-Za-z][A-Za-z0-9.\\-/]*\\s?[一-鿿]{1,2}`, 'g');
+const NB_RE = new RegExp(`[（(][A-Za-z][A-Za-z0-9 .\\-/]*[）)]|\\d[\\d,.]*(?:\\s*[～~]\\s*\\d[\\d,.]*)?\\s*(?:${UNIT})|[A-Za-z][A-Za-z0-9.\\-/]*\\s?[一-鿿]{1,2}`, 'g');
 const clean = (s) => String(s).replace(/(\d)\s+([%％])/g, '$1$2');
 // 中文詞不在詞中間換行：Intl.Segmenter（zh-TW）斷詞，2～4 字的詞包 nowrap，單字併進相鄰詞避免單字掉行（只處理已跳脫的純文字，不碰標記）
 const SEG = typeof Intl !== 'undefined' && Intl.Segmenter ? new Intl.Segmenter('zh-TW', { granularity: 'word' }) : null, SEGC = new Map();
+// 詞與詞之間插 <wbr>：卡內文字設 word-break:keep-all，只在詞邊界（與標點、空白）換行，不會把「封存」拆成「封／存」（盲審第 4 輪）
 const words = (t) => { if (!SEG || !/[一-鿿]{2}/.test(t)) return t; let r = SEGC.get(t); if (r != null) return r;
-  r = ''; let cur = ''; const flush = () => { r += cur.length >= 2 ? `<bdi class="nw">${cur}</bdi>` : cur; cur = ''; };
-  for (const g of SEG.segment(t)) { const w = g.segment; if (g.isWordLike && /^[一-鿿]+$/.test(w)) { if (cur && (w.length === 1 || cur.length === 1) && cur.length + w.length <= 4) cur += w; else { flush(); cur = w.length <= 4 ? w : ''; if (!cur) r += w; } } else { flush(); r += w; } }
+  r = ''; let cur = '', prevW = false; const put = (w, isW) => { r += (isW && prevW ? '<wbr>' : '') + w; prevW = isW; };
+  const flush = () => { if (cur) put(cur.length >= 2 ? `<bdi class="nw">${cur}</bdi>` : cur, true); cur = ''; };
+  for (const g of SEG.segment(t)) { const w = g.segment; if (g.isWordLike && /^[一-鿿]+$/.test(w)) { if (cur && (w.length === 1 || cur.length === 1) && cur.length + w.length <= 4) cur += w; else { flush(); if (w.length <= 4) cur = w; else put(w, true); } } else { flush(); put(w, false); } }
   flush();
   if (SEGC.size > 3000) SEGC.clear(); SEGC.set(t, r); return r; };
 // 段尾最後兩字（含收尾標點）綁在一起，避免單字孤行
-const wordsT = (s) => { const m = /[一-鿿]{2}[。，、！？；：」』）)]*$/.exec(s); return m && m.index > 0 ? words(s.slice(0, m.index)) + `<bdi class="nw">${m[0]}</bdi>` : words(s); };
-export const tx = (s) => { const e = esc(clean(s)); let out = '', last = 0; for (const m of e.matchAll(NB_RE)) { out += words(e.slice(last, m.index)) + `<bdi class="nw">${m[0]}</bdi>`; last = m.index + m[0].length; } return out + wordsT(e.slice(last)); };
+const wordsT = (s) => { const m = /[一-鿿]{2}[。，、！？；：」』）)]*$/.exec(s); return m && m.index > 0 ? words(s.slice(0, m.index)) + (/[一-鿿]$/.test(s.slice(0, m.index)) ? '<wbr>' : '') + `<bdi class="nw">${m[0]}</bdi>` : words(s); };
+// 字串尾端的中文詞（給「詞（縮寫）」綁在一起用）
+const lastWord = (t) => { if (!SEG || !/[一-鿿]$/.test(t)) return ''; let w = ''; for (const g of SEG.segment(t)) w = g.segment; return /^[一-鿿]{1,6}$/.test(w) ? w : ''; };
+export const tx = (s) => { const e = esc(clean(s)); let out = '', last = 0;
+  for (const m of e.matchAll(NB_RE)) { let pre = e.slice(last, m.index), g = m[0]; last = m.index + m[0].length;
+    if (/^[（(]/.test(g) && / /.test(g)) { out += words(pre) + g; continue; } // 括號裡是一段英文（有空白）：整段可在空白處換行，前面的詞由 words 保持完整
+    if (/^[（(]/.test(g)) { const w = lastWord(pre); pre = pre.slice(0, pre.length - w.length); g = w + g; } // 「封存（CCUS）」整組不拆
+    out += words(pre) + (/[一-鿿]$/.test(pre) && /^[一-鿿]/.test(g) ? '<wbr>' : '') + `<bdi class="nw">${g}</bdi>` + (/^[一-鿿]/.test(e.slice(last)) ? '<wbr>' : ''); }
+  return out + wordsT(e.slice(last)); };
 const h = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
 const RM = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+// 回饋句出現時捲到看得見（手機：不被頂部、底部固定列蓋住，扣除量在 CSS 的 scroll-padding）
+const seeIt = (e) => requestAnimationFrame(() => e.isConnected && e.scrollIntoView({ block: 'nearest', behavior: RM() ? 'auto' : 'smooth' }));
 
 // ---- NPC：每區一位，16×16 像素小人，同一副骨架換顏色與帽子 ----
 const BASE = ['................', '.....HHHHHH.....', '....HHHHHHHH....', '....hssssssh....', '....seessees....', '....ssssssss....', '.....ssmmss.....',
@@ -121,7 +132,7 @@ const K = {
     b.opts.forEach((o, i) => { const btn = h('button', null, tx(o)); btn.onclick = () => {
       box.querySelectorAll('button').forEach((x, j) => { x.disabled = true; if (j === b.ans) x.classList.add('ok'); });
       if (i !== b.ans) btn.classList.add('no');
-      el.append(h('div', i === b.ans ? 'lk-why' : 'lk-why no', `<b>${i === b.ans ? '✔ 猜對了！' : '✘ 差一點。'}</b> ${tx(b.why)}`)); done(); }; box.append(btn); });
+      const why = h('div', i === b.ans ? 'lk-why' : 'lk-why no', `<b>${i === b.ans ? '✔ 猜對了！' : '✘ 差一點。'}</b> ${tx(b.why)}`); el.append(why); done(); seeIt(why); }; box.append(btn); });
   },
   // 比較表：{cols:[...], rows:[[...], ...]}，第一欄是列標題
   compare(b, el, ctx, done) {
@@ -142,7 +153,7 @@ const K = {
     const pool = h('div', 'lk-chips'), bins = h('div', 'lk-bins'), msg = h('p', 'lk-small', TIP);
     bins.style.setProperty('--n', b.bins.length > 7 ? Math.ceil(b.bins.length / 2) : b.bins.length); // 籃子盡量排成一列
     el.append(pool, bins, msg); let pick = null, left = b.items.length, wrong = 0;
-    const say = (t, cls = '') => { msg.textContent = t; msg.className = 'lk-small ' + cls; };
+    const say = (t, cls = '') => { msg.textContent = t; msg.className = 'lk-small ' + cls; if (cls) seeIt(msg); };
     shuffle(b.items).forEach((x) => { const c = h('button', 'lk-chip', tx(x.t)); c.dataset.k = x.k;
       c.onclick = () => { pool.querySelectorAll('.lk-chip').forEach((y) => y.classList.remove('pick', 'no')); pick = c; c.classList.add('pick'); say(`選了「${x.t}」，現在點它該放的籃子。`); }; pool.append(c); });
     b.bins.forEach((bin) => { const box = h('div', 'lk-bin', `<span>${tx(bin.label)}</span><div class="lk-chips"></div>`); box.tabIndex = 0; box.setAttribute('role', 'button'); box.dataset.k = bin.k; // 籃子裡要放按鈕，籃子本身不能是 <button>
@@ -183,10 +194,11 @@ const K = {
     function draw() {
       const v = { ...val, ...(modes[mode].consts || {}) };
       b.inputs.forEach((x) => { const r = el.querySelector(`#lk-${ctx.uid}-${x.k}`); r.value = val[x.k]; r.parentNode.querySelector('.v').textContent = `${fmt(val[x.k], Math.max(2, (String(x.step || 1).split(/[.e-]/)[1] || '').length, x.step < 1e-3 ? 6 : 0))}${/^[%％]/.test(x.unit || '') ? '' : ' '}${x.unit || ''}`; }); // 小數位跟著 step，0.001 不會被顯示成 0
-      const bv = bars.map((o) => [o.label, o.fn(v)]), mx = Math.max(1e-9, ...bv.map((x) => Math.abs(x[1])));
-      barEl.innerHTML = bv.map(([l, n]) => `<div class="lk-bar"><span>${tx(l)}</span><i style="width:${Math.abs(n) / mx * 100}%"></i><em>${fmt(n, 1)}${/^[%％]/.test(bu) ? '' : bu ? ' ' : ''}${esc(bu)}</em></div>`).join('');
-      outEl.innerHTML = outs.map((o) => { const res = `${fmt(o.fn(v), o.digits ?? 0)}${/^[%％]/.test(o.unit || '') ? '' : ' '}${esc(o.unit || '')}`, st = stepLines(o, names, v);
-        return `<div><span>${tx(o.label)}</span><bdi class="nw"><b>${fmt(o.fn(v), o.digits ?? 0)}</b>${/^[%％]/.test(o.unit || '') ? '' : ' '}${esc(o.unit || '')}</bdi>${st.length ? `<div class="lk-step"><i>算式</i>${st.map((l, j) => `<div>${l}${j === st.length - 1 ? ` ＝ <b>${res}</b>` : ''}</div>`).join('')}</div>` : ''}</div>`; }).join('');
+      // 拉到 0 讓分母為 0 時（例：沒有節省→回收年限）不顯示「—」，直接寫無法計算（驗收第 1 輪觀察）
+      const NA = '分母為 0，無法計算', bv = bars.map((o) => [o.label, o.fn(v)]), mx = Math.max(1e-9, ...bv.map((x) => Math.abs(x[1])).filter(Number.isFinite));
+      barEl.innerHTML = bv.map(([l, n]) => `<div class="lk-bar"><span>${tx(l)}</span><i style="width:${Number.isFinite(n) ? Math.abs(n) / mx * 100 : 0}%"></i><em>${Number.isFinite(n) ? `${fmt(n, 1)}${/^[%％]/.test(bu) ? '' : bu ? ' ' : ''}${esc(bu)}` : '無法計算'}</em></div>`).join('');
+      outEl.innerHTML = outs.map((o) => { const n = o.fn(v), fin = Number.isFinite(n), res = fin ? `${fmt(n, o.digits ?? 0)}${/^[%％]/.test(o.unit || '') ? '' : ' '}${esc(o.unit || '')}` : NA, st = stepLines(o, names, v);
+        return `<div><span>${tx(o.label)}</span><bdi class="nw">${fin ? `<b>${fmt(n, o.digits ?? 0)}</b>${/^[%％]/.test(o.unit || '') ? '' : ' '}${esc(o.unit || '')}` : '<b>無法計算</b>'}</bdi>${st.length ? `<div class="lk-step"><i>算式</i>${st.map((l, j) => `<div>${l}${j === st.length - 1 ? ` ＝ <b>${res}</b>` : ''}</div>`).join('')}</div>` : fin ? '' : `<div class="lk-step"><i>算式</i><div>${NA}</div></div>`}</div>`; }).join('');
       const hit = notes.find((n) => n.fn(v)); noteEl.innerHTML = hit ? tx(hit.text) : '';
     }
     draw(); done();
@@ -216,7 +228,7 @@ const K = {
     meter.firstChild.style.width = b.base + '%'; done();
   },
   // 一段短文（不適合做成互動的內容），可含名詞標記
-  text(b, el, ctx, done) { el.append(...b.paras.map((p) => h('p', null, ctx.mark ? ctx.mark(p) : esc(p)))); done(); },
+  text(b, el, ctx, done) { el.append(...b.paras.map((p) => h('p', null, ctx.mark ? ctx.mark(p) : tx(p)))); done(); },
 };
 function shuffle(a) { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
 

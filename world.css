@@ -561,3 +561,44 @@ ul.pts li:hover:not(.s-lock), ul.pts li:focus-visible { background:var(--sl); }
 .lk-flow:has(> li:nth-child(7)), .lk-fit.tight .lk-flow { gap:8px 30px; } .lk-flow:has(> li:nth-child(7)) li, .lk-fit.tight .lk-flow li { padding:6px 10px; gap:2px; line-height:1.45; }
 .lk-flow:has(> li:nth-child(7)) li span, .lk-fit.tight .lk-flow li span { margin-bottom:0; width:1.5em; height:1.5em; } .lk-flow:has(> li:nth-child(7)) li:not(:last-child)::after, .lk-fit.tight .lk-flow li:not(:last-child)::after { right:-24px; }
 .lk-flow em { font-size:max(18px, .95em); } /* 驗收第 2 輪：流程說明算內容，不低於 18px */
+
+/* ---- 2026-11-19 下一輪（關卡組）---- */
+/* 像素字補字：DotGothic16 缺 73 個繁中字（產、碳、卡、內、閱、說…），原本換成系統字；用俐方體 11 號（OFL）子集補上 */
+@font-face { font-family:"Cubic11Fill"; src:url("assets/cubic11-fill.woff2") format("woff2"); font-display:swap; }
+:root { --f-pixel:"DotGothic16","Cubic11Fill",var(--f-body); }
+/* 側欄大綱的跳卡按鈕屬系統介面，用像素字 */
+.olist button, .olist span.it { font-family:var(--f-pixel); }
+/* 中文不從詞中間斷：lessonkit 的 tx() 在詞邊界插 <wbr>，這裡只准在詞邊界、標點、空白換行；真的太長才任意斷（不溢出）；避免單字孤行 */
+.lk-fit { word-break:keep-all; overflow-wrap:anywhere; text-wrap:pretty; }
+.lk-fit .qwrap, .lk-fit .refs { word-break:normal; } /* 題目原文沒有斷詞標記，照一般規則換行 */
+/* 大螢幕：系統介面（頂列、卡型標籤、上下張按鈕）跟內容用同一比例放大，比例＝max(1, min(寬/1500, 高/800))，world.js 設 --s（練習頁同一比例） */
+:root { --ui:calc(clamp(16px, 1.1vw + 4px, 20.5px) * var(--s, 1)); }
+/* 記憶點、開關卡內容少：字級到上限後撐滿卡片，不留下半空白（內容仍靠上，world.js 加 .fill） */
+@media (min-width:900px) {
+  #card.fill > .lk-fit { flex:1; display:flex; flex-direction:column; }
+  #card.fill .lk-memo { flex:1; align-content:center; } /* 不用 grid：grid 會把每段字拆成獨立格子 */
+  #card.fill #lkb > .lk-tog { flex:1; grid-auto-rows:1fr; }
+}
+/* 答錯的回饋：框線與開頭字都用紅色 */
+.lk-why > b:first-child { color:var(--g); } .lk-why.no > b:first-child { color:#ff8a7a; }
+/* 先認識名詞：開頭說明比名詞小 */
+.card .lk-fit .lk-pre-hd { margin-top:0; font-size:.85em; }
+.lk-pre-terms dt { font-size:1.2em; }
+/* 開關卡：未勾選也看得出能點（亮框＋淡勾），hover 加亮 */
+.lk-tog button:not(.fixed) { border-color:var(--gold-d); background:#181d3a; }
+.lk-tog button:not(.fixed)::after { content:"✓"; color:rgba(232,200,119,.35); background:rgba(232,200,119,.1); }
+.lk-tog button:not(.fixed):not(.on):hover { border-color:var(--y); background:#202650; }
+.lk-tog button:not(.fixed):not(.on):hover::after { color:rgba(232,200,119,.8); }
+.lk-tog button.on::after { color:var(--k); }
+/* 流程卡收緊（18px 仍放不下才由 fitCard 加 .tight）：步驟編號跟標題排同一列、說明接在下面，每步省一行 */
+@media (min-width:900px) {
+  .lk-fit.tight .lk-h { margin-bottom:8px; }
+  .lk-fit.tight .lk-flow { gap:6px 28px; }
+  .lk-fit.tight .lk-flow li { display:grid; grid-template-columns:auto minmax(0,1fr); align-content:start; column-gap:.4em; row-gap:2px; padding:5px 9px; line-height:1.4; }
+  .lk-fit.tight .lk-flow li span { margin:0; width:1.4em; height:1.4em; }
+  .lk-fit.tight .lk-flow li em { grid-column:1 / -1; }
+}
+/* 「往下還有內容」放大一級 */
+@media (min-width:900px) { :root { --cue:max(16px, calc(var(--ui) * .85)); } }
+/* 手機：捲動到回饋句時扣掉頂部與底部固定列，不被蓋住 */
+@media (max-width:899px) { html { scroll-padding-top:140px; scroll-padding-bottom:110px; } .card { padding-bottom:24px; } }
