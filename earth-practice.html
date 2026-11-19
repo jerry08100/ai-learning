@@ -62,6 +62,7 @@
   [hidden] { display:none !important; }
   html { background:var(--k); overflow-x:clip; scrollbar-color:var(--gold) var(--k); }
   body { margin:0; font-family:var(--f-body); color:var(--w); font-size:calc(18px * var(--s)); line-height:1.6; min-height:100dvh; display:flex; flex-direction:column; overflow-x:clip; }
+  body { word-break:keep-all; overflow-wrap:break-word; } textarea, input { word-break:normal; } /* v117：中文詞邊界由 app.js 插 <wbr>（segDom），全頁詞不拆兩行 */
   /* 背景：固定的深色漸層＋極淡的像素掃描線（不動、不吃效能） */
   body::before { content:""; position:fixed; inset:0; z-index:-1; pointer-events:none;
     background:repeating-linear-gradient(0deg, rgba(243,234,212,.025) 0 1px, transparent 1px 4px), radial-gradient(120% 90% at 30% 0%, #222a52 0%, var(--nv) 45%, #0a0d1e 100%); }
@@ -234,9 +235,11 @@
   .quick button.primary, #pr-start { min-height:56px; min-width:200px; padding:2px 28px 0; font-size:calc(21px * var(--s)); }
   .quick button.primary { margin-top:4px; align-self:flex-start; }
   .quick .muted { margin-bottom:12px; }
+  .home-grid > .col > .quick:only-child { justify-content:center; } /* v117：沒有觀念卡（永續國）時快速做題卡獨佔整欄，內容置中、由 app.js 放大，不只擠在頂端 */
   .form-row { display:grid; grid-template-columns:minmax(0,1.4fr) minmax(0,1.3fr) minmax(0,.8fr); gap:12px; }
   .form-row label > span, .mk-row label > span { display:block; font-size:calc(16px * var(--s)); color:var(--muted); margin-bottom:4px; }
   @media (min-width:1100px) { .home-grid { min-height:calc(100dvh - var(--chrome)); } }
+  @media (min-width:1100px) and (min-height:1000px) { .home-grid .practice { justify-content:space-between; } } /* v117：2560 等高螢幕，練習卡三組平均分布，不全擠在上半 */
   @media (max-width:1100px) { .home-grid { grid-template-columns:minmax(0,1fr); margin:0; } .home-grid > .col > .card:last-child { flex:none; } }
   @media (max-width:640px) { .form-row { grid-template-columns:minmax(0,1fr); } }
 
@@ -450,7 +453,7 @@
     <p id="banner">題目為 iPAS 淨零碳規劃管理師官方公告試題（答案皆官方）與少量本站自製題；解析為本站自寫，僅供參考。</p>
     <p>本站修改自 yazelin/ipas-ai-quiz（MIT）</p>
   </footer>
-  <script type="module" src="app.js?v=116"></script>
+  <script type="module" src="app.js?v=117"></script>
   <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});</script>
 </body>
 </html>

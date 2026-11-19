@@ -31,7 +31,7 @@ const P = {
 // 驗收第 1 輪：北鎮、南鎮原位置有樓蓋在水晶山脈上 → 移到平地，且每棟樓再逐一避開山脈
 const TOWNS = [{ u: 318, v: 118, r: 24, top: 26, cap: true }, { u: 330, v: 60, r: 15, top: 15 }, { u: 402, v: 140, r: 15, top: 16 }, { u: 303, v: 174, r: 14, top: 13 }]; // 驗收第 2 輪：南鎮原址一半是山、像空停車場 → 移到平地（99% 可蓋）
 const townD = (u, v, pad = 0) => Math.min(...TOWNS.map((t) => Math.hypot((u - t.u) / (t.r + pad), (v - t.v) / ((t.r + pad) * .7)))); // 離最近城鎮中心的相對距離（<1 在鎮內）
-const DC = [392, 168]; // 資料中心園區（驗收第 2 輪：原位置冷卻塔落在海上，移到整片都是陸地處）
+const DC = [390, 173]; // v116 驗收 SUSPECTED：上緣貼東港地面 → 往南挪 // 資料中心園區（驗收第 2 輪：原位置冷卻塔落在海上，移到整片都是陸地處）
 const ROADS = [[0, 1], [0, 2], [0, 3], [2, -1]]; // -1＝資料中心
 const VILLS = [[88, 150], [96, 86], [186, 140]]; // 永續國村落：河邊、北方平原、東海岸
 const SOLAR = [86, 124]; // 西側平原、風機旁（驗收第 3 輪：(150,185) 壓到山腳岩地；這裡橫式直式都不壓岩、海、河）
@@ -76,9 +76,9 @@ export function build(portrait) {
         else if (M > .59) c = pick(P.rock, lit);
         else if (Math.abs(u - riverU(v)) < 1.6 && v > 70 && v < 225) c = pick(P.water, .75 + gx * 4);
         else c = pick(fb(u + 99, v) > .55 ? P.forest : P.grass, lit + (fb(u * 2, v * 2) - .5) * .25);
-      } else if (M > .62) c = pick(P.crys, lit + (hash(u | 0, v | 0) > .97 ? .4 : 0));
+      } else if (M > .62 && townD(u, v, 14) > 1) c = pick(P.crys, /* 城鎮外圍留一圈平地，水晶山不貼樓群（v116 驗收 SUSPECTED） */ lit + (hash(u | 0, v | 0) > .97 ? .4 : 0));
       else { c = pick(P.slate, lit - .06); // 電路紋：城市周邊的短格線
-        const cu = Math.floor((u + 3) / 9), cv = Math.floor((v + 5) / 7), gu = (u + 3) % 9, gv = (v + 5) % 7, near = TOWNS.some((t) => Math.hypot(u - t.u, (v - t.v) * 1.3) < t.r + 14);
+        const cu = Math.floor((u + 3) / 9), cv = Math.floor((v + 5) / 7), gu = (u + 3) % 9, gv = (v + 5) % 7, near = TOWNS.some((t) => Math.hypot(u - t.u, (v - t.v) * 1.3) < t.r + 14) && Math.hypot(u - DC[0] - 4, v - DC[1]) > 20; // 電路紋不穿過資料中心
         if (near && h > .06 && ((gu < .9 && hash(cu, cv * 3 + 1) > .5) || (gv < .9 && hash(cu * 5 + 2, cv) > .5))) c = c.map((ch, j) => ch * .55 + P.acc[j] * .45);
         const td = townD(u, v, 3); // 城鎮地面：深色鋪面＋街道格線，跟岩地分開；外圈抖點過渡，不是硬邊橢圓
         if (h > .06 && td < 1 && !(td > .75 && hash(x, y) < (td - .75) * 4)) c = td < .8 && ((u + 1) % 7 < 1 || (v + 1) % 3.6 < .8) ? P.slate[2] : P.slate[0]; }

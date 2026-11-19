@@ -16,7 +16,10 @@ const KEY = CFG.key;
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 // 解析斷行與粗體，規則同 app.js 的 formatExp（雛形先複製一份；併回主站時改共用）
-const formatExp = (t) => esc(t)
+const unesc = (s) => s.replace(/&(amp|lt|gt|quot);/g, (_, k) => ({ amp: '&', lt: '<', gt: '>', quot: '"' }[k]));
+// 標記之間的文字交給 lessonkit 的 tx() 插詞邊界 <wbr>（CSS .fb keep-all），解析不再把「基線」拆成兩行
+const formatExp = (t) => fmtExp0(t).split(/(<[^>]+>)/).map((p, i) => (i % 2 || !p ? p : tx(unesc(p)))).join('');
+const fmtExp0 = (t) => esc(t)
   .replace(/\s*(本站補充：)\s*/g, '<br>$1')
   .replace(/(本站補充：)\s*([(（][A-DＡ-Ｄ][)）])/g, '$1<br>$2')
   .replace(/([。；])\s*([(（][A-DＡ-Ｄ][)）])/g, '$1<br>$2')
@@ -269,7 +272,7 @@ const GROW = new Set(['guess', 'sort', 'timeline', 'calc', 'toggles']);
 // 卡內放不下要能捲時，底部出現漸層與「往下還有」提示（使用者看得出能捲）
 function cue() { const c = $('#card'); if (!c) return; c.classList.toggle('more', matchMedia('(min-width:900px)').matches && c.scrollHeight > c.clientHeight + 4 && c.scrollTop + c.clientHeight < c.scrollHeight - 4); }
 // 流程步驟換行後，每列最後一步不畫往右的箭頭（箭頭會指到框外）
-function flowArrows() { document.querySelectorAll('.lk-flow').forEach((ol) => { const li = [...ol.children]; li.forEach((x, i) => x.classList.toggle('eol', i === li.length - 1 || li[i + 1].offsetTop !== x.offsetTop)); }); }
+const flowArrows = (only) => (only ? [only] : document.querySelectorAll('.lk-flow')).forEach((ol) => { const li = [...ol.children]; li.forEach((x, i) => x.classList.toggle('eol', i === li.length - 1 || li[i + 1].offsetTop !== x.offsetTop)); });
 function fitCard(shrinkOnly) { const cd = $('#card'); if (cd) { cd.style.flex = ''; cd.classList.remove('fill'); } fitCard0(shrinkOnly);
   // 記憶點、開關卡內容少：字級到頂後讓內容撐滿卡片（CSS .fill），其他卡內容矮就收高面板
   if (cd && matchMedia('(min-width:900px)').matches && cd.querySelector('.lk-fit > .lk-memo, #lkb > .lk-tog')) cd.classList.add('fill'); else collapseCard();
@@ -290,16 +293,29 @@ function fitCard0(shrinkOnly) { // shrinkOnly：作答後內容變長時只往�
   if (!matchMedia('(min-width:900px)').matches) return;
   const card = $('#card'), cs = getComputedStyle(card), head = card.firstElementChild;
   const avail = (card.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - head.offsetHeight - 16) * (box.dataset.grow && !shrinkOnly && !box.classList.contains('solved') ? (box.dataset.grow === 'calc' ? 0.96 : 0.82) : 0.97);
-  const ok = () => box.scrollHeight <= avail && box.scrollWidth <= box.clientWidth + 1;
+  // 流程卡：先依當下版面重算列尾箭頭再量（列尾箭頭會伸出框外，用上一次版面留下的 eol 判會誤判溢出，字卡在小號、拉大視窗與直接進卡結果不同；v117）；步驟內文字不准溢出步驟框
+  const ol = box.querySelector('.lk-flow'), olt = ol ? ol.querySelectorAll('b, em') : [];
+  // 步驟框至少 7 個字寬（18px 時不限），免得排成一列窄柱、每行只有四五個字
+  const wide = () => { const fs = parseFloat(getComputedStyle(box).fontSize); return fs <= 18.5 || ol.firstElementChild.clientWidth >= 7 * fs; };
+  const ok = () => { if (ol) flowArrows(ol); return box.scrollHeight <= avail && box.scrollWidth <= box.clientWidth + 1 && (!ol || ([...olt].every((e) => e.scrollWidth <= e.clientWidth + 1) && wide())); };
   const top = Math.round(Math.min(64, 40 * Math.max(1, Math.min(innerWidth / 1500, innerHeight / 800)))); // 上限 40px，超大螢幕再放大到 64px，免得內容縮在中間留一大片空
   let lo = 18, hi = top;
   if (shrinkOnly) { if (ok()) return; hi = parseFloat(box.style.fontSize) || top; }
   const search = () => { for (let k = 0; k < 8; k++) { const mid = (lo + hi) / 2; box.style.fontSize = mid + 'px'; if (ok()) lo = mid; else hi = mid; } box.style.fontSize = Math.floor(lo) + 'px'; };
-  // 流程卡收緊（.tight）不沿用上一次的結論：每次先不收緊找字級，18px 仍放不下才收緊再找一次（驗收第 3 輪：進卡瞬間誤收緊後不再重判）
-  const hi0 = hi, ghost = box.querySelector('.fb-ph .ghost'); box.classList.remove('tight'); if (ghost && !shrinkOnly) ghost.hidden = false; search();
+  // 流程卡排法：一列、兩列、三列、四列（每列步數平均，最後一列至少半列，不排「8＋1」）各找最大字級，取字最大的；v117 驗收：步驟一列排開時字小、卡片只佔一半高
+  // 陷阱卡、先認識名詞也比 1～3 欄：字到上限時取撐得較滿的排法（2560 三張陷阱並排只佔半張卡）
+  const G = ol || box.querySelector('.lk-traps, .lk-pre-terms dl'), gp = G?.classList.contains('lk-traps') ? '--n' : '--cols', n = G ? G.children.length : 0;
+  const COLS = shrinkOnly || !G ? [] : ol ? [...new Set([1, 2, 3, 4].map((r) => Math.ceil(n / r)))].filter((c) => c >= 2 && (n % c === 0 || n % c >= c / 2)) : [...new Set([Math.min(n, 3), 2, 1])].filter((c) => c <= n);
   // 收緊與否看卡片實際會不會捲（ok() 為作答後變長的卡多留了餘量，流程卡不會變長，用它判會在放得下時誤收緊）
   const fitsCard = () => card.scrollHeight <= card.clientHeight + 1 && box.scrollWidth <= box.clientWidth + 1;
-  if (!ok() && !fitsCard() && box.querySelector('.lk-flow')) { box.classList.add('tight'); lo = 18; hi = hi0; search(); }
+  // 排法優先序：完全放得下 ＞ 卡片不捲 ＞ 都不行；同級取字大，再同取撐得滿
+  const searchCols = () => { if (!COLS.length) return search(); let best = null;
+    for (const c of COLS) { G.style.setProperty(gp, c); lo = 18; hi = hi0; search(); const f = parseFloat(box.style.fontSize), fit = ok() ? 2 : fitsCard() ? 1 : 0, hgt = box.scrollHeight;
+      if (!best || fit > best[2] || (fit === best[2] && (f > best[1] || (f === best[1] && hgt > best[3])))) best = [c, f, fit, hgt]; }
+    G.style.setProperty(gp, best[0]); box.style.fontSize = best[1] + 'px'; if (ol) flowArrows(ol); };
+  // 流程卡收緊（.tight）不沿用上一次的結論：每次先不收緊找字級，18px 仍放不下才收緊再找一次（驗收第 3 輪：進卡瞬間誤收緊後不再重判）
+  const hi0 = hi, ghost = box.querySelector('.fb-ph .ghost'); box.classList.remove('tight'); if (ghost && !shrinkOnly) ghost.hidden = false; searchCols();
+  if (!ok() && !fitsCard() && ol) { box.classList.add('tight'); lo = 18; hi = hi0; searchCols(); }
   // 小檢查：右欄先用隱形解析撐高（作答前後不跳版），題目長到 18px 也放不下時拿掉它，進卡不用捲（驗收第 3 輪 e-cl-ghg-co2e）
   if (!ok() && !fitsCard() && ghost && !ghost.hidden) { ghost.hidden = true; lo = 18; hi = hi0; search(); }
 }

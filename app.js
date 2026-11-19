@@ -249,6 +249,28 @@ function zhSeg(t) {
 }
 const zhWords = (h) => SEG ? h.split(/(<[^>]*>)/).map((p, i) => (i % 2 || !p ? p : zhSeg(p))).join('') : h;
 const tx = (s) => zhWords(nb(esc(s)));
+// 其他區塊（今日觀念、延伸知識標題、統計表、頁尾、按鈕…）沒走 tx()：在 DOM 層補——新出現的中文文字節點一律在詞邊界插 <wbr>
+// 只拆文字節點、不解析 HTML；已含 <wbr> 的父層（tx() 處理過）跳過；配合 CSS body{word-break:keep-all}
+const SEG_SKIP = 'script,style,textarea,select,option,.nw';
+function segDom(root) {
+  if (!root || root.nodeType !== 1 || root.closest(SEG_SKIP)) return;
+  const tw = document.createTreeWalker(root, NodeFilter.SHOW_TEXT), todo = []; let n;
+  while ((n = tw.nextNode())) {
+    const p = n.parentElement;
+    if (/[㐀-鿿]{2}/.test(n.data) && !p.closest(SEG_SKIP) && !p.querySelector(':scope > wbr')) todo.push(n);
+  }
+  for (const t of todo) {
+    const parts = zhSeg(t.data).split('<wbr>'); if (parts.length < 2) continue;
+    const f = document.createDocumentFragment();
+    parts.forEach((s, k) => { if (k) f.append(document.createElement('wbr')); f.append(s); });
+    t.replaceWith(f);
+  }
+}
+if (SEG) {
+  segDom(document.body);
+  new MutationObserver((ms) => { for (const m of ms) for (const a of m.addedNodes) segDom(a.nodeType === 3 ? a.parentElement : a); })
+    .observe(document.body, { childList: true, subtree: true });
+}
 // 「(B) 選項內容摘要」；有些題的選項本身就是一串數字（排序題），只顯示選項文字會被誤讀成亂碼，所以一律帶字母
 const ansLabel = (q) => `(${String.fromCharCode(65 + q.answer)}) ${tx(String(q.options[q.answer]))}`; // 正解全文，不截斷（標題可換行）
 // 內嵌 SVG 圖示（RemixIcon，currentColor）
@@ -399,6 +421,7 @@ function watchChrome() {
     const cs = getComputedStyle(view);
     const h = els.reduce((a, e) => a + (e.hidden ? 0 : e.offsetHeight), 0) + parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
     document.documentElement.style.setProperty('--chrome', `${Math.ceil(h) + 1}px`);
+    regrow();
   };
   if ('ResizeObserver' in window) { const ro = new ResizeObserver(set); els.forEach((e) => ro.observe(e)); }
   window.addEventListener('resize', set);
@@ -410,6 +433,26 @@ function watchChrome() {
   window.addEventListener('resize', more);
   if ('ResizeObserver' in window) new ResizeObserver(more).observe(view);
 }
+// 大螢幕留白（2560×1300 等）：雙欄畫面某欄內容只佔一部分高時，把該欄自己的 --s 調大（字、間距一起放大）到剛好填滿，
+// 條件是欄內不捲、整頁不捲；不縮小、最多 ×cap；單欄（<1000 寬）不動。視窗變動時重算。
+const GROWN = new Map();
+function grow(el, cap = 1.4) {
+  if (!el) return;
+  GROWN.set(el, cap);
+  if (document.fonts && document.fonts.status === 'loading') document.fonts.ready.then(regrow); // 像素字還沒載完時量的高不準，載完重算
+  el.style.removeProperty('--s'); el.style.removeProperty('font-size');
+  if (innerWidth < 1000 || innerHeight <= 760) return; // 矮視窗（≤760）觀念卡有 line-clamp、本來就緊，不放大
+  const base = parseFloat(document.documentElement.style.getPropertyValue('--s')) || 1, de = document.documentElement;
+  el.style.fontSize = 'calc(18px * var(--s))'; // 內文字級從 body 繼承的是算好的 px，要在這層重算才會跟著局部 --s 放大
+  const fits = (k) => { el.style.setProperty('--s', (base * k).toFixed(3)); return el.scrollHeight <= el.clientHeight + 1 && de.scrollHeight <= innerHeight; };
+  if (!fits(1)) { el.style.removeProperty('--s'); el.style.removeProperty('font-size'); return; }
+  let lo = 1, hi = cap;
+  if (fits(hi)) return;
+  for (let n = 0; n < 7; n++) { const m = (lo + hi) / 2; if (fits(m)) lo = m; else hi = m; }
+  fits(lo);
+  if (lo < 1.02) { el.style.removeProperty('--s'); el.style.removeProperty('font-size'); }
+}
+function regrow() { for (const [el, cap] of [...GROWN]) { if (el.isConnected) grow(el, cap); else GROWN.delete(el); } }
 // 手機分頁列單列橫向捲動：右側淡出提示還有內容，捲到底就拿掉
 function tabsEdge() { const t = $('.tabs'); if (t) { t.classList.toggle('end', t.scrollLeft + t.clientWidth >= t.scrollWidth - 4); t.classList.toggle('sl', t.scrollLeft > 4); } }
 function setNav(active) {
@@ -515,6 +558,7 @@ function home() {
     if (ccp && ccb) { const chk = () => { ccb.hidden = !ccp.classList.contains('open') && ccp.scrollHeight <= ccp.clientHeight + 1; }; chk(); addEventListener('resize', chk);
       ccb.onclick = () => { const o = ccp.classList.toggle('open'); ccb.textContent = o ? '收起' : '看全文'; chk(); }; }
   }
+  grow(view.querySelector('.concept-card') || view.querySelector('.home-grid .quick'), 1.4); grow(view.querySelector('.home-grid .practice'), 1.25);
   const kw = () => $('#pr-kw').value.trim().toLowerCase();
   const matchKw = (q) => {
     const k = kw();
@@ -577,6 +621,7 @@ function runPractice(pool, opts = {}) {
     $('#star').onclick = () => { p.starred = !p.starred; save(); render(); };
     view.querySelectorAll('.opt').forEach((btn) =>
       (btn.onclick = () => answer(q, +btn.dataset.k)));
+    grow(view.querySelector('.qa-col'));
   };
   const answer = (q, k) => {
     const p = qp(q.id);
@@ -604,6 +649,7 @@ function runPractice(pool, opts = {}) {
     $('#note').oninput = (e) => { p.note = e.target.value; save(); };
     if (window.innerWidth < 1000) $('#fb').scrollIntoView({ block: 'start', behavior: 'smooth' }); // 單欄（手機）：把解析與「下一題」捲進畫面
     $('#next').onclick = () => { i++; i < pool.length ? render() : finish(); };
+    grow($('#fb'));
   };
   const finish = () => {
     pushSync(); // checkpoint:練習完成立即上傳

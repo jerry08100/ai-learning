@@ -602,3 +602,12 @@ ul.pts li:hover:not(.s-lock), ul.pts li:focus-visible { background:var(--sl); }
 @media (min-width:900px) { :root { --cue:max(16px, calc(var(--ui) * .85)); } }
 /* 手機：捲動到回饋句時扣掉頂部與底部固定列，不被蓋住 */
 @media (max-width:899px) { html { scroll-padding-top:140px; scroll-padding-bottom:110px; } .card { padding-bottom:24px; } }
+
+/* ---- v117（關卡組）---- */
+/* 關卡頁像素字改以俐方體為主：DotGothic16 缺「碳產查內卡」等字，補上的俐方體筆畫不同，同一行混兩種字（驗收 v116）。
+   assets/cubic11-fill.woff2 擴成全部知識點標題、區域／層名、world.js／lessonkit.js／ai／earth.html 字串＋ASCII 的子集（1029 字），頂列、卡型標籤、按鈕都同一字型 */
+.app:not(.map-mode) { --f-pixel:"Cubic11Fill","DotGothic16",var(--f-body); }
+/* 小檢查解析：world.js 在詞邊界插 <wbr>，只在詞邊界、標點換行（題目、選項照一般規則） */
+.fb { word-break:keep-all; overflow-wrap:anywhere; }
+/* 流程卡排法由 fitCard 依可用空間選欄數（--cols），每列步數平均 */
+@media (min-width:900px) { .lk-flow[style*="--cols"], .lk-pre-terms dl[style*="--cols"] { display:grid; grid-template-columns:repeat(var(--cols),minmax(0,1fr)); } }
