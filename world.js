@@ -4,6 +4,7 @@
 // 進度只存在本機，不碰主站的練習進度與同步；兩國互不解鎖。
 
 import { mountFx } from './fx.js';
+import { mergeWorld } from './core.js';
 import { mount, termsCard, trapsCard, KIND, GATED, tx } from './lessonkit.js';
 
 const CC = document.body.dataset.country === 'earth' ? 'earth' : 'ai';
@@ -33,7 +34,21 @@ const toast = (m) => { const t = $('#toast'); t.textContent = m; t.classList.add
 // notes[id] = { s: 'ok' 熟練 | 'fail' 未通過, t }；passed['區域:層'] = 通過試煉時間；cur = 勇者所在區域
 const ST = (() => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch { return {}; } })();
 ST.notes ||= {}; ST.passed ||= {}; ST.cur ||= CFG.start;
-const save = () => { try { localStorage.setItem(KEY, JSON.stringify(ST)); } catch {} };
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(ST)); } catch {} clearTimeout(pushT); pushT = setTimeout(push, 3000); };
+// ---- 跨裝置同步（v119）：沿用題庫練習「設定」頁的同步碼（AI 國 ipas_quiz_progress.syncCode），兩國地圖各存一個衍生碼
+// （fox-river-82 → fox-riverwa-82／fox-riverwe-82，符合後端碼格式，後端不用改）；開頁先拉雲端合併（mergeWorld，不互蓋），有變動 3 秒後上傳、切走時立即上傳
+const SYNC_URL = 'https://ipas-sync-823719914514.asia-east1.run.app';
+const syncKey = () => { try { const c = JSON.parse(localStorage.getItem('ipas_quiz_progress'))?.syncCode; return c ? c.replace(/^([a-z]+)-([a-z]+)-/i, `$1-$2${CC === 'ai' ? 'wa' : 'we'}-`) : null; } catch { return null; } };
+let pushT = 0;
+const canon = (o) => JSON.stringify(o, (k, v) => (v && typeof v === 'object' && !Array.isArray(v) ? Object.fromEntries(Object.entries(v).sort()) : v));
+function push(keepalive) { clearTimeout(pushT); pushT = 0; const k = syncKey(); if (k) fetch(`${SYNC_URL}/sync/${encodeURIComponent(k)}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(ST), keepalive: !!keepalive }).catch(() => {}); }
+async function pull() { const k = syncKey(); if (!k) return;
+  try { const r = await fetch(`${SYNC_URL}/sync/${encodeURIComponent(k)}`); if (!r.ok && r.status !== 404) return;
+    const remote = r.ok ? await r.json() : {}, m = mergeWorld(ST, remote);
+    if (JSON.stringify(m) !== JSON.stringify(ST)) { Object.keys(ST).forEach((x) => delete ST[x]); Object.assign(ST, m); try { localStorage.setItem(KEY, JSON.stringify(ST)); } catch {} }
+    if (canon(m) !== canon(remote)) push(); // 欄位順序不同不算變動，免得每次開頁都多傳一次（驗收 SUSPECTED）
+  } catch {} }
+addEventListener('visibilitychange', () => { if (document.hidden && pushT) push(true); });
 
 let W, KN, POOL, LS = new Map(); // world.json、知識點 id→內容、知識點 id→相關題目、知識點 id→互動關卡（*-lessons.json）
 const LN = (i) => W.regions[0].layers[i].name;
@@ -118,7 +133,7 @@ function showMap() {
         return `<li><button data-id="${r.id}" class="${r.id === selId ? 'sel' : ''}"><span class="rname ${open ? '' : 'lock'}">${open ? '' : LOCK}${esc(r.name)}</span>
           <span class="rst">${regionStatus(r)}</span>${open ? `<span class="seg">${segs(c, 12)}</span>` : ''}</button></li>`; }).join('')}
         ${PORT ? `<li><button data-id="${PORT.id}" class="${PORT.id === selId ? 'sel' : ''}"><span class="rname">${PORT.name}</span><span class="rst">${PORT.domain}</span></button></li>` : ''}</ul>
-      <p class="foot"><span>進度只存在這台裝置</span><button class="lite" id="reset">重設進度</button></p>
+      <p class="foot"><span>${syncKey() ? '進度已跨裝置同步' : '進度只存在這台裝置'}</span><button class="lite" id="reset">重設進度</button></p>
     </div>
     <div class="mapbox" id="mapbox"><div class="mapview" id="mapview"><div class="mapwrap" id="mapwrap"><canvas id="cv" aria-label="地圖，點區域看進度；可拖曳或滾輪移動"></canvas></div></div></div>`;
   const cv = $('#cv'); MAP = makeMap(cv);
@@ -157,7 +172,7 @@ function showMap() {
   document.querySelectorAll('.rlist button').forEach((b) => (b.onclick = () => openSheet(b.dataset.id)));
   cv.onclick = (e) => { if (dragged) { dragged = false; return; } const id = MAP.regionAt(e.clientX, e.clientY); if (id && (id === PORT?.id || W.regions.some((r) => r.id === id))) openSheet(id); };
   $('#go').onclick = () => { if (na) run(na); };
-  $('#reset').onclick = () => { if (confirm(`確定清除${CFG.name}的全部進度？這個動作無法復原（不影響${CC === 'ai' ? '題庫練習的紀錄' : '另一國的進度'}）。`)) { ST.notes = {}; ST.passed = {}; ST.cur = CFG.start; save(); selId = null; showMap(); } };
+  $('#reset').onclick = () => { if (confirm(`確定清除${CFG.name}的全部進度？這個動作無法復原（不影響${CC === 'ai' ? '題庫練習的紀錄' : '另一國的進度'}）。`)) { ST.notes = {}; ST.passed = {}; ST.cur = CFG.start; ST.resetAt = Date.now(); save(); selId = null; showMap(); } };
   drawMap();
   if (!matchMedia('(prefers-reduced-motion: reduce)').matches) timer = setInterval(() => { frame++; drawMap(); }, 450);
   $('#sheet').hidden = false;
@@ -496,7 +511,9 @@ let poolReady = null, lsReady = null, lsDone = false;
 const loadLS = (u) => (lsReady = getJSON(u).then((o) => { LS = new Map(Object.entries(o)); }, () => toast('互動關卡載入失敗，先用全文閱讀')).then(() => { lsDone = true; }));
 (async () => {
   try {
+    const synced = Promise.race([pull(), new Promise((ok) => setTimeout(ok, 5000))]); // 雲端冷啟動慢：最多等 5 秒，逾時先用本機進度
     ({ makeMap, TW, TH, LAYOUT } = await import(CFG.map));
+    await synced;
     if (CC === 'earth') { // 永續國：知識點與題目都是獨立檔；題目的 note 可以是一個 id 或多個 id 的陣列
       const [w, notes] = await Promise.all([getJSON('earth-world.json'), getJSON('earth-notes.json')]);
       W = w; KN = new Map(notes.map((n) => [n.id, n]));

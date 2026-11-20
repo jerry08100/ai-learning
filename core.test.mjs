@@ -1,7 +1,7 @@
 // node core.test.mjs  — 邏輯壞掉就會 throw。
 import assert from 'node:assert';
 import { nextBox, isMastered, scoreExam, progressStats, wrongQuestionIds, toMarkdown, reviewPriority,
-  bankOf, levelOf, countIn, firstLevelWith, subjectsIn, resolveSubs, rangeQuestions } from './core.js';
+  bankOf, levelOf, countIn, firstLevelWith, subjectsIn, resolveSubs, rangeQuestions, mergeWorld } from './core.js';
 
 // 出題優先序:錯題(0) < 沒做過(1) < 做過未掌握(2) < 已掌握(3)
 assert.equal(reviewPriority({ box: 1, attempts: 2, wrong: 1 }), 0);
@@ -100,5 +100,19 @@ assert.equal(countIn(bank, bankOf('official'), '中級'), 2);
 assert.equal(countIn(bank, bankOf('自製題'), '中級'), 0, '自製題沒有中級');
 assert.equal(firstLevelWith(bank, bankOf('自製題')), '初級');
 assert.equal(firstLevelWith(bank, bankOf('official')), '初級');
+
+// 世界地圖同步合併：聯集、知識點取新、通過取早、清除進度後舊紀錄不回來、cur 以本機為準
+{
+  const pc = { notes: { a: { s: 'fail', t: 10 }, b: { s: 'ok', t: 5 } }, passed: { 'r:0': 30 }, cur: 'x' };
+  const ph = { notes: { a: { s: 'ok', t: 20 }, c: { s: 'ok', t: 7 } }, passed: { 'r:0': 25, 'r:1': 40 }, cur: 'y' };
+  const m = mergeWorld(pc, ph);
+  assert.deepEqual(m.notes, { a: { s: 'ok', t: 20 }, b: { s: 'ok', t: 5 }, c: { s: 'ok', t: 7 } });
+  assert.deepEqual(m.passed, { 'r:0': 25, 'r:1': 40 });
+  assert.equal(m.cur, 'x');
+  assert.deepEqual(mergeWorld(m, m), m, '合併兩次結果不變');
+  const reset = mergeWorld({ notes: { d: { s: 'ok', t: 60 } }, passed: {}, cur: 'x', resetAt: 50 }, ph);
+  assert.deepEqual(reset.notes, { d: { s: 'ok', t: 60 } }); assert.deepEqual(reset.passed, {}); assert.equal(reset.resetAt, 50);
+  assert.deepEqual(mergeWorld({}, {}), { notes: {}, passed: {}, cur: undefined });
+}
 
 console.log('PASS');

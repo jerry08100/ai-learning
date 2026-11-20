@@ -10,7 +10,7 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="world.css?v=118">
+<link rel="stylesheet" href="world.css?v=119">
 <style>
   /* 世界地圖：地圖蓋滿視窗不捲動，標題與國名牌浮在上面 */
   html, body { height:100%; overflow:hidden; background:#0a1028; }
@@ -36,6 +36,21 @@
   body.going #mapwrap { transform:scale(2.6); filter:blur(1.5px) brightness(1.2); }
   body.going .veil { opacity:1; }
   body.going .ctag, body.going .title { opacity:0; transition:opacity .2s; }
+  /* 同步設定（v119，使用者：系統設定放在一開始的頁面）：右上角按鈕＋原生 dialog；碼存在題庫練習同一份 ipas_quiz_progress */
+  .setbtn { position:fixed; z-index:6; right:max(16px, env(safe-area-inset-right)); top:max(14px, env(safe-area-inset-top)); min-height:44px; padding:10px 18px 9px; cursor:pointer;
+            font-family:var(--f-pixel); font-size:16px; letter-spacing:1px; color:var(--w); }
+  .setbtn:hover, .setbtn:focus-visible { color:var(--y); }
+  #setdlg { width:min(480px, calc(100vw - 32px)); padding:22px 24px; color:var(--w); font-size:16px; line-height:1.7; }
+  #setdlg::backdrop { background:rgba(4,6,16,.7); }
+  #setdlg h2 { margin:0 0 10px; font-family:var(--f-pixel); font-weight:400; font-size:22px; color:var(--y); letter-spacing:2px; }
+  #setdlg p { margin:0 0 12px; color:var(--muted); font-size:15px; }
+  #setdlg .code { margin:0 0 16px; font-size:24px; letter-spacing:1px; color:var(--w); user-select:all; }
+  #setdlg label { display:block; margin-bottom:6px; }
+  #setdlg input { width:100%; box-sizing:border-box; min-height:44px; padding:8px 12px; font-size:18px; background:#0b0e22; color:var(--w); border:1px solid var(--gold); }
+  #setdlg .row { display:flex; gap:10px; margin-top:12px; } #setdlg .row button { flex:1; min-height:44px; cursor:pointer; font-size:17px; }
+  #setdlg .lite { background:transparent; color:var(--w); border:1px solid var(--gold); font-family:var(--f-pixel); }
+  #setmsg { min-height:1.7em; margin:10px 0 0; font-size:15px; }
+  body.going .setbtn { opacity:0; transition:opacity .2s; }
 </style>
 </head>
 <body>
@@ -49,8 +64,36 @@
   </div>
 </div>
 <header class="title win"><h1>知識世界</h1><p>選一個國家開始冒險</p></header>
+<button class="setbtn win" id="setopen">同步設定</button>
+<dialog id="setdlg" class="win" aria-labelledby="set-h">
+  <h2 id="set-h">同步設定</h2>
+  <p>手機和電腦用同一組同步碼，題庫練習與兩國地圖的進度就會跨裝置同步。</p>
+  <div>這台的同步碼</div>
+  <p class="code" id="setcode"></p>
+  <label for="setin">換成另一台的同步碼</label>
+  <p>套用後，這台題庫練習的紀錄會換成雲端那份；地圖進度則會兩邊合併。</p>
+  <input id="setin" placeholder="例如 fox-river-8210" autocomplete="off" autocapitalize="off" spellcheck="false">
+  <p id="setmsg" role="status"></p>
+  <div class="row"><button class="pbtn" id="setapply">套用</button><button class="lite" id="setclose">關閉</button></div>
+</dialog>
+<script>
+(() => { // 同步碼跟題庫練習共用 localStorage ipas_quiz_progress；套用時把 updatedAt 歸零，進題庫時一定採用雲端那份（同 app.js #code-set）
+  const K = 'ipas_quiz_progress', $ = (s) => document.getElementById(s), dlg = $('setdlg');
+  const get = () => { try { return JSON.parse(localStorage.getItem(K)); } catch { return null; } };
+  const show = () => { const st = get(); $('setcode').textContent = st?.syncCode || '還沒有（進一次題庫練習會自動產生，或在下面輸入另一台的碼）'; };
+  $('setopen').onclick = () => { show(); $('setmsg').textContent = ''; $('setin').value = ''; dlg.showModal(); };
+  $('setclose').onclick = () => dlg.close();
+  $('setapply').onclick = () => {
+    const v = $('setin').value.trim().toLowerCase();
+    if (!/^[a-z]+-[a-z]+-\d{2,4}$/.test(v)) { $('setmsg').textContent = '格式是「英文-英文-數字」，例如 fox-river-8210（在另一台的同步設定或題庫「設定」頁看得到完整的碼）'; return; }
+    const st = get() || { v: 1, q: {}, recent: [] }; st.syncCode = v; st.updatedAt = 0; delete st.codeFresh;
+    try { localStorage.setItem(K, JSON.stringify(st)); } catch { $('setmsg').textContent = '存不進這台瀏覽器（可能是無痕模式）'; return; }
+    show(); $('setin').value = ''; $('setmsg').textContent = '已套用。進國家地圖或題庫練習時會自動從雲端拉進度。';
+  };
+})();
+</script>
 <div class="veil" aria-hidden="true"></div>
-<script type="module" src="worldmap.js?v=118"></script>
+<script type="module" src="worldmap.js?v=119"></script>
 <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});</script>
 </body>
 </html>

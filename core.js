@@ -128,3 +128,15 @@ export function toMarkdown(questions, progress, title = 'iPAS 筆記') {
   if (n === 0) lines.push('_(還沒有星標或筆記的題目)_');
   return lines.join('\n');
 }
+
+// 世界地圖進度跨裝置合併（v119）：不互蓋，兩邊取聯集——知識點取較新的一筆、試煉通過取較早的時間；
+// 任一邊按過「清除進度」(resetAt) 就丟掉比它舊的紀錄，免得被另一台的舊進度救回來。cur（勇者位置）以本機為準。
+export function mergeWorld(local = {}, remote = {}) {
+  const r = Math.max(local.resetAt || 0, remote.resetAt || 0), out = { notes: {}, passed: {}, cur: local.cur || remote.cur };
+  if (r) out.resetAt = r;
+  for (const s of [local, remote]) {
+    for (const [id, v] of Object.entries(s.notes || {})) if ((v?.t || 0) >= r && (!out.notes[id] || (v.t || 0) > (out.notes[id].t || 0))) out.notes[id] = v;
+    for (const [k, t] of Object.entries(s.passed || {})) if ((+t || 0) >= r && !(out.passed[k] <= +t)) out.passed[k] = +t;
+  }
+  return out;
+}
