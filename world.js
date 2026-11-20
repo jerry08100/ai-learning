@@ -292,13 +292,31 @@ function fitCard0(shrinkOnly) { // shrinkOnly：作答後內容變長時只往�
   if (!shrinkOnly) box.style.fontSize = '';
   if (!matchMedia('(min-width:900px)').matches) return;
   const card = $('#card'), cs = getComputedStyle(card), head = card.firstElementChild;
-  const avail = (card.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - head.offsetHeight - 16) * (box.dataset.grow && !shrinkOnly && !box.classList.contains('solved') ? (box.dataset.grow === 'calc' ? 0.96 : 0.82) : 0.97);
+  const avail = (card.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - head.offsetHeight - 16) * (box.dataset.grow && !box.querySelector('.lk-terms') && !shrinkOnly && !box.classList.contains('solved') ? (box.dataset.grow === 'calc' ? 0.96 : 0.82) : 0.97);
   // 流程卡：先依當下版面重算列尾箭頭再量（列尾箭頭會伸出框外，用上一次版面留下的 eol 判會誤判溢出，字卡在小號、拉大視窗與直接進卡結果不同；v117）；步驟內文字不准溢出步驟框
   const ol = box.querySelector('.lk-flow'), olt = ol ? ol.querySelectorAll('b, em') : [];
   // 步驟框至少 7 個字寬（18px 時不限），免得排成一列窄柱、每行只有四五個字
   const wide = () => { const fs = parseFloat(getComputedStyle(box).fontSize); return fs <= 18.5 || ol.firstElementChild.clientWidth >= 7 * fs; };
   const ok = () => { if (ol) flowArrows(ol); return box.scrollHeight <= avail && box.scrollWidth <= box.clientWidth + 1 && (!ol || ([...olt].every((e) => e.scrollWidth <= e.clientWidth + 1) && wide())); };
   const top = Math.round(Math.min(64, 40 * Math.max(1, Math.min(innerWidth / 1500, innerHeight / 800)))); // 上限 40px，超大螢幕再放大到 64px，免得內容縮在中間留一大片空
+  const T = box.querySelector('.lk-terms');
+  if (T) { // 名詞卡（v118，使用者：好閱讀、不留大片空、不放大到滿版難讀）：欄數固定、解釋先佔位，展開收起不重排；字 15～22px、每行 12～32 字，取放得下的最大字；15px 仍放不下就讓卡片捲
+    if (shrinkOnly) return;
+    T.style.gap = ''; T.style.height = ''; const n = T.children.length, gap = parseFloat(getComputedStyle(T).columnGap) || 14;
+    const cpl = (c, f) => ((T.clientWidth - gap * (c - 1)) / c - 1.8 * f - 4) / (f * 1.056); // 每行約幾字
+    const C = [...new Set([1, 2, 3, 4, 5, 6].map((r) => Math.ceil(n / r)))].filter((c) => c === n || n % c === 0 || n % c >= c / 2);
+    const fits = () => box.scrollHeight <= avail && [...T.children].every((e) => e.scrollWidth <= e.clientWidth + 1);
+    let best = null;
+    for (const c of C) { T.style.setProperty('--cols', c); let lo = 15, hi = 22;
+      for (let k = 0; k < 6; k++) { const mid = (lo + hi) / 2; box.style.fontSize = mid + 'px'; if (fits() && cpl(c, mid) >= 12) lo = mid; else hi = mid; }
+      lo = Math.floor(lo); box.style.fontSize = lo + 'px'; const w = cpl(c, lo), sc = [fits() && w >= 12 && w <= 32 ? 1 : 0, w >= 12 ? 1 : 0, lo, -Math.abs(w - 20)];
+      const d = best ? sc.findIndex((v, k) => v !== best[1][k]) : 0; if (!best || (d >= 0 && sc[d] > best[1][d])) best = [c, sc]; } // 依序比：放得下且好讀 ＞ 每行夠寬 ＞ 字大 ＞ 每行接近 20 字
+    T.style.setProperty('--cols', best[0]); box.style.fontSize = best[1][2] + 'px';
+    if (fits()) { // 放得下：多的高度先拉開格子間距（最多 40px），剩下平均撐高各列，卡片下方不留空（使用者：下面還有點空間、卡片可以有點間隔）
+      let lo = gap, hi = 40; for (let k = 0; k < 5; k++) { const mid = (lo + hi) / 2; T.style.gap = mid + 'px'; if (fits()) lo = mid; else hi = mid; }
+      T.style.gap = Math.floor(lo) + 'px'; T.style.height = T.offsetHeight + Math.max(0, Math.floor(avail - box.scrollHeight)) + 'px'; }
+    return;
+  }
   let lo = 18, hi = top;
   if (shrinkOnly) { if (ok()) return; hi = parseFloat(box.style.fontSize) || top; }
   const search = () => { for (let k = 0; k < 8; k++) { const mid = (lo + hi) / 2; box.style.fontSize = mid + 'px'; if (ok()) lo = mid; else hi = mid; } box.style.fontSize = Math.floor(lo) + 'px'; };

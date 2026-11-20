@@ -611,3 +611,12 @@ ul.pts li:hover:not(.s-lock), ul.pts li:focus-visible { background:var(--sl); }
 .fb { word-break:keep-all; overflow-wrap:anywhere; }
 /* 流程卡排法由 fitCard 依可用空間選欄數（--cols），每列步數平均 */
 @media (min-width:900px) { .lk-flow[style*="--cols"], .lk-pre-terms dl[style*="--cols"] { display:grid; grid-template-columns:repeat(var(--cols),minmax(0,1fr)); } }
+/* ---- v118 名詞卡固定位子（使用者 2026-11-20：不要自適應、格子固定、好閱讀不留大片空）----
+   fitCard 選固定欄數（--cols）與字級；解釋文字收起時也佔位（visibility），展開／收起格子大小不變 */
+@media (min-width:900px) {
+  .lk-terms[style*="--cols"] { grid-template-columns:repeat(var(--cols),minmax(0,1fr)); grid-auto-rows:1fr; }
+  .lk-term, .lk-term.on { display:grid; grid-template-rows:auto 1fr; align-content:start; gap:.45em; padding:.75em .9em; min-height:0; overflow:hidden; }
+  .lk-term .lk-hint, .lk-term .d, .lk-term.on .lk-hint { grid-row:2; grid-column:1; display:block; }
+  .lk-term .d, .lk-term.on .lk-hint { visibility:hidden; } .lk-term.on .d { visibility:visible; }
+  .lk-terms[style*="--cols"] .lk-term .d { line-height:1.5; }
+}
